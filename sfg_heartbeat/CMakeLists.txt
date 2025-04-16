@@ -12,7 +12,6 @@ ament_auto_find_build_dependencies()
 
 # Add nodes.
 set(target "heartbeat")
-
 ament_auto_add_executable("${target}" "src/heartbeat.cpp" "src/heartbeat_node.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
