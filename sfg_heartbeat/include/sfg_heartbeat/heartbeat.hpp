@@ -1,9 +1,8 @@
 #pragma once
 
+#include <cstdint>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/timer.hpp>
-
-#include <cstdint>
 
 #include "sfg_heartbeat_msgs/msg/heartbeat.hpp"
 
