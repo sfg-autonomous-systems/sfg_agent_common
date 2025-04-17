@@ -15,8 +15,8 @@ ament_auto_find_build_dependencies()
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
-set(target "heartbeat")
-ament_auto_add_executable("${target}" "src/heartbeat.cpp" "src/heartbeat_node.cpp")
+set(target "status_provider")
+ament_auto_add_executable("${target}" "src/status_provider.cpp" "src/status_provider_node.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -26,18 +26,6 @@ ament_target_dependencies("${target}"
   rclcpp
   sfg_agent_msgs
   sfg_utils
-)
-
-set(target "metadata_provider")
-ament_auto_add_executable("${target}" "src/metadata_provider.cpp" "src/metadata_provider_node.cpp")
-target_include_directories("${target}" PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_features("${target}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target}"
-  rclcpp
-  sfg_agent_msgs
 )
 
 # For some reason ament_target_dependencies does not work for yaml-cpp.
