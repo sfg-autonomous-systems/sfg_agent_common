@@ -22,7 +22,8 @@ target_include_directories("${target}" PUBLIC
 target_compile_features("${target}" PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies(${target})
 
-install(DIRECTORY "include/"
+install(DIRECTORY
+  "include/"
   DESTINATION "include"
 )
 
