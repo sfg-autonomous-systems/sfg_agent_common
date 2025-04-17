@@ -29,7 +29,7 @@ namespace sfg_agent
             "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
             std::bind(&AgentDecoder::heartbeat_callback, this, std::placeholders::_1));
         m_agent_metadata_client = create_client<sfg_agent_msgs::srv::GetAgentMetadata>(
-            "/global/" + m_hostname + "/get_agent_metadata");
+            "/global/" + m_hostname + "/get_metadata");
 
         RCLCPP_INFO(get_logger(), "Started agent decoder for '%s'.", m_hostname.c_str());
     }
@@ -54,6 +54,8 @@ namespace sfg_agent
         m_keepalive_timer = create_wall_timer(
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentDecoder::keepalive_callback, this));
+
+        RCLCPP_INFO(get_logger(), "Requesting agent metadata for '%s' via service '%s'.", m_hostname.c_str(), m_agent_metadata_client->get_service_name());
         m_agent_metadata_client->async_send_request(
             std::make_shared<sfg_agent_msgs::srv::GetAgentMetadata::Request>(),
             std::bind(&AgentDecoder::agent_metadata_callback, this, std::placeholders::_1));
