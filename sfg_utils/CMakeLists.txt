@@ -9,19 +9,34 @@ endif()
 # Find dependencies.                                                                                     #
 # ########################################################################################################
 find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_test_dependencies()
-ament_auto_find_build_dependencies()
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(target "${PROJECT_NAME}")
-ament_auto_add_library("${target}" "src/sanitize_hostname.cpp")
+add_library("${target}" SHARED "src/sanitize_hostname.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features("${target}" PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies(${target})
+
+install(DIRECTORY "include/"
+  DESTINATION "include"
+)
+
+install(
+  TARGETS ${target}
+  EXPORT ${target}
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+  RUNTIME DESTINATION "bin"
+  INCLUDES DESTINATION "include"
+)
+
+ament_export_include_directories("include")
+ament_export_libraries(${target})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -37,4 +52,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_package()

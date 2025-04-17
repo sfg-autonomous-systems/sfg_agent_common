@@ -59,7 +59,7 @@ namespace sfg_agent
     {
         if (filepath.empty())
         {
-            RCLCPP_WARN(get_logger(), "Note metadata file specified. Did you forget to specify one?");
+            RCLCPP_WARN(get_logger(), "No metadata file specified. Did you forget to specify one?");
             return true;
         }
 

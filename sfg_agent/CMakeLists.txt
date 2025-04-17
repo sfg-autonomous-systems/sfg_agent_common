@@ -8,15 +8,18 @@ endif()
 # ########################################################################################################
 # Find dependencies.                                                                                     #
 # ########################################################################################################
-find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_test_dependencies()
-ament_auto_find_build_dependencies()
+find_package(ament_cmake REQUIRED)
+find_package(isaac_ros_h264_decoder REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sfg_agent_msgs REQUIRED)
+find_package(sfg_utils REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(target "agent_status_provider")
-ament_auto_add_executable("${target}" "src/agent_status_provider.cpp" "src/agent_status_provider_node.cpp")
+add_executable("${target}" "src/agent_status_provider.cpp" "src/agent_status_provider_node.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -32,17 +35,27 @@ ament_target_dependencies("${target}"
 target_link_libraries("${target}"
   yaml-cpp
 )
+install(TARGETS
+  ${target}
+  DESTINATION "lib/${PROJECT_NAME}"
+)
 
 set(target "agent_decoder")
-ament_auto_add_executable("${target}" "src/agent_decoder.cpp" "src/agent_decoder_node.cpp")
+add_executable("${target}" "src/agent_decoder.cpp" "src/agent_decoder_node.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features("${target}" PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies("${target}"
+  isaac_ros_h264_decoder
   rclcpp
   sfg_agent_msgs
+  sfg_utils
+)
+install(TARGETS
+  ${target}
+  DESTINATION "lib/${PROJECT_NAME}"
 )
 
 if(BUILD_TESTING)
@@ -59,4 +72,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_package()

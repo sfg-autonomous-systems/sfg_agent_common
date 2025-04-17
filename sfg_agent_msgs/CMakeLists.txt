@@ -8,9 +8,9 @@ endif()
 # ########################################################################################################
 # Find dependencies.                                                                                     #
 # ########################################################################################################
-find_package(ament_cmake_auto REQUIRED)
-ament_auto_find_test_dependencies()
-ament_auto_find_build_dependencies()
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # ########################################################################################################
 # Add interfaces.                                                                                        #
@@ -30,6 +30,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+
   # The following line skips the linter which checks for copyrights.
   # Comment the line when a copyright and license is added to all source files.
   set(ament_cmake_copyright_FOUND TRUE)
@@ -41,4 +43,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_auto_package()
+ament_package()
