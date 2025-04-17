@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sfg_heartbeat_msgs</name>
+  <name>sfg_agent_msgs</name>
   <version>0.0.0</version>
-  <description>Includes the message, service, and action definitions of the sfg_heartbeat package.</description>
+  <description>Includes the message, service, and action definitions of the sfg_agent package.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 

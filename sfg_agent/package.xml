@@ -1,14 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sfg_heartbeat</name>
+  <name>sfg_agent</name>
   <version>0.0.0</version>
-  <description>Contains a heartbeat node that periodically publishes a heartbeat message.</description>
+  <description>Contains nodes central to all SFG agents such as a heartbeat node.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
   <depend>rclcpp</depend>
-  <depend>sfg_heartbeat_msgs</depend>
+  <depend>sfg_agent_msgs</depend>
+  <depend>sfg_utils</depend>
+  <depend>yaml-cpp</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_auto</buildtool_depend>

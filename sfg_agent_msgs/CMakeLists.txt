@@ -1,22 +1,31 @@
 cmake_minimum_required(VERSION 3.8)
-project(sfg_heartbeat_msgs)
+project(sfg_agent_msgs)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Find dependencies.
+# ########################################################################################################
+# Find dependencies.                                                                                     #
+# ########################################################################################################
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_test_dependencies()
 ament_auto_find_build_dependencies()
 
-# Add interfaces.
+# ########################################################################################################
+# Add interfaces.                                                                                        #
+# ########################################################################################################
 set(msg_files
   "msg/Heartbeat.msg"
 )
 
+set(srv_files
+  "srv/GetMetadata.srv"
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
+  ${srv_files}
   DEPENDENCIES std_msgs
 )
 
