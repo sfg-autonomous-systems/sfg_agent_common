@@ -16,11 +16,11 @@ ament_auto_find_build_dependencies()
 # Add interfaces.                                                                                        #
 # ########################################################################################################
 set(msg_files
-  "msg/Heartbeat.msg"
+  "msg/AgentHeartbeat.msg"
 )
 
 set(srv_files
-  "srv/GetMetadata.srv"
+  "srv/GetAgentMetadata.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

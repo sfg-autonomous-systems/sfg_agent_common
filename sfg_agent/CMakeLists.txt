@@ -15,8 +15,8 @@ ament_auto_find_build_dependencies()
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
-set(target "status_provider")
-ament_auto_add_executable("${target}" "src/status_provider.cpp" "src/status_provider_node.cpp")
+set(target "agent_status_provider")
+ament_auto_add_executable("${target}" "src/agent_status_provider.cpp" "src/agent_status_provider_node.cpp")
 target_include_directories("${target}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -31,6 +31,18 @@ ament_target_dependencies("${target}"
 # For some reason ament_target_dependencies does not work for yaml-cpp.
 target_link_libraries("${target}"
   yaml-cpp
+)
+
+set(target "agent_decoder")
+ament_auto_add_executable("${target}" "src/agent_decoder.cpp" "src/agent_decoder_node.cpp")
+target_include_directories("${target}" PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_features("${target}" PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies("${target}"
+  rclcpp
+  sfg_agent_msgs
 )
 
 if(BUILD_TESTING)

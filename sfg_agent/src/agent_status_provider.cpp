@@ -1,4 +1,4 @@
-#include "sfg_agent/status_provider.hpp"
+#include "sfg_agent/agent_status_provider.hpp"
 
 #include <cctype>
 #include <limits.h>
@@ -6,19 +6,16 @@
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
+#include "sfg_agent/agent_heartbeat_constants.hpp"
 #include "sfg_utils/sanitize_hostname.hpp"
 
 namespace sfg_agent
 {
-    StatusProvider::StatusProvider() : Node("status_provider")
+    AgentStatusProvider::AgentStatusProvider() : Node("agent_status_provider")
     {
-        RCLCPP_INFO(get_logger(), "Starting status provider.");
-
         // Declare and retrieve ROS parameters.
         declare_parameter("override_hostname", "", rcl_interfaces::msg::ParameterDescriptor().set__description("Override the hostname published."));
         get_parameter("override_hostname", m_override_hostname);
-        declare_parameter("heartbeat_interval", 1, rcl_interfaces::msg::ParameterDescriptor().set__description("Interval in seconds between heartbeats."));
-        get_parameter("heartbeat_interval", m_heartbeat_interval);
         declare_parameter("metadata_filepath", "", rcl_interfaces::msg::ParameterDescriptor().set__description("The filepath pointing to the yaml file containing the metadata."));
         get_parameter("metadata_filepath", m_metadata_filepath);
 
@@ -31,33 +28,34 @@ namespace sfg_agent
         m_hostname = get_sanitized_hostname();
 
         // Set up interfaces.
-        m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::Heartbeat>(
-            "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).keep_last(1).reliable());
-        m_timer = create_wall_timer(
-            std::chrono::duration<float>(m_heartbeat_interval),
-            std::bind(&StatusProvider::publish_heartbeat, this));
-        m_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
+        m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
+            "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+        m_heartbeat_timer = create_wall_timer(
+            std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
+            std::bind(&AgentStatusProvider::publish_heartbeat, this));
+        m_metadata_service = create_service<sfg_agent_msgs::srv::GetAgentMetadata>(
             "/global/" + m_hostname + "/get_metadata",
-            std::bind(&StatusProvider::get_metadata, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&AgentStatusProvider::get_metadata, this, std::placeholders::_1, std::placeholders::_2));
+
+        RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_hostname.c_str());
     }
 
-    void StatusProvider::publish_heartbeat()
+    void AgentStatusProvider::publish_heartbeat()
     {
-        auto msg = sfg_agent_msgs::msg::Heartbeat();
+        auto msg = sfg_agent_msgs::msg::AgentHeartbeat();
         msg.header.stamp = now();
         msg.hostname = m_hostname;
-        msg.interval = m_heartbeat_interval;
         m_heartbeat_publisher->publish(msg);
     }
 
-    void StatusProvider::get_metadata([[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request> request,
-                                      std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response)
+    void AgentStatusProvider::get_metadata([[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
+                                           std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for metadata.");
         *response = m_metadata_response;
     }
 
-    bool StatusProvider::load_metadata(const std::filesystem::path &filepath)
+    bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
     {
         if (filepath.empty())
         {
@@ -78,13 +76,13 @@ namespace sfg_agent
 
             if (config["cameras"])
             {
-                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetMetadata::Response::CAPABILITY_CAMERA;
+                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_CAMERA;
                 m_metadata_response.cameras = config["cameras"].as<std::vector<std::string>>();
             }
 
             if (config["lidars"])
             {
-                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetMetadata::Response::CAPABILITY_LIDAR;
+                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_LIDAR;
                 m_metadata_response.lidars = config["lidars"].as<std::vector<std::string>>();
             }
         }
@@ -97,7 +95,7 @@ namespace sfg_agent
         return true;
     }
 
-    std::string StatusProvider::get_sanitized_hostname()
+    std::string AgentStatusProvider::get_sanitized_hostname()
     {
         if (!m_override_hostname.empty())
         {
