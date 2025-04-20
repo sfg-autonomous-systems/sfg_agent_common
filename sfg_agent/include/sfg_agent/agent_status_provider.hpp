@@ -13,7 +13,7 @@ namespace sfg_agent
     class AgentStatusProvider : public rclcpp::Node
     {
     public:
-        AgentStatusProvider();
+        AgentStatusProvider(const rclcpp::NodeOptions &options);
 
     private:
         void publish_heartbeat();
