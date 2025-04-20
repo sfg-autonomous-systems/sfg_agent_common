@@ -9,7 +9,14 @@ namespace sfg_agent
     AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", options)
     {
         // Declare and retrieve ROS parameters.
-        const char *parameter = "hostname";
+        const char *parameter = "container_name";
+        declare_parameter<std::string>(
+            parameter,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("The name of the container decoder nodes should be dymically loaded in."));
+        get_parameter(parameter, m_container_name);
+
+        parameter = "hostname";
         declare_parameter<std::string>(
             parameter,
             rcl_interfaces::msg::ParameterDescriptor()
@@ -33,9 +40,9 @@ namespace sfg_agent
         m_get_agent_metadata_client = create_client<sfg_agent_msgs::srv::GetAgentMetadata>(
             "/global/" + m_hostname + "/get_agent_metadata");
         m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(
-            "");
+            m_container_name + "/load_node");
         m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(
-            "");
+            m_container_name + "/unload_node");
 
         RCLCPP_INFO(get_logger(), "Started agent decoder for '%s'.", m_hostname.c_str());
     }

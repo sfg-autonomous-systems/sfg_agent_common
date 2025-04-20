@@ -23,6 +23,7 @@ namespace sfg_agent
         void unload_node(const uint64_t id);
 
         // ROS parameters
+        std::string m_container_name;
         std::string m_hostname;
         uint8_t m_keepalive;
 
