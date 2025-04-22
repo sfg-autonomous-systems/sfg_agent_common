@@ -17,9 +17,12 @@ namespace sfg_agent
     private:
         void heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg);
         void keepalive_callback();
-        void agent_metadata_callback(
-            rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future);
-        void load_node(const std::string &package_name, const std::string &plugin_name);
+        void agent_metadata_callback(rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future);
+        void load_node(
+            const std::string &package_name,
+            const std::string &plugin_name,
+            const std::string &node_name,
+            const std::vector<std::string> &remapping_rules);
         void unload_node(const uint64_t id);
 
         // ROS parameters
