@@ -19,7 +19,7 @@ namespace sfg_agent
         declare_parameter("metadata_filepath", "", rcl_interfaces::msg::ParameterDescriptor().set__description("The filepath pointing to the yaml file containing the metadata."));
         get_parameter("metadata_filepath", m_metadata_filepath);
 
-        if (!load_metadata(m_metadata_filepath))
+        if (!load_agent_metadata(m_metadata_filepath))
         {
             RCLCPP_ERROR(get_logger(), "Failed to load metadata from '%s'.", m_metadata_filepath.c_str());
             throw std::runtime_error("Failed to load metadata.");
@@ -34,8 +34,8 @@ namespace sfg_agent
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_metadata_service = create_service<sfg_agent_msgs::srv::GetAgentMetadata>(
-            "/global/" + m_hostname + "/get_metadata",
-            std::bind(&AgentStatusProvider::get_metadata, this, std::placeholders::_1, std::placeholders::_2));
+            "/global/" + m_hostname + "/get_agent_metadata",
+            std::bind(&AgentStatusProvider::get_agent_metadata, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_hostname.c_str());
     }
@@ -48,14 +48,14 @@ namespace sfg_agent
         m_heartbeat_publisher->publish(msg);
     }
 
-    void AgentStatusProvider::get_metadata([[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
-                                           std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
+    void AgentStatusProvider::get_agent_metadata([[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
+                                                 std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for metadata.");
         *response = m_metadata_response;
     }
 
-    bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
+    bool AgentStatusProvider::load_agent_metadata(const std::filesystem::path &filepath)
     {
         if (filepath.empty())
         {

@@ -17,9 +17,9 @@ namespace sfg_agent
 
     private:
         void publish_heartbeat();
-        void get_metadata(const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
-                          std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response);
-        bool load_metadata(const std::filesystem::path &filepath);
+        void get_agent_metadata(const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
+                                std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response);
+        bool load_agent_metadata(const std::filesystem::path &filepath);
         std::string get_sanitized_hostname();
 
         // ROS parameters
