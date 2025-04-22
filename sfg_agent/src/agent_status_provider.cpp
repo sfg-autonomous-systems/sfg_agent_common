@@ -11,13 +11,16 @@
 
 namespace sfg_agent
 {
-    AgentStatusProvider::AgentStatusProvider() : Node("agent_status_provider")
+    AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
     {
         // Declare and retrieve ROS parameters.
-        declare_parameter("override_hostname", "", rcl_interfaces::msg::ParameterDescriptor().set__description("Override the hostname published."));
-        get_parameter("override_hostname", m_override_hostname);
-        declare_parameter("metadata_filepath", "", rcl_interfaces::msg::ParameterDescriptor().set__description("The filepath pointing to the yaml file containing the metadata."));
-        get_parameter("metadata_filepath", m_metadata_filepath);
+        const char *parameter = "override_hostname";
+        declare_parameter(parameter, "", rcl_interfaces::msg::ParameterDescriptor().set__description("Override the hostname published."));
+        get_parameter(parameter, m_override_hostname);
+
+        parameter = "metadata_filepath";
+        declare_parameter(parameter, "", rcl_interfaces::msg::ParameterDescriptor().set__description("The filepath pointing to the yaml file containing the metadata."));
+        get_parameter(parameter, m_metadata_filepath);
 
         if (!load_agent_metadata(m_metadata_filepath))
         {

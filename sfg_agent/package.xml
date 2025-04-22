@@ -7,8 +7,10 @@
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
+  <depend>composition_interfaces</depend>
   <depend>isaac_ros_h264_decoder</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>
   <depend>sfg_utils</depend>
   <depend>yaml-cpp</depend>
