@@ -23,14 +23,14 @@ namespace sfg_agent
         m_keepalive_count = m_keepalive;
 
         // We need to use a sanitized version of the hostname for ROS communication.
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
+        m_sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
 
         // Set up interfaces.
         m_agent_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
             "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
             std::bind(&AgentDecoder::heartbeat_callback, this, std::placeholders::_1));
         m_get_agent_metadata_client =
-            create_client<sfg_agent_msgs::srv::GetAgentMetadata>("/global/" + sanitized_hostname + "/get_agent_metadata");
+            create_client<sfg_agent_msgs::srv::GetAgentMetadata>("/global/" + m_sanitized_hostname + "/get_agent_metadata");
 
         std::string load_node_service = m_container_name + "/_container/load_node";
         std::string unload_node_service = m_container_name + "/_container/unload_node";
@@ -84,8 +84,8 @@ namespace sfg_agent
         {
             RCLCPP_INFO(get_logger(), "Adding camera decoder node for '%s' for agent '%s'", camera.c_str(), m_hostname.c_str());
 
-            std::string input_topic = "/global/" + m_hostname + "/" + camera + "/color_compressed";
-            std::string output_topic = "/local/" + m_hostname + "/" + camera + "/color_uncompressed";
+            std::string input_topic = "/global/" + m_sanitized_hostname + "/" + camera + "/color_compressed";
+            std::string output_topic = "/local/" + m_sanitized_hostname + "/" + camera + "/color_uncompressed";
 
             load_node(
                 "isaac_ros_h264_decoder",
@@ -99,8 +99,8 @@ namespace sfg_agent
         {
             RCLCPP_INFO(get_logger(), "Adding lidar decoder node for '%s' for agent '%s'", lidar.c_str(), m_hostname.c_str());
 
-            std::string input_topic = "/global/" + m_hostname + "/" + lidar + "/pcl_compressed";
-            std::string output_topic = "/local/" + m_hostname + "/" + lidar + "/pcl_uncompressed";
+            std::string input_topic = "/global/" + m_sanitized_hostname + "/" + lidar + "/pcl_compressed";
+            std::string output_topic = "/local/" + m_sanitized_hostname + "/" + lidar + "/pcl_uncompressed";
         }
 
         // After retrieving the metadata, we can start the keepalive timer.

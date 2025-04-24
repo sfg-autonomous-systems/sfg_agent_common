@@ -30,6 +30,7 @@ namespace sfg_agent
         std::string m_hostname;
         uint8_t m_keepalive;
 
+        std::string m_sanitized_hostname;
         uint8_t m_keepalive_count;
         rclcpp::TimerBase::SharedPtr m_keepalive_timer;
         std::string m_container_manager_name;
