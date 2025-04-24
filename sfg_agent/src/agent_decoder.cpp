@@ -143,7 +143,7 @@ namespace sfg_agent
         request->package_name = package_name;
         request->plugin_name = plugin_name;
         request->node_name = node_name;
-        request->node_namespace = "/local/" + m_hostname;
+        request->node_namespace = "/local/" + m_sanitized_hostname;
         request->remap_rules = remapping_rules;
 
         m_load_node_client->async_send_request(
