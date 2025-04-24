@@ -15,11 +15,21 @@ namespace sfg_agent
     {
         // Declare and retrieve ROS parameters.
         std::string parameter = "override_hostname";
-        declare_parameter(parameter, "", rcl_interfaces::msg::ParameterDescriptor().set__description("Override the hostname published."));
+        declare_parameter(
+            parameter, "",
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("Override the hostname published."));
         get_parameter(parameter, m_override_hostname);
+        m_hostname = get_hostname();
+        // We need to use a sanitized version of the hostname for ROS communication.
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
 
         parameter = "metadata_filepath";
-        declare_parameter(parameter, "", rcl_interfaces::msg::ParameterDescriptor().set__description("The filepath pointing to the yaml file containing the metadata."));
+        declare_parameter(
+            parameter,
+            "",
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("The filepath pointing to the yaml file containing the metadata."));
         get_parameter(parameter, m_metadata_filepath);
 
         if (!load_agent_metadata(m_metadata_filepath))
@@ -27,11 +37,6 @@ namespace sfg_agent
             RCLCPP_ERROR(get_logger(), "Failed to load metadata from '%s'.", m_metadata_filepath.c_str());
             throw std::runtime_error("Failed to load metadata.");
         }
-
-        m_hostname = get_hostname();
-
-        // We need to use a sanitized version of the hostname for ROS communication.
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
 
         // Set up interfaces.
         m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
@@ -54,8 +59,9 @@ namespace sfg_agent
         m_heartbeat_publisher->publish(msg);
     }
 
-    void AgentStatusProvider::get_agent_metadata([[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
-                                                 std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
+    void AgentStatusProvider::get_agent_metadata(
+        [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
+        std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for metadata.");
         *response = m_metadata_response;

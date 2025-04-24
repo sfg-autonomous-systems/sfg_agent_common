@@ -4,26 +4,37 @@
 #include "sfg_agent/agent_heartbeat_constants.hpp"
 #include "sfg_utils/sanitize_hostname.hpp"
 
+#define STRINGIFY(value) #value
+
 namespace sfg_agent
 {
     AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", options)
     {
         // Declare and retrieve ROS parameters.
         std::string parameter = "container_name";
-        declare_parameter<std::string>(parameter, rcl_interfaces::msg::ParameterDescriptor().set__description("The name of the container decoder nodes should be dymically loaded in."));
+        declare_parameter<std::string>(
+            parameter,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("The name of the container decoder nodes should be dymically loaded in."));
         get_parameter(parameter, m_container_name);
 
         parameter = "hostname";
-        declare_parameter<std::string>(parameter, rcl_interfaces::msg::ParameterDescriptor().set__description("The agent hostname that should be decoded if present."));
+        declare_parameter<std::string>(
+            parameter,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("The agent hostname that should be decoded if present."));
         get_parameter(parameter, m_hostname);
-
-        parameter = "keepalive";
-        declare_parameter(parameter, 3, rcl_interfaces::msg::ParameterDescriptor().set__description("The number of heartbeat messages to wait before considering an agent dead."));
-        get_parameter(parameter, m_keepalive);
-        m_keepalive_count = m_keepalive;
-
         // We need to use a sanitized version of the hostname for ROS communication.
         m_sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
+
+        parameter = "keepalive";
+        declare_parameter(
+            parameter,
+            3,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("The number of heartbeat messages to wait before considering an agent dead."));
+        get_parameter(parameter, m_keepalive);
+        m_keepalive_count = m_keepalive;
 
         // Set up interfaces.
         m_agent_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
@@ -65,9 +76,23 @@ namespace sfg_agent
 
         RCLCPP_INFO(get_logger(), "Requesting agent metadata for '%s'.", m_hostname.c_str());
 
+        auto weak_this = weak_from_this();
+
         m_get_agent_metadata_client->async_send_request(
             std::make_shared<sfg_agent_msgs::srv::GetAgentMetadata::Request>(),
-            std::bind(&AgentDecoder::agent_metadata_callback, this, std::placeholders::_1));
+            [weak_this](rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future)
+            {
+                if (weak_this.expired())
+                {
+                    RCLCPP_WARN(
+                        rclcpp::get_logger(STRINGIFY(AgentDecoder::heartbeat_callback)),
+                        STRINGIFY(AgentDecoder) " object expired before metadata callback.");
+                    return;
+                }
+
+                auto agent_decoder = std::static_pointer_cast<AgentDecoder>(weak_this.lock());
+                agent_decoder->agent_metadata_callback(std::move(future));
+            });
     }
 
     void AgentDecoder::agent_metadata_callback(rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future)
@@ -135,7 +160,11 @@ namespace sfg_agent
     {
         if (!m_load_node_client->service_is_ready())
         {
-            RCLCPP_ERROR(get_logger(), "Load node service client not ready. Cannot load node '%s' in package '%s'.", plugin_name.c_str(), package_name.c_str());
+            RCLCPP_ERROR(
+                get_logger(),
+                "Load node service client not ready. Cannot load node '%s' in package '%s'.",
+                plugin_name.c_str(),
+                package_name.c_str());
             return;
         }
 
@@ -146,13 +175,31 @@ namespace sfg_agent
         request->node_namespace = "/local/" + m_sanitized_hostname;
         request->remap_rules = remapping_rules;
 
+        auto weak_this = weak_from_this();
+
         m_load_node_client->async_send_request(
             request,
-            [this, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
+            [weak_this, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
             {
+                if (weak_this.expired())
+                {
+                    RCLCPP_WARN(
+                        rclcpp::get_logger(STRINGIFY(AgentDecoder::load_node)),
+                        STRINGIFY(AgentDecoder) " object expired before load node callback for node '%s' from package '%s'.",
+                        package_name.c_str(),
+                        plugin_name.c_str());
+                    return;
+                }
+
+                auto agent_decoder = std::static_pointer_cast<AgentDecoder>(weak_this.lock());
+
                 if (!future.valid())
                 {
-                    RCLCPP_ERROR(get_logger(), "Failed to load node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
+                    RCLCPP_ERROR(
+                        agent_decoder->get_logger(),
+                        "Failed to load node '%s' from package '%s'.",
+                        plugin_name.c_str(),
+                        package_name.c_str());
                     return;
                 }
 
@@ -160,12 +207,17 @@ namespace sfg_agent
 
                 if (!response->success)
                 {
-                    RCLCPP_ERROR(get_logger(), "Failed to load node '%s' from package '%s': %s", plugin_name.c_str(), package_name.c_str(), response->error_message.c_str());
+                    RCLCPP_ERROR(
+                        agent_decoder->get_logger(),
+                        "Failed to load node '%s' from package '%s': %s",
+                        plugin_name.c_str(),
+                        package_name.c_str(),
+                        response->error_message.c_str());
                     return;
                 }
 
-                m_loaded_node_ids.push_back(response->unique_id);
-                RCLCPP_INFO(get_logger(), "Loaded node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
+                agent_decoder->m_loaded_node_ids.push_back(response->unique_id);
+                RCLCPP_INFO(agent_decoder->get_logger(), "Loaded node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
             });
     }
 
@@ -180,13 +232,26 @@ namespace sfg_agent
         auto request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
         request->unique_id = id;
 
+        auto weak_this = weak_from_this();
+
         m_unload_node_client->async_send_request(
             request,
-            [this, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
+            [weak_this, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
             {
+                if (weak_this.expired())
+                {
+                    RCLCPP_WARN(
+                        rclcpp::get_logger(STRINGIFY(AgentDecoder::unload_node)),
+                        STRINGIFY(AgentDecoder) " object expired before unload node callback for ID '%lu'.",
+                        id);
+                    return;
+                }
+
+                auto agent_decoder = std::static_pointer_cast<AgentDecoder>(weak_this.lock());
+
                 if (!future.valid())
                 {
-                    RCLCPP_ERROR(get_logger(), "Failed to unload node with ID '%lu'.", id);
+                    RCLCPP_ERROR(agent_decoder->get_logger(), "Failed to unload node with ID '%lu'.", id);
                     return;
                 }
 
@@ -194,10 +259,13 @@ namespace sfg_agent
 
                 if (!response->success)
                 {
-                    RCLCPP_ERROR(get_logger(), "Failed to unload node with ID '%lu': %s", id, response->error_message.c_str());
+                    RCLCPP_ERROR(
+                        agent_decoder->get_logger(),
+                        "Failed to unload node with ID '%lu': %s", id,
+                        response->error_message.c_str());
                     return;
                 }
-                RCLCPP_INFO(get_logger(), "Unloaded node with ID '%lu'.", id);
+                RCLCPP_INFO(agent_decoder->get_logger(), "Unloaded node with ID '%lu'.", id);
             });
     }
 }
