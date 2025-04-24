@@ -20,7 +20,7 @@ namespace sfg_agent
         void get_agent_metadata(const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
                                 std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response);
         bool load_agent_metadata(const std::filesystem::path &filepath);
-        std::string get_sanitized_hostname();
+        std::string get_hostname();
 
         // ROS parameters
         std::string m_override_hostname;

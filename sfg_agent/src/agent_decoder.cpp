@@ -9,28 +9,34 @@ namespace sfg_agent
     AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", options)
     {
         // Declare and retrieve ROS parameters.
-        const char *parameter = "container_name";
+        std::string parameter = "container_name";
         declare_parameter<std::string>(parameter, rcl_interfaces::msg::ParameterDescriptor().set__description("The name of the container decoder nodes should be dymically loaded in."));
         get_parameter(parameter, m_container_name);
 
         parameter = "hostname";
         declare_parameter<std::string>(parameter, rcl_interfaces::msg::ParameterDescriptor().set__description("The agent hostname that should be decoded if present."));
         get_parameter(parameter, m_hostname);
-        m_hostname = sfg_utils::sanitize_hostname(m_hostname);
 
         parameter = "keepalive";
         declare_parameter(parameter, 3, rcl_interfaces::msg::ParameterDescriptor().set__description("The number of heartbeat messages to wait before considering an agent dead."));
         get_parameter(parameter, m_keepalive);
         m_keepalive_count = m_keepalive;
 
+        // We need to use a sanitized version of the hostname for ROS communication.
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
+
         // Set up interfaces.
         m_agent_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
             "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
             std::bind(&AgentDecoder::heartbeat_callback, this, std::placeholders::_1));
         m_get_agent_metadata_client =
-            create_client<sfg_agent_msgs::srv::GetAgentMetadata>("/global/" + m_hostname + "/get_agent_metadata");
-        m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(m_container_name + "/load_node");
-        m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(m_container_name + "/unload_node");
+            create_client<sfg_agent_msgs::srv::GetAgentMetadata>("/global/" + sanitized_hostname + "/get_agent_metadata");
+
+        std::string load_node_service = m_container_name + "/_container/load_node";
+        std::string unload_node_service = m_container_name + "/_container/unload_node";
+        RCLCPP_INFO(get_logger(), "Creating client for '%s' and '%s'.", load_node_service.c_str(), unload_node_service.c_str());
+        m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(load_node_service);
+        m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(unload_node_service);
 
         RCLCPP_INFO(get_logger(), "Started agent decoder for '%s'.", m_hostname.c_str());
     }
@@ -72,31 +78,29 @@ namespace sfg_agent
             return;
         }
 
-        RCLCPP_INFO(get_logger(), "Adding required decoder nodes for agent '%s'", m_hostname.c_str());
         auto response = future.get();
 
-        if ((response->capabilities & sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_CAMERA) != 0)
+        for (const auto &camera : response->cameras)
         {
-            for (const auto &camera : response->cameras)
-            {
-                std::string input_topic = "/global/" + m_hostname + "/" + camera + "/color_compressed";
-                std::string output_topic = "/local/" + m_hostname + "/" + camera + "/color_raw";
+            RCLCPP_INFO(get_logger(), "Adding camera decoder node for '%s' for agent '%s'", camera.c_str(), m_hostname.c_str());
 
-                load_node(
-                    "isaac_ros_h264_decoder",
-                    "isaac_ros_h264_decoder::DecoderNode",
-                    m_hostname + "_" + camera + "_decoder",
-                    {input_topic + ":=" + output_topic});
-            }
+            std::string input_topic = "/global/" + m_hostname + "/" + camera + "/color_compressed";
+            std::string output_topic = "/local/" + m_hostname + "/" + camera + "/color_uncompressed";
+
+            load_node(
+                "isaac_ros_h264_decoder",
+                "nvidia::isaac_ros::h264_decoder::DecoderNode",
+                camera + "_decoder",
+                {"image_compressed" + (":=" + input_topic),
+                 "image_uncompressed" + (":=" + output_topic)});
         }
 
-        if ((response->capabilities & sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_LIDAR) != 0)
+        for (const auto &lidar : response->lidars)
         {
-            for (const auto &lidar : response->lidars)
-            {
-                std::string input_topic = "/global/" + m_hostname + "/" + lidar + "/pcl_compressed";
-                std::string output_topic = "/local/" + m_hostname + "/" + lidar + "/pcl_raw";
-            }
+            RCLCPP_INFO(get_logger(), "Adding lidar decoder node for '%s' for agent '%s'", lidar.c_str(), m_hostname.c_str());
+
+            std::string input_topic = "/global/" + m_hostname + "/" + lidar + "/pcl_compressed";
+            std::string output_topic = "/local/" + m_hostname + "/" + lidar + "/pcl_uncompressed";
         }
 
         // After retrieving the metadata, we can start the keepalive timer.
@@ -139,7 +143,7 @@ namespace sfg_agent
         request->package_name = package_name;
         request->plugin_name = plugin_name;
         request->node_name = node_name;
-        request->node_namespace = get_namespace();
+        request->node_namespace = "/local/" + m_hostname;
         request->remap_rules = remapping_rules;
 
         m_load_node_client->async_send_request(

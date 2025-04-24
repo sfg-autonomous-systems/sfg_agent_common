@@ -14,7 +14,7 @@ namespace sfg_agent
     AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
     {
         // Declare and retrieve ROS parameters.
-        const char *parameter = "override_hostname";
+        std::string parameter = "override_hostname";
         declare_parameter(parameter, "", rcl_interfaces::msg::ParameterDescriptor().set__description("Override the hostname published."));
         get_parameter(parameter, m_override_hostname);
 
@@ -28,7 +28,10 @@ namespace sfg_agent
             throw std::runtime_error("Failed to load metadata.");
         }
 
-        m_hostname = get_sanitized_hostname();
+        m_hostname = get_hostname();
+
+        // We need to use a sanitized version of the hostname for ROS communication.
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
 
         // Set up interfaces.
         m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
@@ -37,7 +40,7 @@ namespace sfg_agent
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_metadata_service = create_service<sfg_agent_msgs::srv::GetAgentMetadata>(
-            "/global/" + m_hostname + "/get_agent_metadata",
+            "/global/" + sanitized_hostname + "/get_agent_metadata",
             std::bind(&AgentStatusProvider::get_agent_metadata, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_hostname.c_str());
@@ -79,13 +82,11 @@ namespace sfg_agent
 
             if (config["cameras"])
             {
-                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_CAMERA;
                 m_metadata_response.cameras = config["cameras"].as<std::vector<std::string>>();
             }
 
             if (config["lidars"])
             {
-                m_metadata_response.capabilities |= sfg_agent_msgs::srv::GetAgentMetadata::Response::CAPABILITY_LIDAR;
                 m_metadata_response.lidars = config["lidars"].as<std::vector<std::string>>();
             }
         }
@@ -98,11 +99,11 @@ namespace sfg_agent
         return true;
     }
 
-    std::string AgentStatusProvider::get_sanitized_hostname()
+    std::string AgentStatusProvider::get_hostname()
     {
         if (!m_override_hostname.empty())
         {
-            return sfg_utils::sanitize_hostname(m_override_hostname);
+            return m_override_hostname;
         }
 
         char hostname[HOST_NAME_MAX + 1];
@@ -112,6 +113,6 @@ namespace sfg_agent
             throw std::runtime_error("Failed to get hostname: " + std::string(strerror(errno)));
         }
 
-        return sfg_utils::sanitize_hostname(hostname);
+        return hostname;
     }
 }

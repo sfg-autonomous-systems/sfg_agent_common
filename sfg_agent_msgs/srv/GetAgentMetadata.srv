@@ -1,9 +1,3 @@
 ---
-# If set, the agent is publishing camera data on /global/<hostname>/<cameras>.
-uint8 CAPABILITY_CAMERA = 1
-# If set, the agent is publishing lidar data on /global/<hostname>/<lidars>.
-uint8 CAPABILITY_LIDAR = 2
-
-uint64 capabilities
 string[] cameras
 string[] lidars
