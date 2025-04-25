@@ -305,7 +305,7 @@ namespace sfg_agent
     {
         if (!m_unload_node_client->service_is_ready())
         {
-            RCLCPP_ERROR(get_logger(), "Unload node service not ready. Cannot unload node with ID %lu.", id);
+            RCLCPP_ERROR(get_logger(), "Unload node service not ready. Cannot unload node with ID '%lu'.", id);
             return;
         }
 
