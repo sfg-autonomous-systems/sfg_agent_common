@@ -2,13 +2,12 @@
 
 #include <composition_interfaces/srv/load_node.hpp>
 #include <composition_interfaces/srv/unload_node.hpp>
-#include <map>
-#include <mutex>
 #include <rclcpp/rclcpp.hpp>
 #include <regex>
 
-#include "sfg_agent_msgs/msg/agent_heartbeat.hpp"
-#include "sfg_agent_msgs/srv/get_agent_metadata.hpp"
+#include "sfg_agent_msgs/msg/agent_discovery_event.hpp"
+#include "sfg_agent_msgs/msg/agent_metadata.hpp"
+#include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
 
 namespace sfg_agent
 {
@@ -18,50 +17,42 @@ namespace sfg_agent
         AgentDecoder(const rclcpp::NodeOptions &options);
 
     private:
-        struct AgentData
+        struct DecodedAgent
         {
         public:
-            std::string m_hostname;
-            std::string m_sanitized_hostname;
-            rclcpp::TimerBase::SharedPtr m_keepalive_timer;
-            rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedPtr m_get_metadata_client;
-            std::vector<uint64_t> m_loaded_node_ids;
+            std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_decoders;
         };
 
-        void heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg);
-        void keepalive_callback(
-            const std::weak_ptr<AgentData> weak_agent_data);
-        void agent_metadata_callback(
-            const std::weak_ptr<AgentData> weak_agent_data,
-            rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future);
+        void handle_agent_disovery_event(
+            const sfg_agent_msgs::msg::AgentMetadata &metadata,
+            uint8_t event_type);
+        void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);
+
+        void load_nodes(
+            std::shared_ptr<DecodedAgent> agent,
+            const sfg_agent_msgs::msg::AgentMetadata &metadata);
         void load_node_callback(
-            const std::weak_ptr<AgentData> weak_agent_data,
+            std::weak_ptr<DecodedAgent> weak_agent,
             const std::string &package_name,
             const std::string &plugin_name,
             rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future);
-        void unload_node_callback(
-            uint64_t id,
-            rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future);
 
-        void load_node(
-            const std::shared_ptr<AgentData> agent_data,
+        void unload_nodes(std::shared_ptr<DecodedAgent> agent);
+        void unload_node_callback(
             const std::string &package_name,
             const std::string &plugin_name,
-            const std::string &node_name,
-            const std::vector<std::string> &remapping_rules);
-        void unload_node(uint64_t id);
+            uint64_t id,
+            rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future);
 
         // ROS parameters
         std::string m_container_name;
         std::string m_hostname_regex;
-        uint8_t m_keepalive;
 
         std::regex m_compiled_hostname_regex;
-        std::map<std::string, std::shared_ptr<AgentData>> m_decoded_agents;
-        rclcpp::CallbackGroup::SharedPtr m_callback_group;
-        std::mutex m_mutex;
+        std::map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
 
-        rclcpp::Subscription<sfg_agent_msgs::msg::AgentHeartbeat>::SharedPtr m_agent_heartbeat_subscriber;
+        rclcpp::Subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
+        rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedPtr m_get_discovered_agents_client;
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr m_load_node_client;
         rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr m_unload_node_client;
     };

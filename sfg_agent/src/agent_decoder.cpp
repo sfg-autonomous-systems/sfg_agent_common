@@ -1,12 +1,7 @@
 #include "sfg_agent/agent_decoder.hpp"
 
-#include <isaac_ros_h264_decoder/decoder_node.hpp>
-#include <regex>
-
 #include "sfg_agent/agent_heartbeat_constants.hpp"
 #include "sfg_utils/sanitize_hostname.hpp"
-
-#define STRINGIFY(value) #value
 
 namespace sfg_agent
 {
@@ -29,185 +24,147 @@ namespace sfg_agent
         get_parameter(parameter, m_hostname_regex);
         m_compiled_hostname_regex = std::regex(m_hostname_regex);
 
-        parameter = "keepalive";
-        declare_parameter(
-            parameter,
-            3,
-            rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The number of heartbeat messages to wait before considering an agent dead."));
-        get_parameter(parameter, m_keepalive);
-
-        m_callback_group = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-
         // Set up interfaces.
-        rclcpp::SubscriptionOptions subscription_options;
-        subscription_options.callback_group = m_callback_group;
-        m_agent_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
-            "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable(),
-            std::bind(&AgentDecoder::heartbeat_callback, this, std::placeholders::_1),
-            subscription_options);
+        m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
+            "/local/agent_discovery_event",
+            rclcpp::QoS(rclcpp::KeepAll()).reliable(),
+            [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
+            {
+                handle_agent_disovery_event(msg->metadata, msg->event_type);
+            });
+
+        m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>("/local/get_discovered_agents");
 
         std::string load_node_service = m_container_name + "/_container/load_node";
-        std::string unload_node_service = m_container_name + "/_container/unload_node";
-        RCLCPP_INFO(get_logger(), "Creating client for '%s' and '%s'.", load_node_service.c_str(), unload_node_service.c_str());
+        RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", load_node_service.c_str());
         m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(
-            load_node_service,
-            rmw_qos_profile_services_default,
-            m_callback_group);
+            load_node_service);
+
+        std::string unload_node_service = m_container_name + "/_container/unload_node";
+        RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", unload_node_service.c_str());
         m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(
-            unload_node_service,
-            rmw_qos_profile_services_default,
-            m_callback_group);
+            unload_node_service);
 
         RCLCPP_INFO(get_logger(), "Started agent decoder for agents matching regex '%s'.", m_hostname_regex.c_str());
+
+        auto request = std::make_shared<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>();
+        m_get_discovered_agents_client->async_send_request(
+            request,
+            std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
     }
 
-    void AgentDecoder::heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg)
+    void AgentDecoder::handle_agent_disovery_event(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
     {
-        auto hostname = msg->hostname;
+        auto hostname = metadata.hostname;
 
-        // Ignore any hostname that doesn't match the regex.
         if (!std::regex_match(hostname, m_compiled_hostname_regex))
         {
             return;
         }
 
-        std::shared_ptr<AgentData> agent_data;
+        auto iterator = m_decoded_agents.find(hostname);
 
+        switch (event_type)
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            auto iterator = m_decoded_agents.find(hostname);
-
+        case sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED:
+        {
             if (iterator != m_decoded_agents.end())
             {
-                iterator->second->m_keepalive_timer->reset();
+                RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", hostname.c_str());
                 return;
             }
-
-            m_decoded_agents[hostname] = agent_data = std::make_shared<AgentData>();
+            auto agent = m_decoded_agents[hostname] = std::make_shared<DecodedAgent>();
+            load_nodes(agent, metadata);
+            break;
         }
-
-        auto weak_this = weak_from_this();
-        auto weak_agent_data = std::weak_ptr<AgentData>(agent_data);
-
-        RCLCPP_INFO(get_logger(), "Agent '%s' is alive.", hostname.c_str());
-
-        agent_data->m_hostname = hostname;
-        agent_data->m_sanitized_hostname = sfg_utils::sanitize_hostname(hostname);
-        agent_data->m_keepalive_timer = create_wall_timer(
-            std::chrono::seconds(m_keepalive * AGENT_HEARTBEAT_INTERVAL),
-            [weak_this, weak_agent_data]()
-            {
-                if (auto shared_this = weak_this.lock())
-                {
-                    auto agent_decoder = std::dynamic_pointer_cast<AgentDecoder>(shared_this);
-                    agent_decoder->keepalive_callback(weak_agent_data);
-                }
-            });
-
-        agent_data->m_get_metadata_client = create_client<sfg_agent_msgs::srv::GetAgentMetadata>(
-            "/global/" + sfg_utils::sanitize_hostname(hostname) + "/get_agent_metadata",
-            rmw_qos_profile_services_default,
-            m_callback_group);
-
-        if (!agent_data->m_get_metadata_client->service_is_ready())
+        case sfg_agent_msgs::msg::AgentDiscoveryEvent::LOST:
         {
-            RCLCPP_WARN(get_logger(), "Get agent metadata service for '%s' not ready.", hostname.c_str());
-            return;
-        }
-
-        RCLCPP_INFO(get_logger(), "Requesting agent metadata for '%s'.", hostname.c_str());
-
-        agent_data->m_get_metadata_client->async_send_request(
-            std::make_shared<sfg_agent_msgs::srv::GetAgentMetadata::Request>(),
-            [weak_this, weak_agent_data](rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future)
+            if (iterator == m_decoded_agents.end())
             {
-                if (auto shared_this = weak_this.lock())
-                {
-                    auto agent_decoder = std::dynamic_pointer_cast<AgentDecoder>(shared_this);
-                    agent_decoder->agent_metadata_callback(weak_agent_data, future);
-                }
-            });
+                RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", hostname.c_str());
+                return;
+            }
+            unload_nodes(iterator->second);
+            m_decoded_agents.erase(iterator);
+            break;
+        }
+        }
     }
 
-    void AgentDecoder::keepalive_callback(const std::weak_ptr<AgentData> weak_agent_data)
+    void AgentDecoder::get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future)
     {
-        std::shared_ptr<AgentData> agent_data = weak_agent_data.lock();
-
-        if (!agent_data)
-        {
-            RCLCPP_WARN(get_logger(), "Agent '%s' is dead.", agent_data->m_hostname.c_str());
-        }
-
-        RCLCPP_INFO(get_logger(), "Agent '%s' died.", agent_data->m_hostname.c_str());
-
-        for (const auto &node : agent_data->m_loaded_node_ids)
-        {
-            unload_node(node);
-        }
-
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_decoded_agents.erase(agent_data->m_hostname);
-    }
-
-    void AgentDecoder::agent_metadata_callback(
-        const std::weak_ptr<AgentData> weak_agent_data,
-        rclcpp::Client<sfg_agent_msgs::srv::GetAgentMetadata>::SharedFuture future)
-    {
-        auto agent_data = weak_agent_data.lock();
-
-        if (!agent_data)
-        {
-            RCLCPP_WARN(get_logger(), "Agent has died since service request to get metadata.");
-            return;
-        }
-
         if (!future.valid())
         {
-            RCLCPP_ERROR(get_logger(), "Failed to get agent metadata.");
+            RCLCPP_ERROR(get_logger(), "Failed to get discovered agents: Future is invalid.");
             return;
         }
 
-        auto response = future.get();
+        std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Response> response;
 
-        for (const auto &camera : response->cameras)
+        try
         {
-            RCLCPP_INFO(get_logger(), "Adding camera decoder node for '%s' for agent '%s'", camera.c_str(), agent_data->m_hostname.c_str());
-
-            std::string input_topic = "/global/" + agent_data->m_sanitized_hostname + "/" + camera + "/color_compressed";
-            std::string output_topic = "/local/" + agent_data->m_sanitized_hostname + "/" + camera + "/color_uncompressed";
-
-            load_node(
-                agent_data,
-                "isaac_ros_h264_decoder",
-                "nvidia::isaac_ros::h264_decoder::DecoderNode",
-                camera + "_decoder",
-                {"image_compressed" + (":=" + input_topic),
-                 "image_uncompressed" + (":=" + output_topic)});
+            response = future.get();
+        }
+        catch (const std::exception &exception)
+        {
+            RCLCPP_ERROR(get_logger(), "Failed to get discovered agents: %s", exception.what());
+            return;
         }
 
-        for (const auto &lidar : response->lidars)
+        for (const auto &metadata : response->metadata)
         {
-            RCLCPP_INFO(get_logger(), "Adding lidar decoder node for '%s' for agent '%s'", lidar.c_str(), agent_data->m_hostname.c_str());
+            handle_agent_disovery_event(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
+        }
+    }
 
-            std::string input_topic = "/global/" + agent_data->m_sanitized_hostname + "/" + lidar + "/pcl_compressed";
-            std::string output_topic = "/local/" + agent_data->m_sanitized_hostname + "/" + lidar + "/pcl_uncompressed";
+    void AgentDecoder::load_nodes(
+        std::shared_ptr<DecodedAgent> agent,
+        const sfg_agent_msgs::msg::AgentMetadata &metadata)
+    {
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(metadata.hostname);
+        auto weak_agent = std::weak_ptr<DecodedAgent>(agent);
+
+        for (const auto &camera : metadata.cameras)
+        {
+            RCLCPP_INFO(get_logger(), "Adding camera color decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
+
+            std::string package_name = "sfg_image_transport";
+            std::string plugin_name = "sfg_image_transport::Republisher";
+            std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color_compressed";
+            std::string output_topic = "/local/" + sanitized_hostname + "/" + camera + "/color";
+
+            auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
+            request->package_name = package_name;
+            request->plugin_name = plugin_name;
+            request->node_name = camera + "_color_decoder";
+            request->node_namespace = "/local/" + sanitized_hostname;
+            request->parameters = {
+                rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
+                rclcpp::Parameter("out_transport", "raw").to_parameter_msg(),
+                rclcpp::Parameter(".in.ffmpeg.map.h264_nvmpi", "h264_cuvid").to_parameter_msg()};
+            request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
+            request->remap_rules = {"in/ffmpeg" + (":=" + input_topic), "out" + (":=" + output_topic)};
+
+            m_load_node_client->async_send_request(
+                request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
+                { load_node_callback(weak_agent, package_name, plugin_name, future); });
+
+            // ToDo: Create a decoder for the depth image as well.
+            // RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
         }
     }
 
     void AgentDecoder::load_node_callback(
-        const std::weak_ptr<AgentData> weak_agent_data,
+        std::weak_ptr<DecodedAgent> weak_agent,
         const std::string &package_name,
         const std::string &plugin_name,
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
     {
+        // ToDo: Perhaps we should think of implementing some sort of retry logic if loading of the node failed.
+
         if (!future.valid())
         {
-            RCLCPP_ERROR(
-                get_logger(),
-                "Failed to load node '%s' from package '%s'.",
-                plugin_name.c_str(),
-                package_name.c_str());
+            RCLCPP_ERROR(get_logger(), "Failed to load node '%s' from package '%s': Future is invalid", plugin_name.c_str(), package_name.c_str());
             return;
         }
 
@@ -224,27 +181,56 @@ namespace sfg_agent
             return;
         }
 
+        auto id = response->unique_id;
+
+        if (auto agent = weak_agent.lock())
         {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            auto agent_data = weak_agent_data.lock();
-
-            if (!agent_data)
-            {
-                RCLCPP_WARN(get_logger(), "Agent has died since service request to load node. Unloading node '%s' from package '%s' again.", plugin_name.c_str(), package_name.c_str());
-                unload_node(response->unique_id);
-                return;
-            }
-            agent_data->m_loaded_node_ids.push_back(response->unique_id);
+            agent->m_loaded_decoders.push_back(std::make_tuple(package_name, plugin_name, id));
+            RCLCPP_INFO(get_logger(), "Loaded node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
         }
+        else
+        {
+            // The agent has been lost since the service to load the node was called.
+            // Therefore, the node is no longer needed and we should unload it.
+            auto unload_request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
+            unload_request->unique_id = id;
 
-        RCLCPP_INFO(get_logger(), "Loaded node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
+            m_unload_node_client->async_send_request(
+                unload_request,
+                [this, package_name, plugin_name, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
+                {
+                    unload_node_callback(package_name, plugin_name, id, future);
+                });
+
+            RCLCPP_WARN(get_logger(), "Loaded node '%s' from package '%s' but associated agent was lost in the meantime. Unloading node again.", plugin_name.c_str(), package_name.c_str());
+        }
     }
 
-    void AgentDecoder::unload_node_callback(uint64_t id, rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
+    void AgentDecoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
+    {
+        for (const auto &[package_name, plugin_name, id] : agent->m_loaded_decoders)
+        {
+            auto request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
+            request->unique_id = id;
+
+            m_unload_node_client->async_send_request(
+                request,
+                [this, package_name, plugin_name, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
+                {
+                    unload_node_callback(package_name, plugin_name, id, future);
+                });
+        }
+    }
+
+    void AgentDecoder::unload_node_callback(
+        const std::string &package_name,
+        const std::string &plugin_name,
+        uint64_t id,
+        rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
     {
         if (!future.valid())
         {
-            RCLCPP_ERROR(get_logger(), "Failed to unload node with ID '%lu'.", id);
+            RCLCPP_ERROR(get_logger(), "Failed to unload node '%s' from package '%s' with ID '%lu': Future is invalid.", package_name.c_str(), plugin_name.c_str(), id);
             return;
         }
 
@@ -252,77 +238,10 @@ namespace sfg_agent
 
         if (!response->success)
         {
-            RCLCPP_ERROR(
-                get_logger(),
-                "Failed to unload node with ID '%lu': %s", id,
-                response->error_message.c_str());
+            RCLCPP_ERROR(get_logger(), "Failed to unload node '%s' from package '%s' with ID '%lu': %s", package_name.c_str(), plugin_name.c_str(), id, response->error_message.c_str());
             return;
         }
 
         RCLCPP_INFO(get_logger(), "Unloaded node with ID '%lu'.", id);
-    }
-
-    void AgentDecoder::load_node(
-        const std::shared_ptr<AgentData> agent_data,
-        const std::string &package_name,
-        const std::string &plugin_name,
-        const std::string &node_name,
-        const std::vector<std::string> &remapping_rules)
-    {
-        if (!m_load_node_client->service_is_ready())
-        {
-            RCLCPP_ERROR(
-                get_logger(),
-                "Load node service not ready. Cannot load node '%s' in package '%s'.",
-                plugin_name.c_str(),
-                package_name.c_str());
-            return;
-        }
-
-        auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
-        request->package_name = package_name;
-        request->plugin_name = plugin_name;
-        request->node_name = node_name;
-        request->node_namespace = "/local/" + agent_data->m_sanitized_hostname;
-        request->remap_rules = remapping_rules;
-
-        auto weak_this = weak_from_this();
-        auto weak_agent_data = std::weak_ptr<AgentData>(agent_data);
-
-        m_load_node_client->async_send_request(
-            request,
-            [weak_this, weak_agent_data, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
-            {
-                if (auto shared_this = weak_this.lock())
-                {
-                    auto agent_decoder = std::dynamic_pointer_cast<AgentDecoder>(shared_this);
-                    agent_decoder->load_node_callback(weak_agent_data, package_name, plugin_name, future);
-                }
-            });
-    }
-
-    void AgentDecoder::unload_node(uint64_t id)
-    {
-        if (!m_unload_node_client->service_is_ready())
-        {
-            RCLCPP_ERROR(get_logger(), "Unload node service not ready. Cannot unload node with ID '%lu'.", id);
-            return;
-        }
-
-        auto request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
-        request->unique_id = id;
-
-        auto weak_this = weak_from_this();
-
-        m_unload_node_client->async_send_request(
-            request,
-            [weak_this, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
-            {
-                if (auto shared_this = weak_this.lock())
-                {
-                    auto agent_decoder = std::dynamic_pointer_cast<AgentDecoder>(shared_this);
-                    agent_decoder->unload_node_callback(id, future);
-                }
-            });
     }
 }

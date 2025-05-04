@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(sfg_agent_msgs)
+project(sfg_image_transport)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -9,26 +9,42 @@ endif()
 # Find dependencies.                                                                                     #
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 
 # ########################################################################################################
-# Add interfaces.                                                                                        #
+# Add nodes and libraries.                                                                               #
 # ########################################################################################################
-set(msg_files
-  "msg/AgentDiscoveryEvent.msg"
-  "msg/AgentHeartbeat.msg"
-  "msg/AgentMetadata.msg"
+set(executable_name "republisher")
+set(target_name "${executable_name}_component")
+set(export_name "export_${target_name}")
+add_library("${target_name}" SHARED "src/republisher.cpp" "src/republisher_component.cpp")
+rclcpp_components_register_node(
+  "${target_name}"
+  PLUGIN "sfg_image_transport::Republisher"
+  EXECUTABLE "${executable_name}"
 )
-
-set(srv_files
-  "srv/GetDiscoveredAgents.srv"
-  "srv/GetMetadata.srv"
+target_include_directories("${target_name}" PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
 )
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-  ${srv_files}
-  DEPENDENCIES std_msgs
+target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies("${target_name}"
+  image_transport
+  pluginlib
+  rclcpp
+  rclcpp_components
+)
+ament_export_targets("${export_name}")
+install(
+  TARGETS "${target_name}"
+  EXPORT "${export_name}"
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+  RUNTIME DESTINATION "bin"
+  INCLUDES DESTINATION "include"
 )
 
 if(BUILD_TESTING)

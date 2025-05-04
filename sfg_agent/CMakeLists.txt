@@ -10,7 +10,6 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(composition_interfaces REQUIRED)
-find_package(isaac_ros_h264_decoder REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
@@ -53,6 +52,36 @@ install(
   INCLUDES DESTINATION "include"
 )
 
+set(executable_name "agent_discoverer")
+set(target_name "${executable_name}_component")
+set(export_name "export_${target_name}")
+add_library("${target_name}" SHARED "src/agent_discoverer.cpp" "src/agent_discoverer_component.cpp")
+rclcpp_components_register_node(
+  "${target_name}"
+  PLUGIN "sfg_agent::AgentDiscoverer"
+  EXECUTABLE "${executable_name}"
+)
+target_include_directories("${target_name}" PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
+ament_target_dependencies("${target_name}"
+  rclcpp
+  rclcpp_components
+  sfg_agent_msgs
+  sfg_utils
+)
+ament_export_targets("${export_name}")
+install(
+  TARGETS "${target_name}"
+  EXPORT "${export_name}"
+  LIBRARY DESTINATION "lib"
+  ARCHIVE DESTINATION "lib"
+  RUNTIME DESTINATION "bin"
+  INCLUDES DESTINATION "include"
+)
+
 set(executable_name "agent_decoder")
 set(target_name "${executable_name}_component")
 set(export_name "export_${target_name}")
@@ -69,7 +98,6 @@ target_include_directories("${target_name}" PUBLIC
 target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies("${target_name}"
   composition_interfaces
-  isaac_ros_h264_decoder
   rclcpp
   rclcpp_components
   sfg_agent_msgs

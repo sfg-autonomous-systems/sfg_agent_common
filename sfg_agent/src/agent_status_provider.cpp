@@ -14,25 +14,19 @@ namespace sfg_agent
     AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
     {
         // Declare and retrieve ROS parameters.
-        std::string parameter = "override_hostname";
-        declare_parameter(
-            parameter, "",
-            rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("Override the hostname published."));
-        get_parameter(parameter, m_override_hostname);
-        m_hostname = get_hostname();
-        // We need to use a sanitized version of the hostname for ROS communication.
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
-
-        parameter = "metadata_filepath";
+        std::string parameter = "metadata_filepath";
         declare_parameter(
             parameter,
             "",
             rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The filepath pointing to the yaml file containing the metadata."));
+                .set__description("The filepath pointing to the yaml file containing the metadata of the agent."));
         get_parameter(parameter, m_metadata_filepath);
 
-        if (!load_agent_metadata(m_metadata_filepath))
+        m_hostname = get_hostname();
+        // We need to use a sanitized version of the hostname for ROS communication.
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
+
+        if (!load_metadata(m_metadata_filepath))
         {
             RCLCPP_ERROR(get_logger(), "Failed to load metadata from '%s'.", m_metadata_filepath.c_str());
             throw std::runtime_error("Failed to load metadata.");
@@ -40,13 +34,14 @@ namespace sfg_agent
 
         // Set up interfaces.
         m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
-            "/global/agent_heartbeat", rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+            "/global/agent_heartbeat",
+            rclcpp::QoS(rclcpp::KeepLast(1)).best_effort());
         m_heartbeat_timer = create_wall_timer(
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
-        m_metadata_service = create_service<sfg_agent_msgs::srv::GetAgentMetadata>(
-            "/global/" + sanitized_hostname + "/get_agent_metadata",
-            std::bind(&AgentStatusProvider::get_agent_metadata, this, std::placeholders::_1, std::placeholders::_2));
+        m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
+            "/global/" + sanitized_hostname + "/get_metadata",
+            std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_hostname.c_str());
     }
@@ -59,21 +54,23 @@ namespace sfg_agent
         m_heartbeat_publisher->publish(msg);
     }
 
-    void AgentStatusProvider::get_agent_metadata(
-        [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Request> request,
-        std::shared_ptr<sfg_agent_msgs::srv::GetAgentMetadata::Response> response)
+    void AgentStatusProvider::get_metadata_callback(
+        [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request> request,
+        std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response)
     {
-        RCLCPP_INFO(get_logger(), "Received request for metadata.");
-        *response = m_metadata_response;
+        RCLCPP_INFO(get_logger(), "Received request for agent.");
+        *response = m_get_agent_response;
     }
 
-    bool AgentStatusProvider::load_agent_metadata(const std::filesystem::path &filepath)
+    bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
     {
         if (filepath.empty())
         {
             RCLCPP_WARN(get_logger(), "No metadata file specified. Did you forget to specify one?");
             return true;
         }
+
+        m_get_agent_response.metadata.hostname = m_hostname;
 
         // Load the YAML file.
         try
@@ -88,12 +85,12 @@ namespace sfg_agent
 
             if (config["cameras"])
             {
-                m_metadata_response.cameras = config["cameras"].as<std::vector<std::string>>();
+                m_get_agent_response.metadata.cameras = config["cameras"].as<std::vector<std::string>>();
             }
 
             if (config["lidars"])
             {
-                m_metadata_response.lidars = config["lidars"].as<std::vector<std::string>>();
+                m_get_agent_response.metadata.lidars = config["lidars"].as<std::vector<std::string>>();
             }
         }
         catch (const YAML::Exception &exception)
@@ -107,11 +104,6 @@ namespace sfg_agent
 
     std::string AgentStatusProvider::get_hostname()
     {
-        if (!m_override_hostname.empty())
-        {
-            return m_override_hostname;
-        }
-
         char hostname[HOST_NAME_MAX + 1];
 
         if (gethostname(hostname, sizeof(hostname)) != 0)
