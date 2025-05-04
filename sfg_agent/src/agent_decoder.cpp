@@ -149,8 +149,26 @@ namespace sfg_agent
                 request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
                 { load_node_callback(weak_agent, package_name, plugin_name, future); });
 
-            // ToDo: Create a decoder for the depth image as well.
-            // RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
+            RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
+
+            package_name = "sfg_image_transport";
+            plugin_name = "sfg_image_transport::Republisher";
+            input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth_compressed";
+            output_topic = "/local/" + sanitized_hostname + "/" + camera + "/depth";
+
+            request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
+            request->package_name = package_name;
+            request->plugin_name = plugin_name;
+            request->node_name = camera + "_depth_decoder";
+            request->node_namespace = "/local/" + sanitized_hostname;
+            request->parameters = {
+                rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
+                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
+            request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
+            request->remap_rules = {"in/compressedDepth" + (":=" + input_topic), "out" + (":=" + output_topic)};
+            m_load_node_client->async_send_request(
+                request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
+                { load_node_callback(weak_agent, package_name, plugin_name, future); });
         }
     }
 
