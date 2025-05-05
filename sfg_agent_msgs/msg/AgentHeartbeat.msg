@@ -1,2 +1,2 @@
 std_msgs/Header header
-string hostname
+string agent_name

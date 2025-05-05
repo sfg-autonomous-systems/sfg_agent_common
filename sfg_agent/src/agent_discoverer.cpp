@@ -1,13 +1,13 @@
 #include "sfg_agent/agent_discoverer.hpp"
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/get_hostname.hpp"
-#include "sfg_utils/sanitize_hostname.hpp"
+#include "sfg_utils/get_agent_name.hpp"
+#include "sfg_utils/sanitize_agent_name.hpp"
 
 namespace sfg_agent
 {
     AgentDiscoverer::AgentDiscoverer(const rclcpp::NodeOptions &options)
-        : Node("agent_discovery_server", options)
+        : Node("agent_discoverer", options)
     {
         // Declare and retrieve ROS parameters.
         std::string parameter = "keepalive";
@@ -26,7 +26,7 @@ namespace sfg_agent
                 .set__description("Whether to exclude the local agent from the list of discovered agents."));
         get_parameter(parameter, m_exclude_self);
 
-        m_hostname = sfg_utils::sanitize_hostname(sfg_utils::get_hostname());
+        m_agent_name = sfg_utils::get_agent_name();
 
         // Set up interfaces.
         m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
@@ -45,14 +45,15 @@ namespace sfg_agent
 
     void AgentDiscoverer::heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg)
     {
-        auto hostname = msg->hostname;
+        auto agent_name = msg->agent_name;
 
-        if (m_exclude_self && hostname == m_hostname)
+        // Check if the agent is already discovered.
+        if (m_exclude_self && agent_name == m_agent_name)
         {
             return;
         }
 
-        auto iterator = m_discovered_agents.find(hostname);
+        auto iterator = m_discovered_agents.find(agent_name);
 
         if (iterator != m_discovered_agents.end())
         {
@@ -61,39 +62,39 @@ namespace sfg_agent
         }
 
         // Check if the agent has a pending metadata request.
-        if (m_pending_get_metadata_requests.find(hostname) != m_pending_get_metadata_requests.end())
+        if (m_pending_get_metadata_requests.find(agent_name) != m_pending_get_metadata_requests.end())
         {
-            RCLCPP_WARN(get_logger(), "Agent '%s' has an already pending metadata request.", hostname.c_str());
+            RCLCPP_WARN(get_logger(), "Agent '%s' has an already pending metadata request.", agent_name.c_str());
             return;
         }
 
-        auto metadata_client = m_pending_get_metadata_requests[hostname] = create_client<sfg_agent_msgs::srv::GetMetadata>(
-            "/global/" + sfg_utils::sanitize_hostname(hostname) + "/get_metadata",
+        auto metadata_client = m_pending_get_metadata_requests[agent_name] = create_client<sfg_agent_msgs::srv::GetMetadata>(
+            "/global/" + sfg_utils::sanitize_agent_name(agent_name) + "/get_metadata",
             rmw_qos_profile_services_default);
 
         if (!metadata_client->service_is_ready())
         {
-            RCLCPP_WARN(get_logger(), "Get agent metadata service for '%s' not ready.", hostname.c_str());
+            RCLCPP_WARN(get_logger(), "Get agent metadata service for '%s' not ready.", agent_name.c_str());
             return;
         }
 
-        RCLCPP_INFO(get_logger(), "Requesting agent metadata for '%s'.", hostname.c_str());
+        RCLCPP_INFO(get_logger(), "Requesting agent metadata for '%s'.", agent_name.c_str());
 
         metadata_client->async_send_request(
             std::make_shared<sfg_agent_msgs::srv::GetMetadata::Request>(),
-            [this, hostname](rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future)
+            [this, agent_name](rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future)
             {
-                get_metadata_callback(hostname, future);
+                get_metadata_callback(agent_name, future);
             });
     }
 
-    void AgentDiscoverer::keepalive_callback(const std::string &hostname)
+    void AgentDiscoverer::keepalive_callback(const std::string &agent_name)
     {
-        auto iterator = m_discovered_agents.find(hostname);
+        auto iterator = m_discovered_agents.find(agent_name);
 
         if (iterator == m_discovered_agents.end())
         {
-            RCLCPP_WARN(get_logger(), "Agent '%s' has already been lost.", hostname.c_str());
+            RCLCPP_WARN(get_logger(), "Agent '%s' has already been lost.", agent_name.c_str());
             return;
         }
 
@@ -103,19 +104,19 @@ namespace sfg_agent
         msg.event_type = sfg_agent_msgs::msg::AgentDiscoveryEvent::LOST;
         m_agent_discovery_event_publisher->publish(msg);
 
-        m_discovered_agents.erase(hostname);
-        RCLCPP_INFO(get_logger(), "Agent '%s' lost.", hostname.c_str());
+        m_discovered_agents.erase(agent_name);
+        RCLCPP_INFO(get_logger(), "Agent '%s' lost.", agent_name.c_str());
     }
 
     void AgentDiscoverer::get_metadata_callback(
-        const std::string &hostname,
+        const std::string &agent_name,
         rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future)
     {
-        m_pending_get_metadata_requests.erase(hostname);
+        m_pending_get_metadata_requests.erase(agent_name);
 
         if (!future.valid())
         {
-            RCLCPP_ERROR(get_logger(), "Failed to get metadata for agent '%s': Future is invalid.", hostname.c_str());
+            RCLCPP_ERROR(get_logger(), "Failed to get metadata for agent '%s': Future is invalid.", agent_name.c_str());
             return;
         }
 
@@ -127,18 +128,18 @@ namespace sfg_agent
         }
         catch (const std::exception &exception)
         {
-            RCLCPP_ERROR(get_logger(), "Failed to get metadata for agent '%s': %s", hostname.c_str(), exception.what());
+            RCLCPP_ERROR(get_logger(), "Failed to get metadata for agent '%s': %s", agent_name.c_str(), exception.what());
             return;
         }
 
-        RCLCPP_INFO(get_logger(), "Agent '%s' discovered.", hostname.c_str());
-        auto agent = m_discovered_agents[hostname] = std::make_shared<DiscoveredAgent>();
+        RCLCPP_INFO(get_logger(), "Agent '%s' discovered.", agent_name.c_str());
+        auto agent = m_discovered_agents[agent_name] = std::make_shared<DiscoveredAgent>();
 
         agent->m_keepalive_timer = create_wall_timer(
             std::chrono::seconds(m_keepalive * AGENT_HEARTBEAT_INTERVAL),
-            [this, hostname]()
+            [this, agent_name]()
             {
-                keepalive_callback(hostname);
+                keepalive_callback(agent_name);
             });
         agent->m_metadata = response->metadata;
 

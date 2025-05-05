@@ -23,9 +23,9 @@ namespace sfg_agent
         };
 
         void heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg);
-        void keepalive_callback(const std::string &hostname);
+        void keepalive_callback(const std::string &agent_name);
         void get_metadata_callback(
-            const std::string &hostname,
+            const std::string &agent_name,
             rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future);
         void get_discovered_agents_callback(
             const std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Request> request,
@@ -35,7 +35,7 @@ namespace sfg_agent
         uint8_t m_keepalive;
         bool m_exclude_self;
 
-        std::string m_hostname;
+        std::string m_agent_name;
         std::map<std::string, rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedPtr> m_pending_get_metadata_requests;
         std::map<std::string, std::shared_ptr<DiscoveredAgent>> m_discovered_agents;
 

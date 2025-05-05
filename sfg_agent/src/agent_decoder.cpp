@@ -1,7 +1,7 @@
 #include "sfg_agent/agent_decoder.hpp"
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/sanitize_hostname.hpp"
+#include "sfg_utils/sanitize_agent_name.hpp"
 
 namespace sfg_agent
 {
@@ -15,14 +15,14 @@ namespace sfg_agent
                 .set__description("The name of the container decoder nodes should be dymically loaded in."));
         get_parameter(parameter, m_container_name);
 
-        parameter = "hostname_regex";
+        parameter = "agent_name_regex";
         declare_parameter<std::string>(
             parameter,
             rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The regex to match hostnames against."
-                                  "If the hostname matches, the agent will be decoded."));
-        get_parameter(parameter, m_hostname_regex);
-        m_compiled_hostname_regex = std::regex(m_hostname_regex);
+                .set__description("The regex to match agent names against."
+                                  "If the agent name matches, the agent will be decoded."));
+        get_parameter(parameter, m_agent_name_regex);
+        m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
 
         // Set up interfaces.
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
@@ -45,7 +45,7 @@ namespace sfg_agent
         m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(
             unload_node_service);
 
-        RCLCPP_INFO(get_logger(), "Started agent decoder for agents matching regex '%s'.", m_hostname_regex.c_str());
+        RCLCPP_INFO(get_logger(), "Started agent decoder for agents matching regex '%s'.", m_agent_name_regex.c_str());
 
         auto request = std::make_shared<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>();
         m_get_discovered_agents_client->async_send_request(
@@ -55,14 +55,14 @@ namespace sfg_agent
 
     void AgentDecoder::handle_agent_disovery_event(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
     {
-        auto hostname = metadata.hostname;
+        auto agent_name = metadata.agent_name;
 
-        if (!std::regex_match(hostname, m_compiled_hostname_regex))
+        if (!std::regex_match(agent_name, m_compiled_agent_name_regex))
         {
             return;
         }
 
-        auto iterator = m_decoded_agents.find(hostname);
+        auto iterator = m_decoded_agents.find(agent_name);
 
         switch (event_type)
         {
@@ -70,10 +70,10 @@ namespace sfg_agent
         {
             if (iterator != m_decoded_agents.end())
             {
-                RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", hostname.c_str());
+                RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", agent_name.c_str());
                 return;
             }
-            auto agent = m_decoded_agents[hostname] = std::make_shared<DecodedAgent>();
+            auto agent = m_decoded_agents[agent_name] = std::make_shared<DecodedAgent>();
             load_nodes(agent, metadata);
             break;
         }
@@ -81,7 +81,7 @@ namespace sfg_agent
         {
             if (iterator == m_decoded_agents.end())
             {
-                RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", hostname.c_str());
+                RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", agent_name.c_str());
                 return;
             }
             unload_nodes(iterator->second);
@@ -121,12 +121,12 @@ namespace sfg_agent
         std::shared_ptr<DecodedAgent> agent,
         const sfg_agent_msgs::msg::AgentMetadata &metadata)
     {
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(metadata.hostname);
+        auto sanitized_hostname = sfg_utils::sanitize_agent_name(metadata.agent_name);
         auto weak_agent = std::weak_ptr<DecodedAgent>(agent);
 
         for (const auto &camera : metadata.cameras)
         {
-            RCLCPP_INFO(get_logger(), "Adding camera color decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
+            RCLCPP_INFO(get_logger(), "Adding camera color decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
 
             std::string package_name = "sfg_image_transport";
             std::string plugin_name = "sfg_image_transport::Republisher";
@@ -149,7 +149,7 @@ namespace sfg_agent
                 request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
                 { load_node_callback(weak_agent, package_name, plugin_name, future); });
 
-            RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.hostname.c_str());
+            RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
 
             package_name = "sfg_image_transport";
             plugin_name = "sfg_image_transport::Republisher";

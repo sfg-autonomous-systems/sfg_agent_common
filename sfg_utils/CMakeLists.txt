@@ -19,8 +19,8 @@ find_package(pybind11 REQUIRED)
 set(target_name_cpp "${PROJECT_NAME}")
 set(export_name_cpp "export_${target_name_cpp}")
 add_library("${target_name_cpp}" SHARED
-  "src/get_hostname.cpp"
-  "src/sanitize_hostname.cpp")
+  "src/get_agent_name.cpp"
+  "src/sanitize_agent_name.cpp")
 target_include_directories("${target_name_cpp}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>

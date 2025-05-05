@@ -4,5 +4,5 @@
 
 namespace sfg_utils
 {
-    std::string get_hostname();
+    std::string get_agent_name();
 }

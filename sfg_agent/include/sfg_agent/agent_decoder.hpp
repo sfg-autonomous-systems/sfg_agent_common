@@ -46,9 +46,9 @@ namespace sfg_agent
 
         // ROS parameters
         std::string m_container_name;
-        std::string m_hostname_regex;
+        std::string m_agent_name_regex;
 
-        std::regex m_compiled_hostname_regex;
+        std::regex m_compiled_agent_name_regex;
         std::map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
 
         rclcpp::Subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;

@@ -7,8 +7,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/get_hostname.hpp"
-#include "sfg_utils/sanitize_hostname.hpp"
+#include "sfg_utils/get_agent_name.hpp"
+#include "sfg_utils/sanitize_agent_name.hpp"
 
 namespace sfg_agent
 {
@@ -23,8 +23,7 @@ namespace sfg_agent
                 .set__description("The filepath pointing to the yaml file containing the metadata of the agent."));
         get_parameter(parameter, m_metadata_filepath);
 
-        // We need to use a sanitized version of the hostname for ROS communication.
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(sfg_utils::get_hostname());
+        m_agent_name = sfg_utils::get_agent_name();
 
         if (!load_metadata(m_metadata_filepath))
         {
@@ -40,17 +39,17 @@ namespace sfg_agent
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
-            "/global/" + sanitized_hostname + "/get_metadata",
+            "/global/" + sfg_utils::sanitize_agent_name(m_agent_name) + "/get_metadata",
             std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-        RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_hostname.c_str());
+        RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_agent_name.c_str());
     }
 
     void AgentStatusProvider::publish_heartbeat()
     {
         auto msg = sfg_agent_msgs::msg::AgentHeartbeat();
         msg.header.stamp = now();
-        msg.hostname = m_hostname;
+        msg.agent_name = m_agent_name;
         m_heartbeat_publisher->publish(msg);
     }
 
@@ -70,7 +69,7 @@ namespace sfg_agent
             return true;
         }
 
-        m_get_agent_response.metadata.hostname = m_hostname;
+        m_get_agent_response.metadata.agent_name = m_agent_name;
 
         // Load the YAML file.
         try

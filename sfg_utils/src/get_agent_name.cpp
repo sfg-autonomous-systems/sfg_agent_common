@@ -1,4 +1,4 @@
-#include "sfg_utils/get_hostname.hpp"
+#include "sfg_utils/get_agent_name.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -8,13 +8,13 @@
 
 namespace sfg_utils
 {
-    std::string get_hostname()
+    std::string get_agent_name()
     {
-        const char *env_hostname = std::getenv("AGENT_HOSTNAME");
+        const char *agent_name = std::getenv("AGENT_NAME");
 
-        if (env_hostname != nullptr && std::strlen(env_hostname) > 0)
+        if (agent_name != nullptr && std::strlen(agent_name) > 0)
         {
-            return std::string(env_hostname);
+            return std::string(agent_name);
         }
 
         char hostname[HOST_NAME_MAX + 1];
