@@ -137,7 +137,7 @@ namespace sfg_agent
             request->package_name = package_name;
             request->plugin_name = plugin_name;
             request->node_name = camera + "_color_decoder";
-            request->node_namespace = get_namespace() + sanitized_hostname;
+            request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
                 rclcpp::Parameter("out_transport", "raw").to_parameter_msg(),
@@ -160,7 +160,7 @@ namespace sfg_agent
             request->package_name = package_name;
             request->plugin_name = plugin_name;
             request->node_name = camera + "_depth_decoder";
-            request->node_namespace = get_namespace() + sanitized_hostname;
+            request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
                 rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
