@@ -1,6 +1,7 @@
 #include "sfg_agent/agent_discoverer.hpp"
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
+#include "sfg_utils/get_hostname.hpp"
 #include "sfg_utils/sanitize_hostname.hpp"
 
 namespace sfg_agent
@@ -16,6 +17,16 @@ namespace sfg_agent
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The number of heartbeat messages to wait before considering an agent dead."));
         get_parameter(parameter, m_keepalive);
+
+        parameter = "exclude_self";
+        declare_parameter(
+            parameter,
+            true,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description("Whether to exclude the local agent from the list of discovered agents."));
+        get_parameter(parameter, m_exclude_self);
+
+        m_hostname = sfg_utils::sanitize_hostname(sfg_utils::get_hostname());
 
         // Set up interfaces.
         m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
@@ -35,6 +46,12 @@ namespace sfg_agent
     void AgentDiscoverer::heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg)
     {
         auto hostname = msg->hostname;
+
+        if (m_exclude_self && hostname == m_hostname)
+        {
+            return;
+        }
+
         auto iterator = m_discovered_agents.find(hostname);
 
         if (iterator != m_discovered_agents.end())

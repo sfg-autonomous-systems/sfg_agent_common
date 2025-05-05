@@ -21,7 +21,6 @@ namespace sfg_agent
             const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request> request,
             std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response);
         bool load_metadata(const std::filesystem::path &filepath);
-        std::string get_hostname();
 
         // ROS parameters
         std::string m_metadata_filepath;

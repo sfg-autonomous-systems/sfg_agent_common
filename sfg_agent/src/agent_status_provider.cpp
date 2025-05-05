@@ -7,6 +7,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
+#include "sfg_utils/get_hostname.hpp"
 #include "sfg_utils/sanitize_hostname.hpp"
 
 namespace sfg_agent
@@ -22,9 +23,8 @@ namespace sfg_agent
                 .set__description("The filepath pointing to the yaml file containing the metadata of the agent."));
         get_parameter(parameter, m_metadata_filepath);
 
-        m_hostname = get_hostname();
         // We need to use a sanitized version of the hostname for ROS communication.
-        auto sanitized_hostname = sfg_utils::sanitize_hostname(m_hostname);
+        auto sanitized_hostname = sfg_utils::sanitize_hostname(sfg_utils::get_hostname());
 
         if (!load_metadata(m_metadata_filepath))
         {
@@ -100,17 +100,5 @@ namespace sfg_agent
         }
 
         return true;
-    }
-
-    std::string AgentStatusProvider::get_hostname()
-    {
-        char hostname[HOST_NAME_MAX + 1];
-
-        if (gethostname(hostname, sizeof(hostname)) != 0)
-        {
-            throw std::runtime_error("Failed to get hostname: " + std::string(strerror(errno)));
-        }
-
-        return hostname;
     }
 }

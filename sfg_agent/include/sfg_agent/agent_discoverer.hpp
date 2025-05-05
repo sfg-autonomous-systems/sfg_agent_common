@@ -33,7 +33,9 @@ namespace sfg_agent
 
         // ROS parameters
         uint8_t m_keepalive;
+        bool m_exclude_self;
 
+        std::string m_hostname;
         std::map<std::string, rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedPtr> m_pending_get_metadata_requests;
         std::map<std::string, std::shared_ptr<DiscoveredAgent>> m_discovered_agents;
 
