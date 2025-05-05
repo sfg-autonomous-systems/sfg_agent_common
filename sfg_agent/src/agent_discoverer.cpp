@@ -23,10 +23,10 @@ namespace sfg_agent
             rclcpp::QoS(10).best_effort(),
             std::bind(&AgentDiscoverer::heartbeat_callback, this, std::placeholders::_1));
         m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
-            "/local/agent_discovery_event",
+            "agent_discovery_event",
             rclcpp::QoS(rclcpp::KeepAll()).reliable());
         m_get_discovered_agents_service = create_service<sfg_agent_msgs::srv::GetDiscoveredAgents>(
-            "/local/get_discovered_agents",
+            "get_discovered_agents",
             std::bind(&AgentDiscoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent discovery server.");

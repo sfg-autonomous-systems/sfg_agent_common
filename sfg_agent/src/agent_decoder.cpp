@@ -26,14 +26,14 @@ namespace sfg_agent
 
         // Set up interfaces.
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
-            "/local/agent_discovery_event",
+            "agent_discovery_event",
             rclcpp::QoS(rclcpp::KeepAll()).reliable(),
             [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
             {
                 handle_agent_disovery_event(msg->metadata, msg->event_type);
             });
 
-        m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>("/local/get_discovered_agents");
+        m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>("get_discovered_agents");
 
         std::string load_node_service = m_container_name + "/_container/load_node";
         RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", load_node_service.c_str());
@@ -131,13 +131,13 @@ namespace sfg_agent
             std::string package_name = "sfg_image_transport";
             std::string plugin_name = "sfg_image_transport::Republisher";
             std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color_compressed";
-            std::string output_topic = "/local/" + sanitized_hostname + "/" + camera + "/color";
+            std::string output_topic = get_namespace() + sanitized_hostname + "/" + camera + "/color";
 
             auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
             request->plugin_name = plugin_name;
             request->node_name = camera + "_color_decoder";
-            request->node_namespace = "/local/" + sanitized_hostname;
+            request->node_namespace = get_namespace() + sanitized_hostname;
             request->parameters = {
                 rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
                 rclcpp::Parameter("out_transport", "raw").to_parameter_msg(),
@@ -154,13 +154,13 @@ namespace sfg_agent
             package_name = "sfg_image_transport";
             plugin_name = "sfg_image_transport::Republisher";
             input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth_compressed";
-            output_topic = "/local/" + sanitized_hostname + "/" + camera + "/depth";
+            output_topic = get_namespace() + sanitized_hostname + "/" + camera + "/depth";
 
             request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
             request->plugin_name = plugin_name;
             request->node_name = camera + "_depth_decoder";
-            request->node_namespace = "/local/" + sanitized_hostname;
+            request->node_namespace = get_namespace() + sanitized_hostname;
             request->parameters = {
                 rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
                 rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
