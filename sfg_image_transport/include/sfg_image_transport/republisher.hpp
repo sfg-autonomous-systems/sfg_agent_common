@@ -12,14 +12,13 @@ namespace sfg_image_transport
         Republisher(const rclcpp::NodeOptions &options);
 
     private:
+        // ROS parameters
         std::string m_in_transport;
-        std::string m_out_transport;
 
         std::string m_in_topic;
         std::string m_out_topic;
 
-        std::shared_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> m_loader;
         image_transport::Subscriber m_subscriber;
-        std::shared_ptr<image_transport::PublisherPlugin> m_publisher;
+        image_transport::Publisher m_publisher;
     };
 }

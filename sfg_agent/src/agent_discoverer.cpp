@@ -31,7 +31,7 @@ namespace sfg_agent
         // Set up interfaces.
         m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
             "/global/agent_heartbeat",
-            rclcpp::QoS(10).best_effort(),
+            rclcpp::QoS(10).reliable(),
             std::bind(&AgentDiscoverer::heartbeat_callback, this, std::placeholders::_1));
         m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
             "agent_discovery_event",

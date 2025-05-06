@@ -131,7 +131,7 @@ namespace sfg_agent
             std::string package_name = "sfg_image_transport";
             std::string plugin_name = "sfg_image_transport::Republisher";
             std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color_compressed";
-            std::string output_topic = get_namespace() + sanitized_hostname + "/" + camera + "/color";
+            std::string output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/color";
 
             auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
@@ -140,7 +140,7 @@ namespace sfg_agent
             request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
-                rclcpp::Parameter("out_transport", "raw").to_parameter_msg(),
+                rclcpp::Parameter("out.enable_pub_plugins", std::vector<std::string>({"image_transport/raw"})).to_parameter_msg(),
                 rclcpp::Parameter(".in.ffmpeg.map.h264_nvmpi", "h264_cuvid").to_parameter_msg()};
             request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
             request->remap_rules = {"in/ffmpeg" + (":=" + input_topic), "out" + (":=" + output_topic)};
@@ -154,7 +154,7 @@ namespace sfg_agent
             package_name = "sfg_image_transport";
             plugin_name = "sfg_image_transport::Republisher";
             input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth_compressed";
-            output_topic = get_namespace() + sanitized_hostname + "/" + camera + "/depth";
+            output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/depth";
 
             request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
@@ -163,9 +163,10 @@ namespace sfg_agent
             request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
-                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
+                rclcpp::Parameter("out.enable_pub_plugins", std::vector<std::string>({"image_transport/raw"})).to_parameter_msg()};
             request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
             request->remap_rules = {"in/compressedDepth" + (":=" + input_topic), "out" + (":=" + output_topic)};
+
             m_load_node_client->async_send_request(
                 request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
                 { load_node_callback(weak_agent, package_name, plugin_name, future); });
