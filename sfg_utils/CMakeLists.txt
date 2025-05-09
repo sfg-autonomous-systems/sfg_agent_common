@@ -12,6 +12,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
+find_package(rclcpp REQUIRED)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
@@ -19,6 +20,7 @@ find_package(pybind11 REQUIRED)
 set(target_name_cpp "${PROJECT_NAME}")
 set(export_name_cpp "export_${target_name_cpp}")
 add_library("${target_name_cpp}" SHARED
+  "src/extract_parameters.cpp"
   "src/get_agent_name.cpp"
   "src/sanitize_agent_name.cpp")
 target_include_directories("${target_name_cpp}" PUBLIC
@@ -26,7 +28,9 @@ target_include_directories("${target_name_cpp}" PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features("${target_name_cpp}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name_cpp}")
+ament_target_dependencies("${target_name_cpp}"
+  rclcpp
+)
 
 install(DIRECTORY
   "include/"
