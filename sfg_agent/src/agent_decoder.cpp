@@ -30,7 +30,7 @@ namespace sfg_agent
         // Set up interfaces.
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
             "agent_discovery_event",
-            rclcpp::QoS(rclcpp::KeepAll()).reliable(),
+            rclcpp::QoS(rclcpp::QoS(10)).reliable(),
             [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
             {
                 handle_agent_disovery_event(msg->metadata, msg->event_type);

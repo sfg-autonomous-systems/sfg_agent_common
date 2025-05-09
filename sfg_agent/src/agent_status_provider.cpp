@@ -34,7 +34,7 @@ namespace sfg_agent
         // Set up interfaces.
         m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
             "/global/agent_heartbeat",
-            rclcpp::QoS(rclcpp::KeepLast(1)).reliable());
+            rclcpp::QoS(rclcpp::KeepLast(1)));
         m_heartbeat_timer = create_wall_timer(
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
