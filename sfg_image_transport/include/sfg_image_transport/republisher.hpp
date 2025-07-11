@@ -1,8 +1,9 @@
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.hpp>
-#include "pluginlib/class_loader.hpp"
+#include <image_transport/publisher_plugin.hpp>
+#include <pluginlib/class_loader.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace sfg_image_transport
 {
@@ -12,13 +13,18 @@ namespace sfg_image_transport
         Republisher(const rclcpp::NodeOptions &options);
 
     private:
+        typedef image_transport::PublisherPlugin Plugin;
+        typedef void (Plugin::*PublishMemberFunction)(const sensor_msgs::msg::Image::ConstSharedPtr &) const;
+
         // ROS parameters
         std::string m_in_transport;
+        std::string m_out_transport;
 
         std::string m_in_topic;
         std::string m_out_topic;
 
         image_transport::Subscriber m_subscriber;
-        image_transport::Publisher m_publisher;
+        pluginlib::ClassLoader<image_transport::PublisherPlugin> m_plugin_loader;
+        pluginlib::UniquePtr<image_transport::PublisherPlugin> m_publisher_plugin;
     };
 }

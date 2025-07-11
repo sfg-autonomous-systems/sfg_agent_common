@@ -143,7 +143,7 @@ namespace sfg_agent
             request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
-                rclcpp::Parameter("out.enable_pub_plugins", std::vector<std::string>({"image_transport/raw"})).to_parameter_msg()};
+                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
             request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
             request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
             request->remap_rules = {"in/ffmpeg" + (":=" + input_topic), "out" + (":=" + output_topic)};
@@ -166,7 +166,7 @@ namespace sfg_agent
             request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
             request->parameters = {
                 rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
-                rclcpp::Parameter("out.enable_pub_plugins", std::vector<std::string>({"image_transport/raw"})).to_parameter_msg()};
+                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
             request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
             request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
             request->remap_rules = {"in/compressedDepth" + (":=" + input_topic), "out" + (":=" + output_topic)};
@@ -184,7 +184,6 @@ namespace sfg_agent
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
     {
         // ToDo: Perhaps we should think of implementing some sort of retry logic if loading of the node failed.
-
         if (!future.valid())
         {
             RCLCPP_ERROR(get_logger(), "Failed to load node '%s' from package '%s': Future is invalid", plugin_name.c_str(), package_name.c_str());
