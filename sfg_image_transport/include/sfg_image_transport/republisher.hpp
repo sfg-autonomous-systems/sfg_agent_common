@@ -20,9 +20,6 @@ namespace sfg_image_transport
         std::string m_in_transport;
         std::string m_out_transport;
 
-        std::string m_in_topic;
-        std::string m_out_topic;
-
         image_transport::Subscriber m_subscriber;
         pluginlib::ClassLoader<image_transport::PublisherPlugin> m_plugin_loader;
         pluginlib::UniquePtr<image_transport::PublisherPlugin> m_publisher_plugin;
