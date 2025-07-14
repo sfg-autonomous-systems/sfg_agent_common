@@ -30,7 +30,7 @@ namespace sfg_image_transport
         // Create publisher.
         std::string lookup_name = Plugin::getLookupName(m_out_transport);
         m_publisher_plugin = m_plugin_loader.createUniqueInstance(lookup_name);
-        m_publisher_plugin->advertise(this, out_topic);
+        m_publisher_plugin->advertise(this, out_topic, rmw_qos_profile_sensor_data);
         PublishMemberFunction function = &Plugin::publishPtr;
 
         // Create subscriber.
@@ -38,7 +38,8 @@ namespace sfg_image_transport
             this,
             in_topic,
             std::bind(function, m_publisher_plugin.get(), std::placeholders::_1),
-            m_in_transport);
+            m_in_transport,
+            rmw_qos_profile_sensor_data);
 
         in_topic = m_subscriber.getTopic();
         out_topic = m_publisher_plugin->getTopic();
