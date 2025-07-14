@@ -61,8 +61,8 @@ namespace sfg_depthai
         setup_device();
 
         // Set up interfaces.
-        m_color_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/color/image_raw");
-        m_depth_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/depth/image_raw");
+        m_color_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/color/image_raw", rmw_qos_profile_sensor_data);
+        m_depth_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/depth/image_raw", rmw_qos_profile_sensor_data);
         m_output_queue->addCallback(std::bind(&Camera::callback, this, std::placeholders::_1));
 
         RCLCPP_INFO(this->get_logger(), "Started camera.");
