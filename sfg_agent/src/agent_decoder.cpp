@@ -132,8 +132,8 @@ namespace sfg_agent
             RCLCPP_INFO(get_logger(), "Adding camera color decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
 
             std::string package_name = "sfg_image_transport";
-            std::string plugin_name = "sfg_image_transport::Republisher";
-            std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color_compressed";
+            std::string plugin_name = package_name + "::Republisher";
+            std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color/image_compressed";
             std::string output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/color";
 
             auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
@@ -155,8 +155,8 @@ namespace sfg_agent
             RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
 
             package_name = "sfg_image_transport";
-            plugin_name = "sfg_image_transport::Republisher";
-            input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth_compressed";
+            plugin_name = package_name + "::Republisher";
+            input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth/image_compressed";
             output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/depth";
 
             request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
