@@ -134,7 +134,7 @@ namespace sfg_agent
             std::string package_name = "sfg_image_transport";
             std::string plugin_name = package_name + "::Republisher";
             std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color/image_compressed";
-            std::string output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/color";
+            std::string output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/color/image_raw";
 
             auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
@@ -157,7 +157,7 @@ namespace sfg_agent
             package_name = "sfg_image_transport";
             plugin_name = package_name + "::Republisher";
             input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth/image_compressed";
-            output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/depth";
+            output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/depth/image_raw";
 
             request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
             request->package_name = package_name;
