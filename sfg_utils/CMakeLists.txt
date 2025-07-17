@@ -18,7 +18,7 @@ find_package(rclcpp REQUIRED)
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(target_name_cpp "${PROJECT_NAME}")
-set(export_name_cpp "export_${target_name_cpp}")
+set(export_name_cpp "${target_name_cpp}_targets")
 add_library("${target_name_cpp}" SHARED
   "src/extract_parameters.cpp"
   "src/get_agent_name.cpp"
@@ -28,7 +28,7 @@ target_include_directories("${target_name_cpp}" PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 target_compile_features("${target_name_cpp}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name_cpp}"
+ament_target_dependencies("${target_name_cpp}" PUBLIC
   rclcpp
 )
 
@@ -50,13 +50,22 @@ ament_export_targets("${export_name_cpp}")
 
 set(target_name_py "${PROJECT_NAME}_py")
 pybind11_add_module("${target_name_py}" MODULE "src/python_bindings.cpp")
-target_link_libraries("${target_name_py}" PRIVATE "${target_name_cpp}")
+target_link_libraries("${target_name_py}" PRIVATE
+  "${target_name_cpp}"
+)
 ament_python_install_package(${PROJECT_NAME})
 install(
   TARGETS "${target_name_py}"
   DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
 )
-ament_export_dependencies(pybind11)
+
+# ########################################################################################################
+# Add other files/directories.                                                                           #
+# ########################################################################################################
+install(DIRECTORY
+  "cmake"
+  DESTINATION "share/${PROJECT_NAME}/"
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -72,4 +81,4 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_package(CONFIG_EXTRAS "cmake/common.cmake")

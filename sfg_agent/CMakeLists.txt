@@ -19,98 +19,40 @@ find_package(yaml-cpp REQUIRED)
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
-set(executable_name "agent_status_provider")
-set(target_name "${executable_name}_component")
-set(export_name "export_${target_name}")
-add_library("${target_name}" SHARED "src/agent_status_provider.cpp" "src/agent_status_provider_component.cpp")
-rclcpp_components_register_node(
-  "${target_name}"
-  PLUGIN "sfg_agent::AgentStatusProvider"
-  EXECUTABLE "${executable_name}"
-)
-target_include_directories("${target_name}" PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name}"
+sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusProvider"
+  SOURCES
+  "src/agent_status_provider.cpp"
+  "src/agent_status_provider_component.cpp"
+  AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
   sfg_agent_msgs
   sfg_utils
-)
-target_link_libraries("${target_name}"
+  SYSTEM_DEPENDENCIES
   yaml-cpp
 )
-ament_export_targets("${export_name}")
-install(
-  TARGETS "${target_name}"
-  EXPORT "${export_name}"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
-  RUNTIME DESTINATION "bin"
-  INCLUDES DESTINATION "include"
-)
 
-set(executable_name "agent_discoverer")
-set(target_name "${executable_name}_component")
-set(export_name "export_${target_name}")
-add_library("${target_name}" SHARED "src/agent_discoverer.cpp" "src/agent_discoverer_component.cpp")
-rclcpp_components_register_node(
-  "${target_name}"
-  PLUGIN "sfg_agent::AgentDiscoverer"
-  EXECUTABLE "${executable_name}"
-)
-target_include_directories("${target_name}" PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name}"
+sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
+  SOURCES
+  "src/agent_discoverer.cpp"
+  "src/agent_discoverer_component.cpp"
+  AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
   sfg_agent_msgs
   sfg_utils
 )
-ament_export_targets("${export_name}")
-install(
-  TARGETS "${target_name}"
-  EXPORT "${export_name}"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
-  RUNTIME DESTINATION "bin"
-  INCLUDES DESTINATION "include"
-)
 
-set(executable_name "agent_decoder")
-set(target_name "${executable_name}_component")
-set(export_name "export_${target_name}")
-add_library("${target_name}" SHARED "src/agent_decoder.cpp" "src/agent_decoder_component.cpp")
-rclcpp_components_register_node(
-  "${target_name}"
-  PLUGIN "sfg_agent::AgentDecoder"
-  EXECUTABLE "${executable_name}"
-)
-target_include_directories("${target_name}" PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name}"
+sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
+  SOURCES
+  "src/agent_decoder.cpp"
+  "src/agent_decoder_component.cpp"
+  AMENT_DEPENDENCIES
   composition_interfaces
   rclcpp
   rclcpp_components
   sfg_agent_msgs
   sfg_utils
-)
-ament_export_targets("${export_name}")
-install(
-  TARGETS "${target_name}"
-  EXPORT "${export_name}"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
-  RUNTIME DESTINATION "bin"
-  INCLUDES DESTINATION "include"
 )
 
 if(BUILD_TESTING)

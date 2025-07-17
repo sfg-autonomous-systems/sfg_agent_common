@@ -13,6 +13,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>rcl_interfaces</depend>
+  <depend>sfg_utils</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

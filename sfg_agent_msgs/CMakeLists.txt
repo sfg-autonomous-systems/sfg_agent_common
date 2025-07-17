@@ -20,7 +20,6 @@ set(msg_files
   "msg/AgentHeartbeat.msg"
   "msg/AgentMetadata.msg"
 )
-
 set(srv_files
   "srv/GetDiscoveredAgents.srv"
   "srv/GetMetadata.srv"
