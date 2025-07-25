@@ -23,6 +23,7 @@ set(msg_files
 set(srv_files
   "srv/GetDiscoveredAgents.srv"
   "srv/GetMetadata.srv"
+  "srv/TriggerAction.srv"
 )
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}

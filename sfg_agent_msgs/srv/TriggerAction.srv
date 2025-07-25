@@ -1,0 +1,4 @@
+string action  # The action to trigger.
+---
+bool success   # Indicates if the action was successfully triggered.
+string message # Informational message about the outcome of the request.
