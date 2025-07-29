@@ -9,19 +9,15 @@ namespace sfg_image_transport
                                                                    m_plugin_loader("image_transport", "image_transport::PublisherPlugin")
     {
         // Declare and retrieve ROS parameters.
-        std::string parameter = "in_transport";
-        declare_parameter<std::string>(
-            parameter,
+        m_in_transport = declare_parameter<std::string>(
+            "in_transport",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The transport used for the input topic."));
-        get_parameter(parameter, m_in_transport);
 
-        parameter = "out_transport";
-        declare_parameter<std::string>(
-            parameter,
+        m_out_transport = declare_parameter<std::string>(
+            "out_transport",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The transport used for the output topic."));
-        get_parameter(parameter, m_out_transport);
 
         // Set up interfaces.
         auto in_topic = rclcpp::expand_topic_or_service_name("in", get_name(), get_namespace());

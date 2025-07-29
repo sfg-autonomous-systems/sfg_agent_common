@@ -6,41 +6,34 @@ namespace sfg_depthai
         : Node("camera", options)
     {
         // Declare and retrieve ROS parameters.
-        std::string parameter = "color_resolution";
-        declare_parameter(
-            parameter,
+        auto color_resolution = declare_parameter(
+            "color_resolution",
             "1080p",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the color camera.")
                 .set__additional_constraints(
                     "Valid values are: 1080p, 4k, 12mp, 13mp, 720p, 800p, 1200p"));
-        std::string color_resolution;
-        get_parameter(parameter, color_resolution);
 
         if (!parse_color_resolution(color_resolution, m_color_resolution))
         {
             throw std::runtime_error("Invalid color resolution");
         }
 
-        parameter = "depth_resolution";
-        declare_parameter(
-            parameter,
+        auto depth_resolution = declare_parameter(
+            "depth_resolution",
             "720p",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the depth camera.")
                 .set__additional_constraints(
                     "Valid values are: 720p, 800p, 400p, 480p, 1200p"));
-        std::string depth_resolution;
-        get_parameter(parameter, depth_resolution);
 
         if (!parse_depth_resolution(depth_resolution, m_depth_resolution))
         {
             throw std::runtime_error("Invalid depth resolution");
         }
 
-        parameter = "fps";
-        declare_parameter(
-            parameter,
+        m_fps = declare_parameter(
+            "fps",
             15,
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The fps of the camera.")
@@ -48,15 +41,12 @@ namespace sfg_depthai
                     {rcl_interfaces::msg::IntegerRange()
                          .set__from_value(1)
                          .set__to_value(60)}));
-        get_parameter(parameter, m_fps);
 
-        parameter = "frame_id";
-        declare_parameter(
-            parameter,
+        m_frame_id = declare_parameter(
+            "frame_id",
             "camera",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The frame id of the camera."));
-        get_parameter(parameter, m_frame_id);
 
         setup_device();
 

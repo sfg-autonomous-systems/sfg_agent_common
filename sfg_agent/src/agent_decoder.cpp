@@ -10,21 +10,17 @@ namespace sfg_agent
                                                                      m_parameters(extract_parameters(options))
     {
         // Declare and retrieve ROS parameters.
-        std::string parameter = "container_name";
-        declare_parameter<std::string>(
-            parameter,
+        m_container_name = declare_parameter<std::string>(
+            "container_name",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The name of the container decoder nodes should be dymically loaded in."));
-        get_parameter(parameter, m_container_name);
 
-        parameter = "agent_name_regex";
-        declare_parameter(
-            parameter,
+        m_agent_name_regex = declare_parameter(
+            "agent_name_regex",
             ".*",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The regex to match agent names against."
                                   "If the agent name matches, the agent will be decoded."));
-        get_parameter(parameter, m_agent_name_regex);
         m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
 
         // Set up interfaces.

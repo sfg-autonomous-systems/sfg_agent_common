@@ -10,21 +10,17 @@ namespace sfg_agent
         : Node("agent_discoverer", options)
     {
         // Declare and retrieve ROS parameters.
-        std::string parameter = "keepalive";
-        declare_parameter(
-            parameter,
+        m_keepalive = declare_parameter(
+            "keepalive",
             3,
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The number of heartbeat messages to wait before considering an agent dead."));
-        get_parameter(parameter, m_keepalive);
 
-        parameter = "exclude_self";
-        declare_parameter(
-            parameter,
+        m_exclude_self = declare_parameter(
+            "exclude_self",
             true,
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("Whether to exclude the local agent from the list of discovered agents."));
-        get_parameter(parameter, m_exclude_self);
 
         m_agent_name = sfg_utils::get_agent_name();
 
