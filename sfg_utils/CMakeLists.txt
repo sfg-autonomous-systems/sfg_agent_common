@@ -22,6 +22,7 @@ set(export_name_cpp "${target_name_cpp}_targets")
 add_library("${target_name_cpp}" SHARED
   "src/extract_parameters.cpp"
   "src/get_agent_name.cpp"
+  "src/get_ros_namespaces.cpp"
   "src/sanitize_agent_name.cpp")
 target_include_directories("${target_name_cpp}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

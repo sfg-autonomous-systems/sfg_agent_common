@@ -2,6 +2,7 @@
 #include <pybind11/stl.h>
 
 #include "sfg_utils/get_agent_name.hpp"
+#include "sfg_utils/get_ros_namespaces.hpp"
 #include "sfg_utils/sanitize_agent_name.hpp"
 
 namespace py = pybind11;
@@ -9,5 +10,6 @@ namespace py = pybind11;
 PYBIND11_MODULE(sfg_utils_py, module)
 {
     module.def("get_agent_name", &sfg_utils::get_agent_name);
+    module.def("get_ros_namespaces", &sfg_utils::get_ros_namespaces);
     module.def("sanitize_agent_name", &sfg_utils::sanitize_agent_name);
 }
