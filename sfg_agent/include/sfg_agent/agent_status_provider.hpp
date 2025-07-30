@@ -26,6 +26,7 @@ namespace sfg_agent
         std::string m_metadata_filepath;
 
         std::string m_agent_name;
+
         rclcpp::Publisher<sfg_agent_msgs::msg::AgentHeartbeat>::SharedPtr m_heartbeat_publisher;
         rclcpp::TimerBase::SharedPtr m_heartbeat_timer;
         rclcpp::Service<sfg_agent_msgs::srv::GetMetadata>::SharedPtr m_get_metadata_service;
