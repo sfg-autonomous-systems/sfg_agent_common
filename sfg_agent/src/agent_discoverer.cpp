@@ -1,8 +1,7 @@
 #include "sfg_agent/agent_discoverer.hpp"
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/get_agent_name.hpp"
-#include "sfg_utils/sanitize_agent_name.hpp"
+#include "sfg_utils/agent_utils.hpp"
 
 namespace sfg_agent
 {

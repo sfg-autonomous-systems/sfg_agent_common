@@ -20,10 +20,10 @@ find_package(rclcpp REQUIRED)
 set(target_name_cpp "${PROJECT_NAME}")
 set(export_name_cpp "${target_name_cpp}_targets")
 add_library("${target_name_cpp}" SHARED
-  "src/extract_parameters.cpp"
-  "src/get_agent_name.cpp"
-  "src/get_ros_namespaces.cpp"
-  "src/sanitize_agent_name.cpp")
+  "src/agent_utils.cpp"
+  "src/fqn/ros_fqn_builder.cpp"
+  "src/ros_utils.cpp"
+)
 target_include_directories("${target_name_cpp}" PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -47,7 +47,7 @@ install(
   INCLUDES DESTINATION "include"
 )
 ament_export_libraries("${target_name_cpp}")
-ament_export_targets("${export_name_cpp}")
+ament_export_targets("${export_name_cpp}" HAS_LIBRARY_TARGET)
 
 set(target_name_py "${PROJECT_NAME}_py")
 pybind11_add_module("${target_name_py}" MODULE "src/python_bindings.cpp")
@@ -66,17 +66,16 @@ find_program(PYBIND11_STUBGEN_EXECUTABLE pybind11-stubgen)
 if(NOT PYBIND11_STUBGEN_EXECUTABLE)
   message(WARNING "Cannot create python stub file because pybind11-stubgen was not found. Please run 'pip install pybind11-stubgen'.")
 else()
-  set(stub_file "${CMAKE_CURRENT_BINARY_DIR}/${target_name_py}.pyi")
-  add_custom_command(
-    OUTPUT "${stub_file}"
+  set(stub_directory "${CMAKE_CURRENT_BINARY_DIR}/${target_name_py}")
+
+  add_custom_target(generate_stubs ALL
     COMMAND "${PYBIND11_STUBGEN_EXECUTABLE}" -o "${CMAKE_CURRENT_BINARY_DIR}" "${target_name_py}"
     DEPENDS "${target_name_py}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    COMMENT "Generating python stubs for ${target_name_py}."
+    COMMENT "Generating python stubs for package ${target_name_py}"
   )
-  add_custom_target(stubs ALL DEPENDS "${stub_file}")
   install(
-    FILES "${stub_file}"
+    DIRECTORY "${stub_directory}/"
     DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
   )
 endif()

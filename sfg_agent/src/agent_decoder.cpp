@@ -1,13 +1,13 @@
 #include "sfg_agent/agent_decoder.hpp"
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/extract_parameters.hpp"
-#include "sfg_utils/sanitize_agent_name.hpp"
+#include "sfg_utils/ros_utils.hpp"
+#include "sfg_utils/agent_utils.hpp"
 
 namespace sfg_agent
 {
     AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", options),
-                                                                     m_parameters(extract_parameters(options))
+                                                                     m_parameters(sfg_utils::extract_parameters(options))
     {
         // Declare and retrieve ROS parameters.
         m_container_name = declare_parameter<std::string>(

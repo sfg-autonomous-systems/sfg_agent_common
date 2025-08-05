@@ -55,6 +55,14 @@ sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   sfg_utils
 )
 
+# ########################################################################################################
+# Add other files/directories.                                                                           #
+# ########################################################################################################
+install(DIRECTORY
+  "launch"
+  DESTINATION "share/${PROJECT_NAME}/"
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
 
