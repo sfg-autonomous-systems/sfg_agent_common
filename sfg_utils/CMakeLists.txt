@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(sfg_utils)
 
+include("cmake/generate_python_stubs.cmake")
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -61,24 +63,9 @@ install(
 )
 
 # Generate a stub file for our python module.
-find_program(PYBIND11_STUBGEN_EXECUTABLE pybind11-stubgen)
-
-if(NOT PYBIND11_STUBGEN_EXECUTABLE)
-  message(WARNING "Cannot create python stub file because pybind11-stubgen was not found. Please run 'pip install pybind11-stubgen'.")
-else()
-  set(stub_directory "${CMAKE_CURRENT_BINARY_DIR}/${target_name_py}")
-
-  add_custom_target(generate_stubs ALL
-    COMMAND "${PYBIND11_STUBGEN_EXECUTABLE}" -o "${CMAKE_CURRENT_BINARY_DIR}" "${target_name_py}"
-    DEPENDS "${target_name_py}"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    COMMENT "Generating python stubs for package ${target_name_py}"
-  )
-  install(
-    DIRECTORY "${stub_directory}/"
-    DESTINATION "${PYTHON_INSTALL_DIR}/${PROJECT_NAME}"
-  )
-endif()
+generate_python_stubs("${target_name_py}"
+  OUTPUT_DIRECTORY "${PROJECT_NAME}"
+)
 
 # ########################################################################################################
 # Add other files/directories.                                                                           #

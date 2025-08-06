@@ -1,0 +1,22 @@
+# Construct the full path to the installed stubs.
+set(stubs_path "${CMAKE_INSTALL_PREFIX}/@output_directory@")
+
+file(GLOB_RECURSE stub_files "${stubs_path}/*.pyi")
+
+foreach(stub_file ${stub_files})
+    get_filename_component(stub_file_name "${stub_file}" NAME_WE)
+
+    # Skip the __init__.pyi files
+    if(stub_file_name STREQUAL "__init__")
+        continue()
+    endif()
+
+    get_filename_component(stub_file_dir "${stub_file}" DIRECTORY)
+    set(subdirectory "${stub_file_dir}/${stub_file_name}")
+
+    # Create a new directory named after the stub file.
+    file(MAKE_DIRECTORY "${subdirectory}")
+
+    # Move the stub file into the new directory
+    file(RENAME "${stub_file}" "${subdirectory}/__init__.pyi")
+endforeach()
