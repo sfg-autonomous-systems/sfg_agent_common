@@ -15,8 +15,6 @@ PYBIND11_MODULE(sfg_utils_py, module)
 
     py::module_ fqn_submodule = module.def_submodule("fqn");
 
-    py::module_ ros_utils_submodule = fqn_submodule.def_submodule("ros_utils");
-
     py::enum_<sfg_utils::fqn::Scope>(fqn_submodule, "Scope")
         .value("Global", sfg_utils::fqn::Scope::Global)
         .value("Local", sfg_utils::fqn::Scope::Local);
