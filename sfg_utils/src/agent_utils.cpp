@@ -11,11 +11,11 @@ namespace sfg_utils
 {
     std::string get_agent_name()
     {
-        const char *agent_name = std::getenv("AGENT_NAME");
+        const char *name = std::getenv("AGENT_NAME");
 
-        if (agent_name != nullptr && std::strlen(agent_name) > 0)
+        if (name != nullptr && std::strlen(name) > 0)
         {
-            return std::string(agent_name);
+            return std::string(name);
         }
 
         char hostname[HOST_NAME_MAX + 1];
@@ -28,9 +28,9 @@ namespace sfg_utils
         return hostname;
     }
 
-    std::string sanitize_agent_name(const std::string &agent_name)
+    std::string sanitize_agent_name(const std::string &name)
     {
-        auto sanitized_agent_name = agent_name;
+        auto sanitized_agent_name = name;
 
         // Convert to lowercase.
         std::transform(sanitized_agent_name.begin(), sanitized_agent_name.end(), sanitized_agent_name.begin(),
@@ -60,7 +60,7 @@ namespace sfg_utils
         // If the agent name is empty, set it to "host_<random_unique_integer>".
         if (sanitized_agent_name.empty())
         {
-            throw std::runtime_error("Agent name '" + agent_name + "' cannot be made compatible with ROS topic naming convention. Please change the agent name.");
+            throw std::runtime_error("Agent name '" + name + "' cannot be made compatible with ROS topic naming convention. Please change the agent name.");
         }
 
         return sanitized_agent_name;

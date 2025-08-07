@@ -12,9 +12,11 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rmw REQUIRED)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
@@ -33,6 +35,10 @@ target_include_directories("${target_name_cpp}" PUBLIC
 target_compile_features("${target_name_cpp}" PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies("${target_name_cpp}" PUBLIC
   rclcpp
+  rmw
+)
+target_link_libraries("${target_name_cpp}" PRIVATE
+  magic_enum::magic_enum
 )
 
 install(DIRECTORY
@@ -55,6 +61,7 @@ set(target_name_py "${PROJECT_NAME}_py")
 pybind11_add_module("${target_name_py}" MODULE "src/python_bindings.cpp")
 target_link_libraries("${target_name_py}" PRIVATE
   "${target_name_cpp}"
+  magic_enum::magic_enum
 )
 ament_python_install_package(${PROJECT_NAME})
 install(

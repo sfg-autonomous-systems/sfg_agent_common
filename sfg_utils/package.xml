@@ -8,10 +8,13 @@
   <license>MIT</license>
 
   <depend>rclcpp</depend>
-  <depend>pybind11_vendor</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <build_depend>magic_enum</build_depend>
+  <build_depend>pybind11_vendor</build_depend>
+  <build_depend>rmw</build_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

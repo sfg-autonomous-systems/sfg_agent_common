@@ -2,10 +2,10 @@
 
 namespace sfg_utils::fqn
 {
-    enum class Component
+    enum class Stream
     {
-        Camera,
-        Lidar,
+        Color,
+        Depth,
         Custom
     };
 }

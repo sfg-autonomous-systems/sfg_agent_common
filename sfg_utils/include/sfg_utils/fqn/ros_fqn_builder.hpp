@@ -1,8 +1,9 @@
 #pragma once
 
-#include "sfg_utils/fqn/scope.hpp"
-#include "sfg_utils/fqn/endpoint.hpp"
 #include "sfg_utils/fqn/component.hpp"
+#include "sfg_utils/fqn/resource.hpp"
+#include "sfg_utils/fqn/scope.hpp"
+#include "sfg_utils/fqn/stream.hpp"
 
 #include <string>
 #include <optional>
@@ -15,7 +16,8 @@ namespace sfg_utils::fqn
         RosFQNBuilder &scope(Scope scope);
         RosFQNBuilder &agent(const std::string &name = "");
         RosFQNBuilder &component(Component type, const std::string &name);
-        RosFQNBuilder &endpoint(Endpoint type, const std::string &stream = "", const std::string &resource = "");
+        RosFQNBuilder &stream(Stream stream, const std::string &name = "");
+        RosFQNBuilder &resource(Resource resource, const std::string &name = "");
         [[nodiscard]] std::string build(bool only_namespace = false) const;
 
     private:
