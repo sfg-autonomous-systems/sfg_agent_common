@@ -1,4 +1,6 @@
 #include <magic_enum.hpp>
+#include <pybind11/native_enum.h>
+#include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -12,14 +14,16 @@ using namespace pybind11::literals;
 namespace
 {
     template <typename TEnum>
-    void bind_enum(py::module module)
+    void bind_enum(py::module module, const char *enum_type = "enum.Enum")
     {
-        auto py_enum = py::enum_<TEnum>(module, magic_enum::enum_type_name<TEnum>().data());
+        auto py_enum = py::native_enum<TEnum>(module, magic_enum::enum_type_name<TEnum>().data(), enum_type);
 
         for (const auto &[value, name] : magic_enum::enum_entries<TEnum>())
         {
             py_enum.value(name.data(), value);
         }
+
+        py_enum.finalize();
     }
 }
 
@@ -30,17 +34,20 @@ PYBIND11_MODULE(sfg_utils_py, module)
 
     py::module_ fqn_submodule = module.def_submodule("fqn");
 
+    bind_enum<sfg_utils::fqn::RosFQNSegment>(fqn_submodule, "enum.IntFlag");
     bind_enum<sfg_utils::fqn::Scope>(fqn_submodule);
     bind_enum<sfg_utils::fqn::Component>(fqn_submodule);
     bind_enum<sfg_utils::fqn::Stream>(fqn_submodule);
-    bind_enum<sfg_utils::fqn::Resource>(fqn_submodule);
+    bind_enum<sfg_utils::fqn::Resource>(fqn_submodule, "enum.IntFlag");
 
     py::class_<sfg_utils::fqn::RosFQNBuilder>(fqn_submodule, "RosFQNBuilder")
         .def(py::init<>())
         .def("scope", &sfg_utils::fqn::RosFQNBuilder::scope, "scope"_a)
         .def("agent", &sfg_utils::fqn::RosFQNBuilder::agent, "name"_a = "")
-        .def("component", &sfg_utils::fqn::RosFQNBuilder::component, "component"_a, "name"_a)
+        .def("component", &sfg_utils::fqn::RosFQNBuilder::component, "component"_a, "name"_a = "")
         .def("stream", &sfg_utils::fqn::RosFQNBuilder::stream, "stream"_a, "name"_a = "")
         .def("resource", &sfg_utils::fqn::RosFQNBuilder::resource, "resource"_a, "name"_a = "")
-        .def("build", &sfg_utils::fqn::RosFQNBuilder::build, "only_namespace"_a = false);
+        .def("build", &sfg_utils::fqn::RosFQNBuilder::build, "begin"_a = sfg_utils::fqn::RosFQNSegment::Scope, "end"_a = sfg_utils::fqn::RosFQNSegment::Resource)
+        .def("reset", py::overload_cast<>(&sfg_utils::fqn::RosFQNBuilder::reset))
+        .def("reset", py::overload_cast<sfg_utils::fqn::RosFQNSegment>(&sfg_utils::fqn::RosFQNBuilder::reset), "segments"_a);
 }

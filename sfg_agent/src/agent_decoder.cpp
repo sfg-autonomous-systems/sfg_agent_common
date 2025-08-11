@@ -1,8 +1,11 @@
 #include "sfg_agent/agent_decoder.hpp"
 
+#include <magic_enum.hpp>
+
 #include "sfg_agent/agent_heartbeat_constants.hpp"
-#include "sfg_utils/ros_utils.hpp"
 #include "sfg_utils/agent_utils.hpp"
+#include "sfg_utils/ros_utils.hpp"
+#include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
@@ -120,56 +123,22 @@ namespace sfg_agent
         std::shared_ptr<DecodedAgent> agent,
         const sfg_agent_msgs::msg::AgentMetadata &metadata)
     {
-        auto sanitized_hostname = sfg_utils::sanitize_agent_name(metadata.agent_name);
+        using namespace sfg_utils::fqn;
+
         auto weak_agent = std::weak_ptr<DecodedAgent>(agent);
 
         for (const auto &camera : metadata.cameras)
         {
-            RCLCPP_INFO(get_logger(), "Adding camera color decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
+            for (auto stream : {Stream::Color, Stream::Depth})
+            {
+                auto request = create_load_camera_decoder_node_request(metadata.agent_name, camera, stream);
+                auto package_name = request->package_name;
+                auto plugin_name = request->plugin_name;
 
-            std::string package_name = "sfg_image_transport";
-            std::string plugin_name = package_name + "::Republisher";
-            std::string input_topic = "/global/" + sanitized_hostname + "/" + camera + "/color/image_compressed";
-            std::string output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/color/image_raw";
-
-            auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
-            request->package_name = package_name;
-            request->plugin_name = plugin_name;
-            request->node_name = camera + "_color_decoder";
-            request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
-            request->parameters = {
-                rclcpp::Parameter("in_transport", "ffmpeg").to_parameter_msg(),
-                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
-            request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
-            request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
-            request->remap_rules = {"in/ffmpeg" + (":=" + input_topic), "out" + (":=" + output_topic)};
-
-            m_load_node_client->async_send_request(
-                request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
-                { load_node_callback(weak_agent, package_name, plugin_name, future); });
-
-            RCLCPP_INFO(get_logger(), "Adding camera depth decoder node for '%s' for agent '%s'.", camera.c_str(), metadata.agent_name.c_str());
-
-            package_name = "sfg_image_transport";
-            plugin_name = package_name + "::Republisher";
-            input_topic = "/global/" + sanitized_hostname + "/" + camera + "/depth/image_compressed";
-            output_topic = get_namespace() + ("/" + sanitized_hostname) + "/" + camera + "/depth/image_raw";
-
-            request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
-            request->package_name = package_name;
-            request->plugin_name = plugin_name;
-            request->node_name = camera + "_depth_decoder";
-            request->node_namespace = get_namespace() + ("/" + sanitized_hostname);
-            request->parameters = {
-                rclcpp::Parameter("in_transport", "compressedDepth").to_parameter_msg(),
-                rclcpp::Parameter("out_transport", "raw").to_parameter_msg()};
-            request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
-            request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
-            request->remap_rules = {"in/compressedDepth" + (":=" + input_topic), "out" + (":=" + output_topic)};
-
-            m_load_node_client->async_send_request(
-                request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
-                { load_node_callback(weak_agent, package_name, plugin_name, future); });
+                m_load_node_client->async_send_request(
+                    request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
+                    { load_node_callback(weak_agent, package_name, plugin_name, future); });
+            }
         }
     }
 
@@ -261,5 +230,39 @@ namespace sfg_agent
         }
 
         RCLCPP_INFO(get_logger(), "Unloaded node with ID '%lu'.", id);
+    }
+
+    std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
+    AgentDecoder::create_load_camera_decoder_node_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    {
+        using namespace sfg_utils::fqn;
+
+        assert(stream == Stream::Color || stream == Stream::Depth);
+
+        RCLCPP_INFO(get_logger(), "Adding camera %s decoder node for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), camera.c_str(), agent_name.c_str());
+        auto agent_fqn_builder = RosFQNBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
+
+        std::string package_name = "sfg_image_transport";
+        std::string plugin_name = package_name + "::Republisher";
+
+        std::string input_topic = agent_fqn_builder.resource(Resource::ImageCompressed).build();
+        std::string output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
+
+        std::string in_transport = (stream == Stream::Color ? "ffmpeg" : "compressedDepth");
+        std::string out_transport = "raw";
+
+        auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
+        request->package_name = package_name;
+        request->plugin_name = plugin_name;
+        request->node_name = camera + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
+        request->node_namespace = agent_fqn_builder.build(RosFQNSegment::Agent);
+        request->parameters = {
+            rclcpp::Parameter("in_transport", in_transport).to_parameter_msg(),
+            rclcpp::Parameter("out_transport", out_transport).to_parameter_msg()};
+        request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
+        request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
+        request->remap_rules = {"in/" + (in_transport + ":=" + input_topic), "out" + (":=" + output_topic)};
+
+        return request;
     }
 }

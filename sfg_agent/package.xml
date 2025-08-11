@@ -16,6 +16,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>magic_enum</build_depend>
+
   <exec_depend>sfg_image_transport</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

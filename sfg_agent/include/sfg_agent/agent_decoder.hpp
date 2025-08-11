@@ -8,6 +8,7 @@
 #include "sfg_agent_msgs/msg/agent_discovery_event.hpp"
 #include "sfg_agent_msgs/msg/agent_metadata.hpp"
 #include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
+#include "sfg_utils/fqn/stream.hpp"
 
 namespace sfg_agent
 {
@@ -43,6 +44,8 @@ namespace sfg_agent
             const std::string &plugin_name,
             uint64_t id,
             rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future);
+
+        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_decoder_node_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
 
         // ROS parameters
         std::string m_container_name;

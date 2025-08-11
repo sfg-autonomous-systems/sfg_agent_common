@@ -4,12 +4,12 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from rospkg import get_package_name
-from sfg_utils.fqn import RosFQNBuilder, Scope
+from sfg_utils.fqn import RosFQNBuilder, RosFQNSegment, Scope
 
 package_name = get_package_name(__file__)
 local_namespace, global_namespace = (
-    RosFQNBuilder().scope(Scope.Local).agent().build(only_namespace=True),
-    RosFQNBuilder().scope(Scope.Global).agent().build(only_namespace=True),
+    RosFQNBuilder().scope(Scope.Local).agent().build(end=RosFQNSegment.Agent),
+    RosFQNBuilder().scope(Scope.Global).agent().build(end=RosFQNSegment.Agent),
 )
 
 

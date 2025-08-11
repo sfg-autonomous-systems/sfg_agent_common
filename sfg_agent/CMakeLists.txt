@@ -10,6 +10,7 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(composition_interfaces REQUIRED)
+find_package(magic_enum CONFIG REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
@@ -53,6 +54,8 @@ sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   rclcpp_components
   sfg_agent_msgs
   sfg_utils
+  SYSTEM_DEPENDENCIES
+  magic_enum::magic_enum
 )
 
 # ########################################################################################################

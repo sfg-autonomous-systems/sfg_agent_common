@@ -6,6 +6,7 @@ namespace sfg_utils::fqn
     {
         Camera,
         Lidar,
+        LocomotionController,
         Custom
     };
 }
