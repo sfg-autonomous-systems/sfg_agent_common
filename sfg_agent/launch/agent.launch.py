@@ -20,6 +20,10 @@ local_namespace, global_namespace = (
     .build(begin=RosFqnSegment.Scope, end=RosFqnSegment.Agent),
 )
 
+metadata_filepath_argument = DeclareLaunchArgument(
+    "metadata_filepath", default_value=""
+)
+
 
 def get_nodes(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:
     agent_status_provider_node = ComposableNode(
@@ -27,7 +31,12 @@ def get_nodes(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:
         plugin="sfg_agent::AgentStatusProvider",
         namespace=local_namespace,
         parameters=[
-            {"metadata_filepath": arguments["metadata_filepath"]},
+            {
+                metadata_filepath_argument.name: arguments.get(
+                    metadata_filepath_argument.name,
+                    metadata_filepath_argument.default_value,
+                )
+            },
         ],
         extra_arguments=[{"use_intra_process_comms": True}],
     )
@@ -35,14 +44,14 @@ def get_nodes(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:
     return [], [agent_status_provider_node]
 
 
-def generate_launch_description():
+def generate_launch_description() -> launch.LaunchDescription:
     nodes, composable_nodes = get_nodes(
-        metadata_filepath=LaunchConfiguration("metadata_filepath")
+        metadata_filepath=LaunchConfiguration(metadata_filepath_argument.name)
     )
 
     return launch.LaunchDescription(
         [
-            DeclareLaunchArgument("metadata_filepath"),
+            metadata_filepath_argument,
             *nodes,
             ComposableNodeContainer(
                 package="rclcpp_components",
