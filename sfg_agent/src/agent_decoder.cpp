@@ -26,16 +26,18 @@ namespace sfg_agent
                                   "If the agent name matches, the agent will be decoded."));
         m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
 
+        using namespace sfg_utils::fqn;
+
         // Set up interfaces.
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
-            "agent_discovery_event",
+            RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10,
             [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
             {
-                handle_agent_disovery_event(msg->metadata, msg->event_type);
+                handle_agent_discovery_event(msg->metadata, msg->event_type);
             });
 
-        m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>("get_discovered_agents");
+        m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>(RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build());
 
         std::string load_node_service = m_container_name + "/_container/load_node";
         RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", load_node_service.c_str());
@@ -55,7 +57,7 @@ namespace sfg_agent
             std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
     }
 
-    void AgentDecoder::handle_agent_disovery_event(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
+    void AgentDecoder::handle_agent_discovery_event(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
     {
         auto agent_name = metadata.agent_name;
 
@@ -115,7 +117,7 @@ namespace sfg_agent
 
         for (const auto &metadata : response->metadata)
         {
-            handle_agent_disovery_event(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
+            handle_agent_discovery_event(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
         }
     }
 
@@ -240,7 +242,7 @@ namespace sfg_agent
         assert(stream == Stream::Color || stream == Stream::Depth);
 
         RCLCPP_INFO(get_logger(), "Adding camera %s decoder node for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), camera.c_str(), agent_name.c_str());
-        auto agent_fqn_builder = RosFQNBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
+        auto agent_fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
 
         std::string package_name = "sfg_image_transport";
         std::string plugin_name = package_name + "::Republisher";
@@ -255,7 +257,7 @@ namespace sfg_agent
         request->package_name = package_name;
         request->plugin_name = plugin_name;
         request->node_name = camera + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
-        request->node_namespace = agent_fqn_builder.build(RosFQNSegment::Agent);
+        request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Agent);
         request->parameters = {
             rclcpp::Parameter("in_transport", in_transport).to_parameter_msg(),
             rclcpp::Parameter("out_transport", out_transport).to_parameter_msg()};

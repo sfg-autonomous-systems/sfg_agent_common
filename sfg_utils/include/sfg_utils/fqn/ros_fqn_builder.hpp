@@ -11,24 +11,24 @@
 
 namespace sfg_utils::fqn
 {
-    class RosFQNBuilder
+    class RosFqnBuilder
     {
     private:
         static constexpr std::string_view s_segment_delimiter = "/";
 
     public:
-        RosFQNBuilder();
+        RosFqnBuilder();
 
-        RosFQNBuilder &scope(Scope scope);
-        RosFQNBuilder &agent(const std::string &name = "");
-        RosFQNBuilder &component(Component component, const std::string &name = "");
-        RosFQNBuilder &stream(Stream stream, const std::string &name = "");
-        RosFQNBuilder &resource(Resource resource, const std::string &name = "");
-        [[nodiscard]] std::string build(RosFQNSegment begin, RosFQNSegment end) const;
-        [[nodiscard]] std::string build(RosFQNSegment segment) const;
+        RosFqnBuilder &scope(Scope scope);
+        RosFqnBuilder &agent(const std::string &name = "");
+        RosFqnBuilder &component(Component component, const std::string &name = "");
+        RosFqnBuilder &stream(Stream stream, const std::string &name = "");
+        RosFqnBuilder &resource(Resource resource, const std::string &name = "");
+        [[nodiscard]] std::string build(RosFqnSegment begin, RosFqnSegment end) const;
+        [[nodiscard]] std::string build(RosFqnSegment segment) const;
         [[nodiscard]] std::string build() const;
-        RosFQNBuilder &reset();
-        RosFQNBuilder &reset(RosFQNSegment segments);
+        RosFqnBuilder &reset();
+        RosFqnBuilder &reset(RosFqnSegment segments);
 
     private:
         // Our ROS FQN naming convention follows the segmented structure below:
@@ -38,28 +38,28 @@ namespace sfg_utils::fqn
         // Additionally, the type of resource is constrained by the immediately preceding segment.
         // In order to capture these rules, we define a set of validation rules for each segment
         // using the following structure:
-        struct RosFQNSegmentRule
+        struct RosFqnSegmentRule
         {
             bool m_is_required;
-            RosFQNSegment m_segment;
-            RosFQNSegment m_required_segments;
+            RosFqnSegment m_segment;
+            RosFqnSegment m_required_segments;
             Resource m_allowed_resources;
         };
 
-        static size_t s_get_index(RosFQNSegment segment);
+        static size_t s_get_index(RosFqnSegment segment);
 
         // This array defines the validation rules for each segment. The order of the
-        // rules is important and must match the order in which they are defined in RosFQNSegment.
-        static const std::array<RosFQNSegmentRule, magic_enum::enum_count<RosFQNSegment>()> s_segment_rules;
+        // rules is important and must match the order in which they are defined in RosFqnSegment.
+        static const std::array<RosFqnSegmentRule, magic_enum::enum_count<RosFqnSegment>()> s_segment_rules;
 
         template <typename TEnum>
-        void set_segment(RosFQNSegment segment, TEnum value, const std::string &name);
+        void set_segment(RosFqnSegment segment, TEnum value, const std::string &name);
 
-        RosFQNSegment m_set_segments;
+        RosFqnSegment m_set_segments;
 
         // This array holds the values for each segment. The order of the  segments is
-        // important and must match the order in which they are defined in RosFQNSegment.
-        std::array<std::optional<std::string>, magic_enum::enum_count<RosFQNSegment>()> m_segment_values;
+        // important and must match the order in which they are defined in RosFqnSegment.
+        std::array<std::optional<std::string>, magic_enum::enum_count<RosFqnSegment>()> m_segment_values;
 
         // The resource that was set. We need to keep track of this because
         // we only allow certain resources, depending on the preceding segment.

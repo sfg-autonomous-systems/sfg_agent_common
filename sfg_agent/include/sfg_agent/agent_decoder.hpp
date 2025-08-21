@@ -24,7 +24,7 @@ namespace sfg_agent
             std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_decoders;
         };
 
-        void handle_agent_disovery_event(
+        void handle_agent_discovery_event(
             const sfg_agent_msgs::msg::AgentMetadata &metadata,
             uint8_t event_type);
         void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);

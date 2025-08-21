@@ -2,6 +2,7 @@
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
+#include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
@@ -23,16 +24,18 @@ namespace sfg_agent
 
         m_agent_name = sfg_utils::get_agent_name();
 
+        using namespace sfg_utils::fqn;
+
         // Set up interfaces.
         m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
-            "/global/agent_heartbeat",
+            RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS(),
             std::bind(&AgentDiscoverer::heartbeat_callback, this, std::placeholders::_1));
         m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
-            "agent_discovery_event",
+            RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10);
         m_get_discovered_agents_service = create_service<sfg_agent_msgs::srv::GetDiscoveredAgents>(
-            "get_discovered_agents",
+            RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build(),
             std::bind(&AgentDiscoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent discovery server.");
@@ -63,8 +66,10 @@ namespace sfg_agent
             return;
         }
 
+        using namespace sfg_utils::fqn;
+
         auto metadata_client = m_pending_get_metadata_requests[agent_name] = create_client<sfg_agent_msgs::srv::GetMetadata>(
-            "/global/" + sfg_utils::sanitize_agent_name(agent_name) + "/get_metadata",
+            RosFqnBuilder().scope(Scope::Global).agent(agent_name).resource(Resource::Custom, "get_metadata").build(),
             rmw_qos_profile_services_default);
 
         if (!metadata_client->service_is_ready())

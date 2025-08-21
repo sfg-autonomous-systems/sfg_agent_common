@@ -5,7 +5,7 @@
 
 namespace sfg_utils::fqn
 {
-    enum class RosFQNSegment : std::uint64_t
+    enum class RosFqnSegment : std::uint64_t
     {
         None = 0,
         Scope = 1 << 0,
@@ -18,7 +18,7 @@ namespace sfg_utils::fqn
 }
 
 template <>
-struct magic_enum::customize::enum_range<sfg_utils::fqn::RosFQNSegment>
+struct magic_enum::customize::enum_range<sfg_utils::fqn::RosFqnSegment>
 {
     static constexpr bool is_flags = true;
 };

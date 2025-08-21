@@ -7,7 +7,7 @@ using namespace sfg_utils::fqn;
 class RosFQNBuilderTest : public ::testing::Test
 {
 protected:
-    RosFQNBuilder builder;
+    RosFqnBuilder builder;
 };
 
 int main(int argc, char **argv)

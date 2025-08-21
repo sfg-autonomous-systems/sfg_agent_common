@@ -7,16 +7,19 @@ namespace sfg_utils::fqn
 {
     enum class Resource : std::uint64_t
     {
-        None = 0,
-        ImageRaw = 1 << 0,
-        ImageCompressed = 1 << 1,
+        AgentHeartbeat = 1 << 1,
         CameraInfo = 1 << 2,
-        RobotDescription = 1 << 3,
-        PointCloud = 1 << 4,
-        IMU = 1 << 5,
-        AgentHeartbeat = 1 << 6,
-        Custom = 1 << 7,
-        All = ImageRaw | ImageCompressed | CameraInfo | RobotDescription | PointCloud | IMU | AgentHeartbeat | Custom
+        CmdVel = 1 << 3,
+        ImageCompressed = 1 << 4,
+        ImageRaw = 1 << 5,
+        Imu = 1 << 6,
+        JointStates = 1 << 7,
+        PointCloud = 1 << 8,
+        RobotDescription = 1 << 9,
+
+        None = 0,
+        Custom = 1,
+        All = AgentHeartbeat | CameraInfo | CmdVel | ImageCompressed | ImageRaw | Imu | JointStates | PointCloud | RobotDescription | Custom
     };
 }
 

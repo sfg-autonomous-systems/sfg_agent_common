@@ -47,76 +47,76 @@ namespace
 
 namespace sfg_utils::fqn
 {
-    size_t RosFQNBuilder::s_get_index(RosFQNSegment segment)
+    size_t RosFqnBuilder::s_get_index(RosFqnSegment segment)
     {
-        if (__builtin_popcount(std::underlying_type_t<RosFQNSegment>(segment)) != 1)
+        if (__builtin_popcount(std::underlying_type_t<RosFqnSegment>(segment)) != 1)
         {
             throw std::invalid_argument("Invalid segment type.");
         }
 
-        // RosFQNSegment is a flag enum, so we use __builtin_ctzll to get the index required to access
+        // RosFqnSegment is a flag enum, so we use __builtin_ctzll to get the index required to access
         // the corresponding element in s_segment_rules and m_segment_values.
-        return __builtin_ctzll(std::underlying_type_t<RosFQNSegment>(segment));
+        return __builtin_ctzll(std::underlying_type_t<RosFqnSegment>(segment));
     }
 
-    const std::array<RosFQNBuilder::RosFQNSegmentRule, magic_enum::enum_count<RosFQNSegment>()> RosFQNBuilder::s_segment_rules = {
-        RosFQNSegmentRule{
+    const std::array<RosFqnBuilder::RosFqnSegmentRule, magic_enum::enum_count<RosFqnSegment>()> RosFqnBuilder::s_segment_rules = {
+        RosFqnSegmentRule{
             true,
-            RosFQNSegment::Scope,
-            RosFQNSegment::None,
+            RosFqnSegment::Scope,
+            RosFqnSegment::None,
             Resource::AgentHeartbeat | Resource::Custom},
-        RosFQNSegmentRule{
+        RosFqnSegmentRule{
             false,
-            RosFQNSegment::Agent,
-            RosFQNSegment::Scope,
+            RosFqnSegment::Agent,
+            RosFqnSegment::Scope,
             Resource::RobotDescription | Resource::Custom},
-        RosFQNSegmentRule{
+        RosFqnSegmentRule{
             false,
-            RosFQNSegment::Component,
-            RosFQNSegment::Agent,
-            Resource::ImageRaw | Resource::ImageCompressed | Resource::CameraInfo | Resource::PointCloud | Resource::IMU | Resource::Custom},
-        RosFQNSegmentRule{
+            RosFqnSegment::Component,
+            RosFqnSegment::Agent,
+            Resource::CameraInfo | Resource::CmdVel | Resource::ImageCompressed | Resource::ImageRaw | Resource::Imu | Resource::JointStates | Resource::PointCloud | Resource::Custom},
+        RosFqnSegmentRule{
             false,
-            RosFQNSegment::Stream,
-            RosFQNSegment::Component,
-            Resource::ImageRaw | Resource::ImageCompressed | Resource::CameraInfo | Resource::PointCloud | Resource::IMU | Resource::Custom},
-        RosFQNSegmentRule{
+            RosFqnSegment::Stream,
+            RosFqnSegment::Component,
+            Resource::CameraInfo | Resource::CmdVel | Resource::ImageCompressed | Resource::ImageRaw | Resource::Imu | Resource::JointStates | Resource::PointCloud | Resource::Custom},
+        RosFqnSegmentRule{
             true,
-            RosFQNSegment::Resource,
-            RosFQNSegment::Scope,
+            RosFqnSegment::Resource,
+            RosFqnSegment::Scope,
             Resource::None}};
 
-    RosFQNBuilder::RosFQNBuilder() : m_set_segments(RosFQNSegment::None),
+    RosFqnBuilder::RosFqnBuilder() : m_set_segments(RosFqnSegment::None),
                                      m_segment_values({}),
                                      m_resource(Resource::None) {}
 
-    RosFQNBuilder &RosFQNBuilder::scope(Scope scope)
+    RosFqnBuilder &RosFqnBuilder::scope(Scope scope)
     {
-        m_segment_values[s_get_index(RosFQNSegment::Scope)] = enum_value_to_snake_case_string(scope);
-        m_set_segments |= RosFQNSegment::Scope;
+        m_segment_values[s_get_index(RosFqnSegment::Scope)] = enum_value_to_snake_case_string(scope);
+        m_set_segments |= RosFqnSegment::Scope;
         return *this;
     }
 
-    RosFQNBuilder &RosFQNBuilder::agent(const std::string &name)
+    RosFqnBuilder &RosFqnBuilder::agent(const std::string &name)
     {
-        m_segment_values[s_get_index(RosFQNSegment::Agent)] = sanitize_agent_name(name.empty() ? get_agent_name() : name);
-        m_set_segments |= RosFQNSegment::Agent;
+        m_segment_values[s_get_index(RosFqnSegment::Agent)] = sanitize_agent_name(name.empty() ? get_agent_name() : name);
+        m_set_segments |= RosFqnSegment::Agent;
         return *this;
     }
 
-    RosFQNBuilder &RosFQNBuilder::component(Component component, const std::string &name)
+    RosFqnBuilder &RosFqnBuilder::component(Component component, const std::string &name)
     {
-        set_segment(RosFQNSegment::Component, component, name);
+        set_segment(RosFqnSegment::Component, component, name);
         return *this;
     }
 
-    RosFQNBuilder &RosFQNBuilder::stream(Stream stream, const std::string &name)
+    RosFqnBuilder &RosFqnBuilder::stream(Stream stream, const std::string &name)
     {
-        set_segment(RosFQNSegment::Stream, stream, name);
+        set_segment(RosFqnSegment::Stream, stream, name);
         return *this;
     }
 
-    RosFQNBuilder &RosFQNBuilder::resource(Resource resource, const std::string &name)
+    RosFqnBuilder &RosFqnBuilder::resource(Resource resource, const std::string &name)
     {
         // Because Resource is a flag enum, we need to ensure that only one bit is set.
         // __builtin_popcount is used to count the number of bits set in the underlying type.
@@ -125,30 +125,30 @@ namespace sfg_utils::fqn
             throw std::invalid_argument("Invalid resource type.");
         }
 
-        set_segment(RosFQNSegment::Resource, resource, name);
+        set_segment(RosFqnSegment::Resource, resource, name);
         m_resource = resource;
         return *this;
     }
 
-    [[nodiscard]] std::string RosFQNBuilder::build(RosFQNSegment begin, RosFQNSegment end) const
+    [[nodiscard]] std::string RosFqnBuilder::build(RosFqnSegment begin, RosFqnSegment end) const
     {
-        // Because RosFQNSegment is a flag enum, we need to ensure that both begin and end are referring to single segments...
-        if (__builtin_popcount(std::underlying_type_t<RosFQNSegment>(begin)) != 1 || __builtin_popcount(std::underlying_type_t<RosFQNSegment>(end)) != 1 ||
+        // Because RosFqnSegment is a flag enum, we need to ensure that both begin and end are referring to single segments...
+        if (__builtin_popcount(std::underlying_type_t<RosFqnSegment>(begin)) != 1 || __builtin_popcount(std::underlying_type_t<RosFqnSegment>(end)) != 1 ||
             // or if the begin segment is after the end segment.
             begin > end)
         {
             throw std::invalid_argument("Invalid ROS FQN segment range.");
         }
 
-        bool is_absolute_name = begin == RosFQNSegment::Scope;
+        bool is_absolute_name = begin == RosFqnSegment::Scope;
         // Prepend a slash if the name is absolute.
         auto stream = std::stringstream() << (is_absolute_name ? "/" : "");
 
         // Depending on the segment range, we need to selectively omit/include certain segment validation rules.
         // We do this by creating a mask that includes only the segments in the specified range.
-        auto segment_mask = RosFQNSegment::None;
+        auto segment_mask = RosFqnSegment::None;
 
-        for (auto segment : magic_enum::enum_values<RosFQNSegment>())
+        for (auto segment : magic_enum::enum_values<RosFqnSegment>())
         {
             if (segment >= begin && segment <= end)
             {
@@ -159,7 +159,7 @@ namespace sfg_utils::fqn
         // Since the preceeding segment determines which resources are allowed,
         // we need to keep track of the allowed resources as we build the FQN.
         auto allowed_resources = s_segment_rules[s_get_index(begin)].m_allowed_resources;
-        auto last_segment = RosFQNSegment::None;
+        auto last_segment = RosFqnSegment::None;
 
         for (size_t index = s_get_index(begin); index <= s_get_index(end); index++)
         {
@@ -179,8 +179,8 @@ namespace sfg_utils::fqn
                         "' to be set.");
                 }
 
-                // We can only perform Resource type checks if the beginning of the build range is not of RosFQNSegment type 'Resource'.
-                if (begin != RosFQNSegment::Resource && segment_rule.m_segment == RosFQNSegment::Resource && (allowed_resources & m_resource) != m_resource)
+                // We can only perform Resource type checks if the beginning of the build range is not of RosFqnSegment type 'Resource'.
+                if (begin != RosFqnSegment::Resource && segment_rule.m_segment == RosFqnSegment::Resource && (allowed_resources & m_resource) != m_resource)
                 {
                     throw std::runtime_error(
                         "ROS FQN build failed: Resource '" + std::string(magic_enum::enum_flags_name(m_resource)) +
@@ -221,22 +221,22 @@ namespace sfg_utils::fqn
         return name;
     }
 
-    [[nodiscard]] std::string RosFQNBuilder::build(RosFQNSegment segment) const
+    [[nodiscard]] std::string RosFqnBuilder::build(RosFqnSegment segment) const
     {
         return build(segment, segment);
     }
 
-    [[nodiscard]] std::string RosFQNBuilder::build() const
+    [[nodiscard]] std::string RosFqnBuilder::build() const
     {
-        return build(RosFQNSegment::Scope, RosFQNSegment::Resource);
+        return build(RosFqnSegment::Scope, RosFqnSegment::Resource);
     }
 
-    RosFQNBuilder &RosFQNBuilder::reset()
+    RosFqnBuilder &RosFqnBuilder::reset()
     {
-        return reset(RosFQNSegment::All);
+        return reset(RosFqnSegment::All);
     }
 
-    RosFQNBuilder &RosFQNBuilder::reset(RosFQNSegment segments)
+    RosFqnBuilder &RosFqnBuilder::reset(RosFqnSegment segments)
     {
         for (size_t index = 0; index < m_segment_values.size(); index++)
         {
@@ -247,7 +247,7 @@ namespace sfg_utils::fqn
             }
         }
 
-        if ((segments & RosFQNSegment::Resource) == RosFQNSegment::Resource)
+        if ((segments & RosFqnSegment::Resource) == RosFqnSegment::Resource)
         {
             m_resource = Resource::None;
         }
@@ -255,7 +255,7 @@ namespace sfg_utils::fqn
     }
 
     template <typename TEnum>
-    void RosFQNBuilder::set_segment(RosFQNSegment segment, TEnum value, const std::string &name)
+    void RosFqnBuilder::set_segment(RosFqnSegment segment, TEnum value, const std::string &name)
     {
         if (value != TEnum::Custom)
         {

@@ -9,8 +9,6 @@ from launch_ros.descriptions import ComposableNode
 
 
 def get_nodes(
-    local_namespace: str,
-    global_namespace: str,
     package_name: str,
     launch_file: str,
     **arguments: Any,
@@ -32,7 +30,7 @@ def get_nodes(
     get_nodes_function_name = "get_nodes"
     error_message = (
         f"Please define a {get_nodes_function_name} function with the following signature:\n"
-        + f"def {get_nodes_function_name}(local_namespace: str, global_namespace: str, **arguments: Any) -> tuple[list[Node], list[ComposableNode]]:\n"
+        + f"def {get_nodes_function_name}(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:\n"
         + "    # ...\n"
         + "    # return [...], [...]"
     )
@@ -53,12 +51,10 @@ def get_nodes(
     signature = inspect.signature(function)
     parameters = list(signature.parameters.values())
 
-    if len(parameters) != 3:
+    if len(parameters) != 1:
         raise AttributeError(
             f"Invalid signature for {get_nodes_function_name} function.\n"
             + error_message
         )
 
-    return getattr(module, get_nodes_function_name)(
-        local_namespace, global_namespace, **arguments
-    )
+    return getattr(module, get_nodes_function_name)(**arguments)

@@ -6,6 +6,7 @@ namespace sfg_utils::fqn
     {
         Color,
         Depth,
+
         Custom
     };
 }

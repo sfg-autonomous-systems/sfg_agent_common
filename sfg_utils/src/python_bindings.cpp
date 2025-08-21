@@ -34,22 +34,22 @@ PYBIND11_MODULE(sfg_utils_py, module)
 
     py::module_ fqn_submodule = module.def_submodule("fqn");
 
-    bind_enum<sfg_utils::fqn::RosFQNSegment>(fqn_submodule, "enum.IntFlag");
+    bind_enum<sfg_utils::fqn::RosFqnSegment>(fqn_submodule, "enum.IntFlag");
     bind_enum<sfg_utils::fqn::Scope>(fqn_submodule);
     bind_enum<sfg_utils::fqn::Component>(fqn_submodule);
     bind_enum<sfg_utils::fqn::Stream>(fqn_submodule);
     bind_enum<sfg_utils::fqn::Resource>(fqn_submodule, "enum.IntFlag");
 
-    py::class_<sfg_utils::fqn::RosFQNBuilder>(fqn_submodule, "RosFQNBuilder")
+    py::class_<sfg_utils::fqn::RosFqnBuilder>(fqn_submodule, "RosFqnBuilder")
         .def(py::init<>())
-        .def("scope", &sfg_utils::fqn::RosFQNBuilder::scope, "scope"_a)
-        .def("agent", &sfg_utils::fqn::RosFQNBuilder::agent, "name"_a = "")
-        .def("component", &sfg_utils::fqn::RosFQNBuilder::component, "component"_a, "name"_a = "")
-        .def("stream", &sfg_utils::fqn::RosFQNBuilder::stream, "stream"_a, "name"_a = "")
-        .def("resource", &sfg_utils::fqn::RosFQNBuilder::resource, "resource"_a, "name"_a = "")
-        .def("build", py::overload_cast<sfg_utils::fqn::RosFQNSegment, sfg_utils::fqn::RosFQNSegment>(&sfg_utils::fqn::RosFQNBuilder::build, py::const_), "begin"_a, "end"_a)
-        .def("build", py::overload_cast<sfg_utils::fqn::RosFQNSegment>(&sfg_utils::fqn::RosFQNBuilder::build, py::const_), "segment"_a)
-        .def("build", py::overload_cast<>(&sfg_utils::fqn::RosFQNBuilder::build, py::const_))
-        .def("reset", py::overload_cast<>(&sfg_utils::fqn::RosFQNBuilder::reset))
-        .def("reset", py::overload_cast<sfg_utils::fqn::RosFQNSegment>(&sfg_utils::fqn::RosFQNBuilder::reset), "segments"_a);
+        .def("scope", &sfg_utils::fqn::RosFqnBuilder::scope, "scope"_a)
+        .def("agent", &sfg_utils::fqn::RosFqnBuilder::agent, "name"_a = "")
+        .def("component", &sfg_utils::fqn::RosFqnBuilder::component, "component"_a, "name"_a = "")
+        .def("stream", &sfg_utils::fqn::RosFqnBuilder::stream, "stream"_a, "name"_a = "")
+        .def("resource", &sfg_utils::fqn::RosFqnBuilder::resource, "resource"_a, "name"_a = "")
+        .def("build", py::overload_cast<sfg_utils::fqn::RosFqnSegment, sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_), "begin"_a, "end"_a)
+        .def("build", py::overload_cast<sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_), "segment"_a)
+        .def("build", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_))
+        .def("reset", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::reset))
+        .def("reset", py::overload_cast<sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::reset), "segments"_a);
 }

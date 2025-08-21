@@ -55,6 +55,7 @@ install(
 )
 ament_export_libraries("${target_name_cpp}")
 ament_export_targets("${export_name_cpp}" HAS_LIBRARY_TARGET)
+ament_export_dependencies(magic_enum)
 
 set(target_name_py "${PROJECT_NAME}_py")
 pybind11_add_module("${target_name_py}" MODULE "src/python_bindings.cpp")
@@ -68,7 +69,7 @@ install(
 )
 generate_python_stubs("${target_name_py}"
   OUTPUT_DIRECTORY "${PROJECT_NAME}"
-  STUBGEN_ARGS "--enum-class-locations" "RosFQNSegment:${target_name_py}.fqn"
+  STUBGEN_ARGS "--enum-class-locations" "RosFqnSegment:${target_name_py}.fqn"
 )
 
 # ########################################################################################################

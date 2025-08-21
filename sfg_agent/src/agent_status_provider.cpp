@@ -8,6 +8,7 @@
 
 #include "sfg_agent/agent_heartbeat_constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
+#include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
@@ -28,15 +29,17 @@ namespace sfg_agent
             throw std::runtime_error("Failed to load metadata.");
         }
 
+        using namespace sfg_utils::fqn;
+
         // Set up interfaces.
         m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
-            "/global/agent_heartbeat",
+            RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
             std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
-            "/global/" + sfg_utils::sanitize_agent_name(m_agent_name) + "/get_metadata",
+            RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),
             std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_agent_name.c_str());

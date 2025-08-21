@@ -31,6 +31,7 @@ macro(sfg_utils__add_component EXECUTABLE_NAME PLUGIN_CLASS_NAME)
 
     if(ARG_SYSTEM_DEPENDENCIES)
         target_link_libraries("${target_name}" PUBLIC ${ARG_SYSTEM_DEPENDENCIES})
+        ament_export_dependencies(${ARG_SYSTEM_DEPENDENCIES})
     endif()
 
     ament_export_targets("${export_name}" HAS_LIBRARY_TARGET)
