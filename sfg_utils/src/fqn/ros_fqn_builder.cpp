@@ -188,7 +188,7 @@ namespace sfg_utils::fqn
                         "Allowed resources are '" + std::string(magic_enum::enum_flags_name(allowed_resources)) + "'.");
                 }
 
-                stream << *segment_value << "/";
+                stream << *segment_value << s_segment_delimiter;
                 allowed_resources = segment_rule.m_allowed_resources;
                 last_segment = segment_rule.m_segment;
             }
@@ -200,7 +200,7 @@ namespace sfg_utils::fqn
         }
 
         // Remove the trailing slash.
-        auto name = stream.str().erase(stream.str().size() - 1);
+        auto name = stream.str().erase(stream.str().size() - s_segment_delimiter.size());
         int validation_result = RMW_TOPIC_VALID;
         size_t invalid_index = -1;
 
@@ -219,6 +219,16 @@ namespace sfg_utils::fqn
         }
 
         return name;
+    }
+
+    [[nodiscard]] std::string RosFQNBuilder::build(RosFQNSegment segment) const
+    {
+        return build(segment, segment);
+    }
+
+    [[nodiscard]] std::string RosFQNBuilder::build() const
+    {
+        return build(RosFQNSegment::Scope, RosFQNSegment::Resource);
     }
 
     RosFQNBuilder &RosFQNBuilder::reset()

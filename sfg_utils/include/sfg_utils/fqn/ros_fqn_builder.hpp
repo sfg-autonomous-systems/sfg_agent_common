@@ -13,6 +13,9 @@ namespace sfg_utils::fqn
 {
     class RosFQNBuilder
     {
+    private:
+        static constexpr std::string_view s_segment_delimiter = "/";
+
     public:
         RosFQNBuilder();
 
@@ -21,7 +24,9 @@ namespace sfg_utils::fqn
         RosFQNBuilder &component(Component component, const std::string &name = "");
         RosFQNBuilder &stream(Stream stream, const std::string &name = "");
         RosFQNBuilder &resource(Resource resource, const std::string &name = "");
-        [[nodiscard]] std::string build(RosFQNSegment begin = RosFQNSegment::Scope, RosFQNSegment end = RosFQNSegment::Resource) const;
+        [[nodiscard]] std::string build(RosFQNSegment begin, RosFQNSegment end) const;
+        [[nodiscard]] std::string build(RosFQNSegment segment) const;
+        [[nodiscard]] std::string build() const;
         RosFQNBuilder &reset();
         RosFQNBuilder &reset(RosFQNSegment segments);
 
