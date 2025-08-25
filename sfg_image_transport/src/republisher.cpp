@@ -5,9 +5,18 @@
 
 namespace sfg_image_transport
 {
-    Republisher::Republisher(const rclcpp::NodeOptions &options) : Node("republisher", options),
-                                                                   m_plugin_loader("image_transport", "image_transport::PublisherPlugin")
+    std::shared_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> Republisher::s_plugin_loader = nullptr;
+    std::mutex Republisher::s_plugin_loader_mutex;
+
+    Republisher::Republisher(const rclcpp::NodeOptions &options) : Node("republisher", options)
     {
+        std::lock_guard<std::mutex> lock(s_plugin_loader_mutex);
+
+        if (!s_plugin_loader)
+        {
+            s_plugin_loader = std::make_shared<pluginlib::ClassLoader<image_transport::PublisherPlugin>>("image_transport", "image_transport::PublisherPlugin");
+        }
+
         // Declare and retrieve ROS parameters.
         m_in_transport = declare_parameter<std::string>(
             "in_transport",
@@ -25,7 +34,7 @@ namespace sfg_image_transport
 
         // Create publisher.
         std::string lookup_name = Plugin::getLookupName(m_out_transport);
-        m_publisher_plugin = m_plugin_loader.createUniqueInstance(lookup_name);
+        m_publisher_plugin = s_plugin_loader->createUniqueInstance(lookup_name);
         m_publisher_plugin->advertise(this, out_topic, rmw_qos_profile_sensor_data);
         PublishMemberFunction function = &Plugin::publishPtr;
 
