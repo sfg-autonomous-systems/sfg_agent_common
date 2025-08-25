@@ -241,14 +241,14 @@ namespace sfg_agent
 
         assert(stream == Stream::Color || stream == Stream::Depth);
 
-        RCLCPP_INFO(get_logger(), "Adding camera %s decoder node for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), camera.c_str(), agent_name.c_str());
         auto agent_fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
+        RCLCPP_INFO(get_logger(), "Adding camera %s decoder node for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), agent_fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
 
         std::string package_name = "sfg_image_transport";
         std::string plugin_name = package_name + "::Republisher";
 
-        std::string input_topic = agent_fqn_builder.resource(Resource::ImageCompressed).build();
-        std::string output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
+        auto input_topic = agent_fqn_builder.resource(Resource::ImageCompressed).build();
+        auto output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
 
         std::string in_transport = (stream == Stream::Color ? "ffmpeg" : "compressedDepth");
         std::string out_transport = "raw";
@@ -256,14 +256,16 @@ namespace sfg_agent
         auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
         request->package_name = package_name;
         request->plugin_name = plugin_name;
-        request->node_name = camera + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
-        request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Agent);
+        request->node_name = agent_fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
+        request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
         request->parameters = {
             rclcpp::Parameter("in_transport", in_transport).to_parameter_msg(),
             rclcpp::Parameter("out_transport", out_transport).to_parameter_msg()};
         request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
         request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
-        request->remap_rules = {"in/" + (in_transport + ":=" + input_topic), "out" + (":=" + output_topic)};
+        request->remap_rules = {
+            "in/" + in_transport + ":=" + input_topic,
+            "out:=" + output_topic};
 
         return request;
     }
