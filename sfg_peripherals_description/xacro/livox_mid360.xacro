@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="livox_mid360" params="name parent *origin">
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <xacro:insert_block name="origin" />
+        </joint>
+
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <mesh filename="package://sfg_peripherals_description/mesh/livox_mid360.dae"
+                        scale="1 1 1" />
+                </geometry>
+            </visual>
+        </link>
+
+        <joint name="${name}_point_cloud_frame_joint" type="fixed">
+            <parent link="${name}" />
+            <child link="${name}_point_cloud_frame" />
+            <origin rpy="0 0 0" xyz="0 0 0.047" />
+        </joint>
+
+        <link name="${name}_point_cloud_frame" />
+
+        <joint name="${name}_imu_frame_joint" type="fixed">
+            <parent link="${name}" />
+            <child link="${name}_imu_frame" />
+            <origin rpy="0 0 0" xyz="-0.02329 -0.011 0.00288" />
+        </joint>
+
+        <link name="${name}_imu_frame" />
+    </xacro:macro>
+</robot>

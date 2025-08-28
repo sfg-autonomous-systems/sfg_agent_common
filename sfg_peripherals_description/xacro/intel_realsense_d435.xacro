@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="intel_realsense_d435" params="name parent *origin">
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <xacro:insert_block name="origin" />
+        </joint>
+
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <mesh
+                        filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.dae"
+                        scale="1 1 1" />
+                </geometry>
+            </visual>
+        </link>
+
+        <joint name="${name}_base_frame_joint" type="fixed">
+            <parent link="${name}" />
+            <child link="${name}_base_frame" />
+            <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.0175 0.02075" />
+        </joint>
+
+        <link name="${name}_base_frame" />
+    </xacro:macro>
+</robot>

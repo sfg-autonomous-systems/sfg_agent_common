@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="htc_vive_tracker_30" params="name parent *origin">
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <xacro:insert_block name="origin" />
+        </joint>
+
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <mesh filename="package://sfg_go2_description/mesh/tracker.dae" scale="1 1 1" />
+                </geometry>
+            </visual>
+        </link>
+
+        <joint name="${name}_frame_joint" type="fixed">
+            <parent link="${name}" />
+            <child link="${name}_frame" />
+            <origin rpy="${0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0.0005" />
+        </joint>
+
+        <link name="${name}_frame" />
+    </xacro:macro>
+</robot>

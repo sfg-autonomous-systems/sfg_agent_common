@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="luxonis_oakd_pro" params="name parent *origin">
+        <joint name="${name}_joint" type="fixed">
+            <parent link="${parent}" />
+            <child link="${name}" />
+            <xacro:insert_block name="origin" />
+        </joint>
+
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <mesh
+                        filename="package://sfg_peripherals_description/mesh/luxonis_oakd_pro.dae"
+                        scale="1 1 1" />
+                </geometry>
+            </visual>
+        </link>
+
+        <!-- ToDo: Implement frames for different camera streams. -->
+    </xacro:macro>
+</robot>
