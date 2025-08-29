@@ -60,9 +60,9 @@ namespace sfg_depthai
 
     void Camera::setup_device()
     {
-        constexpr auto COLOR_SOCKET = dai::CameraBoardSocket::CAM_A;
-        constexpr auto LEFT_SOCKET = dai::CameraBoardSocket::CAM_B;
-        constexpr auto RIGHT_SOCKET = dai::CameraBoardSocket::CAM_C;
+        constexpr auto color_socket = dai::CameraBoardSocket::CAM_A;
+        constexpr auto left_socket = dai::CameraBoardSocket::CAM_B;
+        constexpr auto right_socket = dai::CameraBoardSocket::CAM_C;
 
         auto color = m_pipeline.create<dai::node::ColorCamera>();
         auto left = m_pipeline.create<dai::node::MonoCamera>();
@@ -72,21 +72,21 @@ namespace sfg_depthai
         auto out = m_pipeline.create<dai::node::XLinkOut>();
         auto align = m_pipeline.create<dai::node::ImageAlign>();
 
-        left->setBoardSocket(LEFT_SOCKET);
+        left->setBoardSocket(left_socket);
         left->setResolution(m_depth_resolution);
         left->setFps(m_fps);
 
-        right->setBoardSocket(RIGHT_SOCKET);
+        right->setBoardSocket(right_socket);
         right->setResolution(m_depth_resolution);
         right->setFps(m_fps);
 
-        color->setBoardSocket(COLOR_SOCKET);
+        color->setBoardSocket(color_socket);
         color->setResolution(m_color_resolution);
         color->setFps(m_fps);
         color->setInterleaved(false);
 
         depth->setDefaultProfilePreset(dai::node::StereoDepth::PresetMode::DEFAULT);
-        depth->setDepthAlign(LEFT_SOCKET);
+        depth->setDepthAlign(color_socket);
         depth->setLeftRightCheck(true);
         depth->setSubpixel(true);
 
@@ -111,14 +111,14 @@ namespace sfg_depthai
         auto color_width = color->getVideoWidth();
         auto color_height = color->getVideoHeight();
         dai::CalibrationHandler calibration = m_device->readCalibration();
-        m_color_camera_info = m_color_converter->calibrationToCameraInfo(calibration, COLOR_SOCKET, color_width, color_height);
+        m_color_camera_info = m_color_converter->calibrationToCameraInfo(calibration, color_socket, color_width, color_height);
 
         // Technically this is redundant, but if we ever change the alignment, the socket
         // will change too, so we would need to get the calibration for the new socket.
         auto depth_width = color_width;
         auto depth_height = color_width;
         calibration = m_device->readCalibration();
-        m_depth_camera_info = m_depth_converter->calibrationToCameraInfo(calibration, COLOR_SOCKET, depth_width, depth_height);
+        m_depth_camera_info = m_depth_converter->calibrationToCameraInfo(calibration, color_socket, depth_width, depth_height);
     }
 
     void Camera::callback(const std::shared_ptr<dai::ADatatype> &data)
