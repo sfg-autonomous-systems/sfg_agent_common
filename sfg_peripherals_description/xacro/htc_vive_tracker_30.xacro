@@ -10,7 +10,9 @@
         <link name="${name}">
             <visual>
                 <geometry>
-                    <mesh filename="package://sfg_go2_description/mesh/tracker.dae" scale="1 1 1" />
+                    <mesh
+                        filename="package://sfg_peripherals_description/mesh/htc_vive_tracker_30.dae"
+                        scale="1 1 1" />
                 </geometry>
             </visual>
         </link>
