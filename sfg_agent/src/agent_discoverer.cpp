@@ -136,7 +136,7 @@ namespace sfg_agent
         auto agent = m_discovered_agents[agent_name] = std::make_shared<DiscoveredAgent>();
 
         agent->m_keepalive_timer = create_wall_timer(
-            std::chrono::seconds(m_keepalive * AGENT_HEARTBEAT_INTERVAL),
+            std::chrono::seconds(m_keepalive * agent_heartbeat_interval),
             [this, agent_name]()
             {
                 keepalive_callback(agent_name);

@@ -36,7 +36,7 @@ namespace sfg_agent
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
-            std::chrono::seconds(AGENT_HEARTBEAT_INTERVAL),
+            std::chrono::seconds(agent_heartbeat_interval),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
             RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),

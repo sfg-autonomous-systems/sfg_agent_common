@@ -7,5 +7,5 @@ namespace sfg_agent
     // How often the agent should send a heartbeat in seconds.
     // This value is intentionally hard-coded to ensure it is the same
     // across all agents.
-    constexpr std::uint8_t AGENT_HEARTBEAT_INTERVAL = 5;
+    constexpr std::uint8_t agent_heartbeat_interval = 5;
 }
