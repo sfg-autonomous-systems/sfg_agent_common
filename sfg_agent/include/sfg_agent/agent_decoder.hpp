@@ -21,7 +21,9 @@ namespace sfg_agent
         struct DecodedAgent
         {
         public:
-            std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_decoders;
+            std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_nodes;
+            std::vector<rclcpp::SubscriptionBase::SharedPtr> m_subscribers;
+            std::vector<rclcpp::PublisherBase::SharedPtr> m_publishers;
         };
 
         void handle_agent_discovery_event(
@@ -45,7 +47,8 @@ namespace sfg_agent
             uint64_t id,
             rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future);
 
-        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_decoder_node_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
 
         // ROS parameters
         std::string m_container_name;

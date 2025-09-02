@@ -1,27 +1,19 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sfg_agent</name>
+  <name>sfg_topic_tools</name>
   <version>0.0.0</version>
-  <description>Contains nodes central to all SFG agents such as a agent_status_provider node.</description>
+  <description>Tools for directing, throttling, selecting, and otherwise messing with topics at a
+    meta level.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
-  <depend>composition_interfaces</depend>
+  <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>sfg_agent_msgs</depend>
   <depend>sfg_utils</depend>
-  <!-- Not sure if below dependency should be in the package.xml. -->
-  <depend>yaml-cpp</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-
-  <build_depend>magic_enum</build_depend>
-
-  <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>sfg_image_transport</exec_depend>
-  <exec_depend>sfg_topic_tools</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
