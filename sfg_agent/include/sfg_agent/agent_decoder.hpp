@@ -26,7 +26,7 @@ namespace sfg_agent
             std::vector<rclcpp::PublisherBase::SharedPtr> m_publishers;
         };
 
-        void handle_agent_discovery_event(
+        void agent_discovery_event_callback(
             const sfg_agent_msgs::msg::AgentMetadata &metadata,
             uint8_t event_type);
         void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);

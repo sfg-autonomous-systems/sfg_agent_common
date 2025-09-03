@@ -38,7 +38,7 @@ namespace sfg_agent
             10,
             [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
             {
-                handle_agent_discovery_event(msg->metadata, msg->event_type);
+                agent_discovery_event_callback(msg->metadata, msg->event_type);
             });
 
         m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>(RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build());
@@ -61,7 +61,7 @@ namespace sfg_agent
             std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
     }
 
-    void AgentDecoder::handle_agent_discovery_event(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
+    void AgentDecoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
     {
         auto agent_name = metadata.agent_name;
 
@@ -121,7 +121,7 @@ namespace sfg_agent
 
         for (const auto &metadata : response->metadata)
         {
-            handle_agent_discovery_event(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
+            agent_discovery_event_callback(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
         }
     }
 
