@@ -1,26 +1,31 @@
 #include "sfg_utils/ros_utils.hpp"
 
-#include <tuple>
-
-#include "sfg_utils/agent_utils.hpp"
-
 namespace sfg_utils
 {
-    std::vector<rcl_interfaces::msg::Parameter> extract_parameters(const rclcpp::NodeOptions &options)
+    template <typename ReturnType>
+    std::vector<ReturnType> extract_parameters(rclcpp::Node &node, const std::string &prefix)
     {
-        const auto &overrides = options.parameter_overrides();
-        std::vector<rcl_interfaces::msg::Parameter> parameters;
-        parameters.reserve(overrides.size());
+        std::map<std::string, rclcpp::Parameter> parameters;
+        node.get_node_parameters_interface()->get_parameters_by_prefix(prefix, parameters);
 
-        std::transform(
-            overrides.begin(),
-            overrides.end(),
-            std::back_inserter(parameters),
-            [](const rclcpp::Parameter &parameter)
+        std::vector<ReturnType> extracted_parameters;
+        extracted_parameters.reserve(parameters.size());
+
+        for (const auto &[name, parameter] : parameters)
+        {
+            if constexpr (std::is_same<ReturnType, rclcpp::Parameter>::value)
             {
-                return parameter.to_parameter_msg();
-            });
+                extracted_parameters.push_back(rclcpp::Parameter(name, parameter.get_parameter_value()));
+            }
+            else if constexpr (std::is_same<ReturnType, rcl_interfaces::msg::Parameter>::value)
+            {
+                extracted_parameters.push_back(rclcpp::Parameter(name, parameter.get_parameter_value()).to_parameter_msg());
+            }
+        }
 
-        return parameters;
+        return extracted_parameters;
     }
+
+    template std::vector<rclcpp::Parameter> extract_parameters<rclcpp::Parameter>(rclcpp::Node &node, const std::string &prefix);
+    template std::vector<rcl_interfaces::msg::Parameter> extract_parameters<rcl_interfaces::msg::Parameter>(rclcpp::Node &node, const std::string &prefix);
 }

@@ -9,22 +9,26 @@
 
 namespace sfg_agent
 {
-    AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", options),
-                                                                     m_parameters(sfg_utils::extract_parameters(options))
+    AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
     {
         // Declare and retrieve ROS parameters.
-        m_container_name = declare_parameter<std::string>(
+        m_container_name = sfg_utils::declare_parameter_if_not_declared<std::string>(
+            *this,
             "container_name",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The name of the container decoder nodes should be dymically loaded in."));
 
-        m_agent_name_regex = declare_parameter(
+        m_agent_name_regex = sfg_utils::declare_parameter_if_not_declared(
+            *this,
             "agent_name_regex",
             ".*",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The regex to match agent names against."
                                   "If the agent name matches, the agent will be decoded."));
         m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
+
+        m_camera_decoder_parameters = sfg_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_decoder_parameters");
+        m_camera_info_relay_parameters = sfg_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_info_relay_parameters");
 
         using namespace sfg_utils::fqn;
 
@@ -257,10 +261,9 @@ namespace sfg_agent
         request->plugin_name = request->package_name + "::Republisher";
         request->node_name = agent_fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
         request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
-        request->parameters = {
-            rclcpp::Parameter("in_transport", in_transport).to_parameter_msg(),
-            rclcpp::Parameter("out_transport", out_transport).to_parameter_msg()};
-        request->parameters.insert(request->parameters.end(), m_parameters.begin(), m_parameters.end());
+        request->parameters = m_camera_decoder_parameters;
+        request->parameters.push_back(rclcpp::Parameter("in_transport", in_transport).to_parameter_msg());
+        request->parameters.push_back(rclcpp::Parameter("out_transport", out_transport).to_parameter_msg());
         request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
         request->remap_rules = {
             "in/" + in_transport + ":=" + input_topic,
@@ -287,7 +290,7 @@ namespace sfg_agent
         request->plugin_name = request->package_name + "::Relay";
         request->node_name = agent_fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_info_relay";
         request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
-        request->parameters = m_parameters;
+        request->parameters = m_camera_info_relay_parameters;
         request->parameters.push_back(rclcpp::Parameter("input_topic", input_topic).to_parameter_msg());
         request->parameters.push_back(rclcpp::Parameter("output_topic", output_topic).to_parameter_msg());
         request->parameters.push_back(rclcpp::Parameter("msg_type", "sensor_msgs/msg/CameraInfo").to_parameter_msg());

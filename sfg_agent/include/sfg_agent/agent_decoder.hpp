@@ -54,9 +54,11 @@ namespace sfg_agent
         std::string m_container_name;
         std::string m_agent_name_regex;
 
+        std::vector<rcl_interfaces::msg::Parameter> m_camera_decoder_parameters;
+        std::vector<rcl_interfaces::msg::Parameter> m_camera_info_relay_parameters;
+
         std::regex m_compiled_agent_name_regex;
         std::map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
-        std::vector<rcl_interfaces::msg::Parameter> m_parameters;
 
         rclcpp::Subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
         rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedPtr m_get_discovered_agents_client;
