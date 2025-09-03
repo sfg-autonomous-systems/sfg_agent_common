@@ -25,14 +25,31 @@ macro(sfg_utils__add_component EXECUTABLE_NAME PLUGIN_CLASS_NAME)
 
     target_compile_features("${target_name}" PUBLIC c_std_99 cxx_std_17)
 
-    if(ARG_AMENT_DEPENDENCIES)
-        ament_target_dependencies("${target_name}" PUBLIC ${ARG_AMENT_DEPENDENCIES})
-    endif()
+    set(CURRENT_SCOPE "PUBLIC")
 
-    if(ARG_SYSTEM_DEPENDENCIES)
-        target_link_libraries("${target_name}" PUBLIC ${ARG_SYSTEM_DEPENDENCIES})
-        ament_export_dependencies(${ARG_SYSTEM_DEPENDENCIES})
-    endif()
+    foreach(dependency IN LISTS ARG_AMENT_DEPENDENCIES)
+        if("${dependency}" STREQUAL "PUBLIC" OR "${dependency}" STREQUAL "INTERFACE" OR "${dependency}" STREQUAL "PRIVATE")
+            set(CURRENT_SCOPE "${dependency}")
+            continue()
+        endif()
+
+        ament_target_dependencies("${target_name}" "${CURRENT_SCOPE}" "${dependency}")
+    endforeach()
+
+    set(CURRENT_SCOPE "PUBLIC")
+
+    foreach(dependency IN LISTS ARG_SYSTEM_DEPENDENCIES)
+        if("${dependency}" STREQUAL "PUBLIC" OR "${dependency}" STREQUAL "INTERFACE" OR "${dependency}" STREQUAL "PRIVATE")
+            set(CURRENT_SCOPE "${dependency}")
+            continue()
+        endif()
+
+        target_link_libraries("${target_name}" "${CURRENT_SCOPE}" "${dependency}")
+
+        if("${CURRENT_SCOPE}" STREQUAL "PUBLIC" OR "${CURRENT_SCOPE}" STREQUAL "INTERFACE")
+            ament_export_dependencies("${dependency}")
+        endif()
+    endforeach()
 
     ament_export_targets("${export_name}" HAS_LIBRARY_TARGET)
 
