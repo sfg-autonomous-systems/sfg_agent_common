@@ -1,4 +1,6 @@
-#include <rclcpp/rclcpp.hpp>
+#pragma once
+
+#include "sfg_utils/ros_utils.tpp"
 
 namespace sfg_utils
 {
