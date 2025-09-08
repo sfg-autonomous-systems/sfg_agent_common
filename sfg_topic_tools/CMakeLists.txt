@@ -10,7 +10,6 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(image_transport REQUIRED)
-find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_utils REQUIRED)
@@ -23,7 +22,6 @@ sfg_utils__add_component("relay" "${PROJECT_NAME}::Relay"
   "src/relay.cpp"
   "src/relay_component.cpp"
   AMENT_DEPENDENCIES
-  pluginlib
   rclcpp
   rclcpp_components
 )

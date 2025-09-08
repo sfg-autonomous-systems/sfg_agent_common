@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(sfg_utils)
 
+include("cmake/add_library.cmake")
 include("cmake/generate_python_stubs.cmake")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -22,40 +23,19 @@ find_package(rmw REQUIRED)
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(target_name_cpp "${PROJECT_NAME}")
-set(export_name_cpp "${target_name_cpp}_targets")
-add_library("${target_name_cpp}" SHARED
+sfg_utils__add_library("${target_name_cpp}"
+  SOURCES
   "src/agent_utils.cpp"
   "src/fqn/ros_fqn_builder.cpp"
   "src/ros_utils.cpp"
-)
-target_include_directories("${target_name_cpp}" PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
-target_compile_features("${target_name_cpp}" PUBLIC c_std_99 cxx_std_17)
-ament_target_dependencies("${target_name_cpp}" PUBLIC
+  AMENT_DEPENDENCIES
   rclcpp
   rmw
-)
-target_link_libraries("${target_name_cpp}" PUBLIC
+  SYSTEM_DEPENDENCIES
   magic_enum::magic_enum
+  EXPORT_DEPENDENCIES
+  magic_enum
 )
-install(DIRECTORY
-  "include/"
-  DESTINATION "include"
-)
-ament_export_include_directories("include")
-install(
-  TARGETS "${target_name_cpp}"
-  EXPORT "${export_name_cpp}"
-  LIBRARY DESTINATION "lib"
-  ARCHIVE DESTINATION "lib"
-  RUNTIME DESTINATION "bin"
-  INCLUDES DESTINATION "include"
-)
-ament_export_libraries("${target_name_cpp}")
-ament_export_targets("${export_name_cpp}" HAS_LIBRARY_TARGET)
-ament_export_dependencies(magic_enum)
 
 set(target_name_py "${PROJECT_NAME}_py")
 pybind11_add_module("${target_name_py}" MODULE "src/python_bindings.cpp")

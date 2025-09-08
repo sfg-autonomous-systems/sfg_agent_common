@@ -12,8 +12,6 @@
   <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>
   <depend>sfg_utils</depend>
-  <!-- Not sure if below dependency should be in the package.xml. -->
-  <depend>yaml-cpp</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
