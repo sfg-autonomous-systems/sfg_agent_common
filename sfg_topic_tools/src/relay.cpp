@@ -21,12 +21,7 @@ namespace sfg_topic_tools
                 .set__description("The msg type published on the input and output topics."));
 
         auto default_qos = rclcpp::QoS(10);
-        auto qos_override_options = rclcpp::QosOverridingOptions({
-            rclcpp::QosPolicyKind::Depth,
-            rclcpp::QosPolicyKind::Durability,
-            rclcpp::QosPolicyKind::History,
-            rclcpp::QosPolicyKind::Reliability,
-        });
+        auto qos_override_options = rclcpp::QosOverridingOptions::with_default_policies();
 
         // We need to manually declare and retrieve the QoS override parameters because
         // rclcpp::GenericPublisher does not do this by itself yet.
