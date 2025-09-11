@@ -17,7 +17,7 @@ namespace sfg_image_transport
         typedef void (Plugin::*PublishMemberFunction)(const sensor_msgs::msg::Image::ConstSharedPtr &) const;
 
         static std::shared_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> s_plugin_loader;
-        static std::mutex s_plugin_loader_mutex;
+        static std::mutex s_mutex;
 
         // ROS parameters
         std::string m_in_transport;
