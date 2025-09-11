@@ -273,3 +273,5 @@ namespace sfg_utils::fqn
         m_set_segments |= segment;
     }
 }
+
+#undef STRINGIFY
