@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
@@ -28,6 +29,8 @@ sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusPr
   rclcpp_components
   sfg_agent_msgs
   sfg_utils
+  SYSTEM_DEPENDENCIES
+  yaml-cpp
 )
 
 sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
