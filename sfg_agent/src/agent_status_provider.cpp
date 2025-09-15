@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
-#include "sfg_agent/agent_heartbeat_constants.hpp"
+#include "sfg_agent/agent_constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
