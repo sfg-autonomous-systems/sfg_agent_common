@@ -20,8 +20,8 @@ find_package(sfg_utils REQUIRED)
 # ########################################################################################################
 sfg_utils__add_component("republisher" "${PROJECT_NAME}::Republisher"
   SOURCES
-  "src/republisher.cpp"
   "src/republisher_component.cpp"
+  "src/republisher.cpp"
   AMENT_DEPENDENCIES
   image_transport
   pluginlib

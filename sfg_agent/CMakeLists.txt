@@ -22,8 +22,8 @@ find_package(yaml-cpp REQUIRED)
 # ########################################################################################################
 sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusProvider"
   SOURCES
-  "src/agent_status_provider.cpp"
   "src/agent_status_provider_component.cpp"
+  "src/agent_status_provider.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
@@ -35,8 +35,8 @@ sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusPr
 
 sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
   SOURCES
-  "src/agent_discoverer.cpp"
   "src/agent_discoverer_component.cpp"
+  "src/agent_discoverer.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
@@ -46,8 +46,8 @@ sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
 
 sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   SOURCES
-  "src/agent_decoder.cpp"
   "src/agent_decoder_component.cpp"
+  "src/agent_decoder.cpp"
   AMENT_DEPENDENCIES
   composition_interfaces
   rclcpp

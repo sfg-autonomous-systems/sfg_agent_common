@@ -22,8 +22,8 @@ find_package(sfg_utils REQUIRED)
 # ########################################################################################################
 sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   SOURCES
-  "src/camera.cpp"
   "src/camera_component.cpp"
+  "src/camera.cpp"
   AMENT_DEPENDENCIES
   depthai_bridge
   image_transport

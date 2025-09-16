@@ -25,9 +25,10 @@ find_package(rmw REQUIRED)
 set(target_name_cpp "${PROJECT_NAME}")
 sfg_utils__add_library("${target_name_cpp}"
   SOURCES
-  "src/agent_utils.cpp"
   "src/fqn/ros_fqn_builder.cpp"
+  "src/agent_utils.cpp"
   "src/ros_utils.cpp"
+  "src/cpp_utils.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rmw

@@ -19,8 +19,8 @@ find_package(sfg_utils REQUIRED)
 # ########################################################################################################
 sfg_utils__add_component("relay" "${PROJECT_NAME}::Relay"
   SOURCES
-  "src/relay.cpp"
   "src/relay_component.cpp"
+  "src/relay.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
