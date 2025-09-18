@@ -36,7 +36,7 @@ namespace sfg_agent
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::DiscoveryEvent>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10,
-            [this](const sfg_agent_msgs::msg::DiscoveryEvent::SharedPtr msg)
+            [this](const sfg_agent_msgs::msg::DiscoveryEvent::ConstSharedPtr &msg)
             {
                 agent_discovery_event_callback(msg->metadata, msg->event_type);
             });

@@ -22,7 +22,7 @@ namespace sfg_agent
             sfg_agent_msgs::msg::Metadata m_metadata;
         };
 
-        void heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::SharedPtr msg);
+        void heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::ConstSharedPtr &msg);
         void keepalive_callback(const std::string &agent_name);
         void get_metadata_callback(
             const std::string &agent_name,

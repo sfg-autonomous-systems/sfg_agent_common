@@ -41,7 +41,7 @@ namespace sfg_agent
         RCLCPP_INFO(get_logger(), "Started agent discovery server.");
     }
 
-    void Discoverer::heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::SharedPtr msg)
+    void Discoverer::heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::ConstSharedPtr &msg)
     {
         auto agent_name = msg->agent_name;
 
@@ -98,11 +98,11 @@ namespace sfg_agent
             return;
         }
 
-        auto msg = sfg_agent_msgs::msg::DiscoveryEvent();
-        msg.header.stamp = now();
-        msg.metadata = iterator->second->m_metadata;
-        msg.event_type = sfg_agent_msgs::msg::DiscoveryEvent::LOST;
-        m_agent_discovery_event_publisher->publish(msg);
+        auto msg = std::make_unique<sfg_agent_msgs::msg::DiscoveryEvent>();
+        msg->header.stamp = now();
+        msg->metadata = iterator->second->m_metadata;
+        msg->event_type = sfg_agent_msgs::msg::DiscoveryEvent::LOST;
+        m_agent_discovery_event_publisher->publish(std::move(msg));
 
         m_discovered_agents.erase(agent_name);
         RCLCPP_INFO(get_logger(), "Agent '%s' lost.", agent_name.c_str());

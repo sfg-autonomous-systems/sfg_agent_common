@@ -47,10 +47,10 @@ namespace sfg_agent
 
     void StatusProvider::publish_heartbeat()
     {
-        auto msg = sfg_agent_msgs::msg::Heartbeat();
-        msg.header.stamp = now();
-        msg.agent_name = m_agent_name;
-        m_heartbeat_publisher->publish(msg);
+        auto msg = std::make_unique<sfg_agent_msgs::msg::Heartbeat>();
+        msg->header.stamp = now();
+        msg->agent_name = m_agent_name;
+        m_heartbeat_publisher->publish(std::move(msg));
     }
 
     void StatusProvider::get_metadata_callback(
