@@ -16,9 +16,9 @@ find_package(std_msgs REQUIRED)
 # Add interfaces.                                                                                        #
 # ########################################################################################################
 set(msg_files
-  "msg/AgentDiscoveryEvent.msg"
-  "msg/AgentHeartbeat.msg"
-  "msg/AgentMetadata.msg"
+  "msg/DiscoveryEvent.msg"
+  "msg/Heartbeat.msg"
+  "msg/Metadata.msg"
 )
 set(srv_files
   "srv/GetDiscoveredAgents.srv"

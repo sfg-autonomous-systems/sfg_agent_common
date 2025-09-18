@@ -5,17 +5,17 @@
 #include <rclcpp/rclcpp.hpp>
 #include <regex>
 
-#include "sfg_agent_msgs/msg/agent_discovery_event.hpp"
-#include "sfg_agent_msgs/msg/agent_metadata.hpp"
+#include "sfg_agent_msgs/msg/discovery_event.hpp"
+#include "sfg_agent_msgs/msg/metadata.hpp"
 #include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
 #include "sfg_utils/fqn/stream.hpp"
 
 namespace sfg_agent
 {
-    class AgentDecoder : public rclcpp::Node
+    class Decoder : public rclcpp::Node
     {
     public:
-        AgentDecoder(const rclcpp::NodeOptions &options);
+        Decoder(const rclcpp::NodeOptions &options);
 
     private:
         struct DecodedAgent
@@ -27,13 +27,13 @@ namespace sfg_agent
         };
 
         void agent_discovery_event_callback(
-            const sfg_agent_msgs::msg::AgentMetadata &metadata,
+            const sfg_agent_msgs::msg::Metadata &metadata,
             uint8_t event_type);
         void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);
 
         void load_nodes(
             std::shared_ptr<DecodedAgent> agent,
-            const sfg_agent_msgs::msg::AgentMetadata &metadata);
+            const sfg_agent_msgs::msg::Metadata &metadata);
         void load_node_callback(
             std::weak_ptr<DecodedAgent> weak_agent,
             const std::string &package_name,
@@ -60,7 +60,7 @@ namespace sfg_agent
         std::regex m_compiled_agent_name_regex;
         std::map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
 
-        rclcpp::Subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
+        rclcpp::Subscription<sfg_agent_msgs::msg::DiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
         rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedPtr m_get_discovered_agents_client;
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr m_load_node_client;
         rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr m_unload_node_client;

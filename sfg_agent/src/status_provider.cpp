@@ -1,4 +1,4 @@
-#include "sfg_agent/agent_status_provider.hpp"
+#include "sfg_agent/status_provider.hpp"
 
 #include <cctype>
 #include <limits.h>
@@ -6,13 +6,13 @@
 #include <unistd.h>
 #include <yaml-cpp/yaml.h>
 
-#include "sfg_agent/agent_constants.hpp"
+#include "sfg_agent/constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
-    AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
+    StatusProvider::StatusProvider(const rclcpp::NodeOptions &options) : Node("status_provider", options)
     {
         // Declare and retrieve ROS parameters.
         m_metadata_filepath = declare_parameter(
@@ -32,36 +32,36 @@ namespace sfg_agent
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::AgentHeartbeat>(
+        m_heartbeat_publisher = create_publisher<sfg_agent_msgs::msg::Heartbeat>(
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
             std::chrono::seconds(agent_heartbeat_interval),
-            std::bind(&AgentStatusProvider::publish_heartbeat, this));
+            std::bind(&StatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
             RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),
-            std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&StatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_agent_name.c_str());
     }
 
-    void AgentStatusProvider::publish_heartbeat()
+    void StatusProvider::publish_heartbeat()
     {
-        auto msg = sfg_agent_msgs::msg::AgentHeartbeat();
+        auto msg = sfg_agent_msgs::msg::Heartbeat();
         msg.header.stamp = now();
         msg.agent_name = m_agent_name;
         m_heartbeat_publisher->publish(msg);
     }
 
-    void AgentStatusProvider::get_metadata_callback(
+    void StatusProvider::get_metadata_callback(
         [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request> request,
         std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for agent.");
-        *response = m_get_agent_response;
+        *response = m_get_metadata_response;
     }
 
-    bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
+    bool StatusProvider::load_metadata(const std::filesystem::path &filepath)
     {
         if (filepath.empty())
         {
@@ -69,7 +69,7 @@ namespace sfg_agent
             return true;
         }
 
-        m_get_agent_response.metadata.agent_name = m_agent_name;
+        m_get_metadata_response.metadata.agent_name = m_agent_name;
 
         // Load the YAML file.
         try
@@ -84,12 +84,12 @@ namespace sfg_agent
 
             if (config["cameras"])
             {
-                m_get_agent_response.metadata.cameras = config["cameras"].as<std::vector<std::string>>();
+                m_get_metadata_response.metadata.cameras = config["cameras"].as<std::vector<std::string>>();
             }
 
             if (config["lidars"])
             {
-                m_get_agent_response.metadata.lidars = config["lidars"].as<std::vector<std::string>>();
+                m_get_metadata_response.metadata.lidars = config["lidars"].as<std::vector<std::string>>();
             }
         }
         catch (const YAML::Exception &exception)

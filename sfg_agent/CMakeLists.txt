@@ -20,10 +20,10 @@ find_package(yaml-cpp REQUIRED)
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
-sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusProvider"
+sfg_utils__add_component("status_provider" "${PROJECT_NAME}::StatusProvider"
   SOURCES
-  "src/agent_status_provider_component.cpp"
-  "src/agent_status_provider.cpp"
+  "src/status_provider_component.cpp"
+  "src/status_provider.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
@@ -33,10 +33,10 @@ sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusPr
   yaml-cpp
 )
 
-sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
+sfg_utils__add_component("discoverer" "${PROJECT_NAME}::Discoverer"
   SOURCES
-  "src/agent_discoverer_component.cpp"
-  "src/agent_discoverer.cpp"
+  "src/discoverer_component.cpp"
+  "src/discoverer.cpp"
   AMENT_DEPENDENCIES
   rclcpp
   rclcpp_components
@@ -44,10 +44,10 @@ sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
   sfg_utils
 )
 
-sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
+sfg_utils__add_component("decoder" "${PROJECT_NAME}::Decoder"
   SOURCES
-  "src/agent_decoder_component.cpp"
-  "src/agent_decoder.cpp"
+  "src/decoder_component.cpp"
+  "src/decoder.cpp"
   AMENT_DEPENDENCIES
   composition_interfaces
   rclcpp

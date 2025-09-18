@@ -3,7 +3,7 @@
 <package format="3">
   <name>sfg_agent</name>
   <version>0.0.0</version>
-  <description>Contains nodes central to all SFG agents such as a agent_status_provider node.</description>
+  <description>Contains nodes central to all SFG agents such as a status_provider node.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 

@@ -1,13 +1,13 @@
-#include "sfg_agent/agent_discoverer.hpp"
+#include "sfg_agent/discoverer.hpp"
 
-#include "sfg_agent/agent_constants.hpp"
+#include "sfg_agent/constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
-    AgentDiscoverer::AgentDiscoverer(const rclcpp::NodeOptions &options)
-        : Node("agent_discoverer", options)
+    Discoverer::Discoverer(const rclcpp::NodeOptions &options)
+        : Node("discoverer", options)
     {
         // Declare and retrieve ROS parameters.
         m_keepalive = declare_parameter(
@@ -27,21 +27,21 @@ namespace sfg_agent
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::AgentHeartbeat>(
+        m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::Heartbeat>(
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS(),
-            std::bind(&AgentDiscoverer::heartbeat_callback, this, std::placeholders::_1));
-        m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
+            std::bind(&Discoverer::heartbeat_callback, this, std::placeholders::_1));
+        m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::DiscoveryEvent>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10);
         m_get_discovered_agents_service = create_service<sfg_agent_msgs::srv::GetDiscoveredAgents>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build(),
-            std::bind(&AgentDiscoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&Discoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent discovery server.");
     }
 
-    void AgentDiscoverer::heartbeat_callback(const sfg_agent_msgs::msg::AgentHeartbeat::SharedPtr msg)
+    void Discoverer::heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::SharedPtr msg)
     {
         auto agent_name = msg->agent_name;
 
@@ -88,7 +88,7 @@ namespace sfg_agent
             });
     }
 
-    void AgentDiscoverer::keepalive_callback(const std::string &agent_name)
+    void Discoverer::keepalive_callback(const std::string &agent_name)
     {
         auto iterator = m_discovered_agents.find(agent_name);
 
@@ -98,17 +98,17 @@ namespace sfg_agent
             return;
         }
 
-        auto msg = sfg_agent_msgs::msg::AgentDiscoveryEvent();
+        auto msg = sfg_agent_msgs::msg::DiscoveryEvent();
         msg.header.stamp = now();
         msg.metadata = iterator->second->m_metadata;
-        msg.event_type = sfg_agent_msgs::msg::AgentDiscoveryEvent::LOST;
+        msg.event_type = sfg_agent_msgs::msg::DiscoveryEvent::LOST;
         m_agent_discovery_event_publisher->publish(msg);
 
         m_discovered_agents.erase(agent_name);
         RCLCPP_INFO(get_logger(), "Agent '%s' lost.", agent_name.c_str());
     }
 
-    void AgentDiscoverer::get_metadata_callback(
+    void Discoverer::get_metadata_callback(
         const std::string &agent_name,
         rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future)
     {
@@ -144,14 +144,14 @@ namespace sfg_agent
         agent->m_metadata = response->metadata;
 
         // Inform subscribers about the new agent.
-        auto msg = sfg_agent_msgs::msg::AgentDiscoveryEvent();
+        auto msg = sfg_agent_msgs::msg::DiscoveryEvent();
         msg.header.stamp = now();
         msg.metadata = response->metadata;
-        msg.event_type = sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED;
+        msg.event_type = sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED;
         m_agent_discovery_event_publisher->publish(msg);
     }
 
-    void sfg_agent::AgentDiscoverer::get_discovered_agents_callback(
+    void sfg_agent::Discoverer::get_discovered_agents_callback(
         [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Request> request,
         std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Response> response)
     {

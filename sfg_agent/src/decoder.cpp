@@ -1,15 +1,15 @@
-#include "sfg_agent/agent_decoder.hpp"
+#include "sfg_agent/decoder.hpp"
 
 #include <magic_enum.hpp>
 
-#include "sfg_agent/agent_constants.hpp"
+#include "sfg_agent/constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
 #include "sfg_utils/ros_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_agent
 {
-    AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options) : Node("agent_decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
+    Decoder::Decoder(const rclcpp::NodeOptions &options) : Node("decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
     {
         // Declare and retrieve ROS parameters.
         m_container_name = sfg_utils::declare_parameter_if_not_declared<std::string>(
@@ -33,10 +33,10 @@ namespace sfg_agent
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::AgentDiscoveryEvent>(
+        m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::DiscoveryEvent>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10,
-            [this](const sfg_agent_msgs::msg::AgentDiscoveryEvent::SharedPtr msg)
+            [this](const sfg_agent_msgs::msg::DiscoveryEvent::SharedPtr msg)
             {
                 agent_discovery_event_callback(msg->metadata, msg->event_type);
             });
@@ -58,10 +58,10 @@ namespace sfg_agent
         auto request = std::make_shared<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>();
         m_get_discovered_agents_client->async_send_request(
             request,
-            std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
+            std::bind(&Decoder::get_discovered_agents_callback, this, std::placeholders::_1));
     }
 
-    void AgentDecoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::AgentMetadata &metadata, uint8_t event_type)
+    void Decoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::Metadata &metadata, uint8_t event_type)
     {
         auto agent_name = metadata.agent_name;
 
@@ -74,7 +74,7 @@ namespace sfg_agent
 
         switch (event_type)
         {
-        case sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED:
+        case sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED:
         {
             if (iterator != m_decoded_agents.end())
             {
@@ -85,7 +85,7 @@ namespace sfg_agent
             load_nodes(agent, metadata);
             break;
         }
-        case sfg_agent_msgs::msg::AgentDiscoveryEvent::LOST:
+        case sfg_agent_msgs::msg::DiscoveryEvent::LOST:
         {
             if (iterator == m_decoded_agents.end())
             {
@@ -99,7 +99,7 @@ namespace sfg_agent
         }
     }
 
-    void AgentDecoder::get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future)
+    void Decoder::get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future)
     {
         if (!future.valid())
         {
@@ -121,13 +121,13 @@ namespace sfg_agent
 
         for (const auto &metadata : response->metadata)
         {
-            agent_discovery_event_callback(metadata, sfg_agent_msgs::msg::AgentDiscoveryEvent::DISCOVERED);
+            agent_discovery_event_callback(metadata, sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED);
         }
     }
 
-    void AgentDecoder::load_nodes(
+    void Decoder::load_nodes(
         std::shared_ptr<DecodedAgent> agent,
-        const sfg_agent_msgs::msg::AgentMetadata &metadata)
+        const sfg_agent_msgs::msg::Metadata &metadata)
     {
         using namespace sfg_utils::fqn;
 
@@ -150,7 +150,7 @@ namespace sfg_agent
         }
     }
 
-    void AgentDecoder::load_node_callback(
+    void Decoder::load_node_callback(
         std::weak_ptr<DecodedAgent> weak_agent,
         const std::string &package_name,
         const std::string &plugin_name,
@@ -201,7 +201,7 @@ namespace sfg_agent
         }
     }
 
-    void AgentDecoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
+    void Decoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
     {
         for (const auto &[package_name, plugin_name, id] : agent->m_loaded_nodes)
         {
@@ -217,7 +217,7 @@ namespace sfg_agent
         }
     }
 
-    void AgentDecoder::unload_node_callback(
+    void Decoder::unload_node_callback(
         const std::string &package_name,
         const std::string &plugin_name,
         uint64_t id,
@@ -241,7 +241,7 @@ namespace sfg_agent
     }
 
     std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    AgentDecoder::create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    Decoder::create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
 
@@ -273,7 +273,7 @@ namespace sfg_agent
     }
 
     std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    AgentDecoder::create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    Decoder::create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
 
