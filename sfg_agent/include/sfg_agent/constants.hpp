@@ -2,7 +2,7 @@
 
 #include <cctype>
 
-namespace sfg_agent
+namespace sfg_agent::constants
 {
     // How often the agent should send a heartbeat in seconds.
     // This value is intentionally hard-coded to ensure it is the same

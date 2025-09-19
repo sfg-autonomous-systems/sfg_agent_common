@@ -21,7 +21,7 @@ namespace sfg_agent
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The filepath pointing to the yaml file containing the metadata of the agent."));
 
-        m_agent_name = sfg_utils::get_agent_name();
+        m_agent_name = sfg_utils::agent_utils::get_agent_name();
 
         if (!load_metadata(m_metadata_filepath))
         {
@@ -36,7 +36,7 @@ namespace sfg_agent
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
-            std::chrono::seconds(agent_heartbeat_interval),
+            std::chrono::seconds(constants::agent_heartbeat_interval),
             std::bind(&StatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
             RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),

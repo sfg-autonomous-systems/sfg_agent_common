@@ -12,13 +12,13 @@ namespace sfg_agent
     Decoder::Decoder(const rclcpp::NodeOptions &options) : Node("decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
     {
         // Declare and retrieve ROS parameters.
-        m_container_name = sfg_utils::declare_parameter_if_not_declared<std::string>(
+        m_container_name = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "container_name",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The name of the container decoder nodes should be dymically loaded in."));
 
-        m_agent_name_regex = sfg_utils::declare_parameter_if_not_declared(
+        m_agent_name_regex = sfg_utils::ros_utils::declare_parameter_if_not_declared(
             *this,
             "agent_name_regex",
             ".*",
@@ -27,8 +27,8 @@ namespace sfg_agent
                                   "If the agent name matches, the agent will be decoded."));
         m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
 
-        m_camera_decoder_parameters = sfg_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_decoder_parameters");
-        m_camera_info_relay_parameters = sfg_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_info_relay_parameters");
+        m_camera_decoder_parameters = sfg_utils::ros_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_decoder_parameters");
+        m_camera_info_relay_parameters = sfg_utils::ros_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_info_relay_parameters");
 
         using namespace sfg_utils::fqn;
 

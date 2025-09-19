@@ -29,8 +29,10 @@ namespace
 
 PYBIND11_MODULE(sfg_utils_py, module)
 {
-    module.def("get_agent_name", &sfg_utils::get_agent_name);
-    module.def("sanitize_agent_name", &sfg_utils::sanitize_agent_name, "name"_a);
+    py::module_ agent_utils_submodule = module.def_submodule("agent_utils");
+
+    agent_utils_submodule.def("get_agent_name", &sfg_utils::agent_utils::get_agent_name);
+    agent_utils_submodule.def("sanitize_agent_name", &sfg_utils::agent_utils::sanitize_agent_name, "name"_a);
 
     py::module_ fqn_submodule = module.def_submodule("fqn");
 

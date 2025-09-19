@@ -4,7 +4,7 @@
 
 #include <string_view>
 
-namespace sfg_utils
+namespace sfg_utils::cpp_utils
 {
     template <typename T>
     std::string get_type_name()

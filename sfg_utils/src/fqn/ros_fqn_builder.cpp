@@ -99,7 +99,7 @@ namespace sfg_utils::fqn
 
     RosFqnBuilder &RosFqnBuilder::agent(const std::string &name)
     {
-        m_segment_values[s_get_index(RosFqnSegment::Agent)] = sanitize_agent_name(name.empty() ? get_agent_name() : name);
+        m_segment_values[s_get_index(RosFqnSegment::Agent)] = agent_utils::sanitize_agent_name(name.empty() ? agent_utils::get_agent_name() : name);
         m_set_segments |= RosFqnSegment::Agent;
         return *this;
     }

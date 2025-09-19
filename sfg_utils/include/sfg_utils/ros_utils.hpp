@@ -2,7 +2,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 
-namespace sfg_utils
+namespace sfg_utils::ros_utils
 {
     template <typename ReturnType>
     std::vector<ReturnType> extract_parameters(rclcpp::Node &node, const std::string &prefix = "");

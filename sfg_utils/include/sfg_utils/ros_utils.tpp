@@ -2,7 +2,7 @@
 
 #include "sfg_utils/ros_utils.tpp"
 
-namespace sfg_utils
+namespace sfg_utils::ros_utils
 {
     template <typename ParameterType, typename... Args>
     auto declare_parameter_if_not_declared(rclcpp::Node &node, const std::string &name, const ParameterType &default_value, Args &&...args)

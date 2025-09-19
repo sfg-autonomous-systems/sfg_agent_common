@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <unistd.h>
 
-namespace sfg_utils
+namespace sfg_utils::agent_utils
 {
     std::string get_agent_name()
     {

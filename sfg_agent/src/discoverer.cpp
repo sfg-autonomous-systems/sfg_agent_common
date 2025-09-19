@@ -22,7 +22,7 @@ namespace sfg_agent
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("Whether to exclude the local agent from the list of discovered agents."));
 
-        m_agent_name = sfg_utils::get_agent_name();
+        m_agent_name = sfg_utils::agent_utils::get_agent_name();
 
         using namespace sfg_utils::fqn;
 
@@ -136,7 +136,7 @@ namespace sfg_agent
         auto agent = m_discovered_agents[agent_name] = std::make_shared<DiscoveredAgent>();
 
         agent->m_keepalive_timer = create_wall_timer(
-            std::chrono::seconds(m_keepalive * agent_heartbeat_interval),
+            std::chrono::seconds(m_keepalive * constants::agent_heartbeat_interval),
             [this, agent_name]()
             {
                 keepalive_callback(agent_name);

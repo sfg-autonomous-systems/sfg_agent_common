@@ -20,5 +20,5 @@ namespace sfg_utils::fqn
 template <>
 struct magic_enum::customize::enum_range<sfg_utils::fqn::RosFqnSegment>
 {
-    static constexpr bool is_flags = true;
+    static constexpr auto is_flags = true;
 };
