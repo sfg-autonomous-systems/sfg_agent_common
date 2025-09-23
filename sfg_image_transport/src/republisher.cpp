@@ -5,7 +5,7 @@
 
 namespace sfg_image_transport
 {
-    std::shared_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> Republisher::s_plugin_loader = nullptr;
+    std::unique_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> Republisher::s_plugin_loader = nullptr;
     std::mutex Republisher::s_mutex;
 
     Republisher::Republisher(const rclcpp::NodeOptions &options) : Node("republisher", options)
@@ -14,7 +14,7 @@ namespace sfg_image_transport
 
         if (!s_plugin_loader)
         {
-            s_plugin_loader = std::make_shared<pluginlib::ClassLoader<image_transport::PublisherPlugin>>("image_transport", "image_transport::PublisherPlugin");
+            s_plugin_loader = std::make_unique<pluginlib::ClassLoader<image_transport::PublisherPlugin>>("image_transport", "image_transport::PublisherPlugin");
         }
 
         // Declare and retrieve ROS parameters.

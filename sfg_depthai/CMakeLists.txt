@@ -30,6 +30,7 @@ sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   rclcpp
   rclcpp_components
   rcl_interfaces
+  sfg_utils
   SYSTEM_DEPENDENCIES
   depthai::opencv
 )

@@ -1,4 +1,4 @@
-#include "sfg_agent/decoder.hpp"
+#include "sfg_agent/agent_decoder.hpp"
 
 #include <magic_enum.hpp>
 
@@ -9,7 +9,8 @@
 
 namespace sfg_agent
 {
-    Decoder::Decoder(const rclcpp::NodeOptions &options) : Node("decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
+    AgentDecoder::AgentDecoder(const rclcpp::NodeOptions &options)
+        : Node("agent_decoder", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true))
     {
         // Declare and retrieve ROS parameters.
         m_container_name = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
@@ -58,10 +59,14 @@ namespace sfg_agent
         auto request = std::make_shared<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>();
         m_get_discovered_agents_client->async_send_request(
             request,
-            std::bind(&Decoder::get_discovered_agents_callback, this, std::placeholders::_1));
+            std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
+
+        // ToDo: Perhaps we should query the currently loaded nodes in the container and populate m_decoded_agents accordingly.
+        // This would allow the agent decoder to recover from a crash. Although, I think if the agent decoder crashes, the container
+        // would also crash, so perhaps this is not necessary.
     }
 
-    void Decoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::Metadata &metadata, uint8_t event_type)
+    void AgentDecoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::Metadata &metadata, uint8_t event_type)
     {
         auto agent_name = metadata.agent_name;
 
@@ -99,7 +104,7 @@ namespace sfg_agent
         }
     }
 
-    void Decoder::get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future)
+    void AgentDecoder::get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future)
     {
         if (!future.valid())
         {
@@ -125,7 +130,7 @@ namespace sfg_agent
         }
     }
 
-    void Decoder::load_nodes(
+    void AgentDecoder::load_nodes(
         std::shared_ptr<DecodedAgent> agent,
         const sfg_agent_msgs::msg::Metadata &metadata)
     {
@@ -150,7 +155,7 @@ namespace sfg_agent
         }
     }
 
-    void Decoder::load_node_callback(
+    void AgentDecoder::load_node_callback(
         std::weak_ptr<DecodedAgent> weak_agent,
         const std::string &package_name,
         const std::string &plugin_name,
@@ -201,7 +206,7 @@ namespace sfg_agent
         }
     }
 
-    void Decoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
+    void AgentDecoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
     {
         for (const auto &[package_name, plugin_name, id] : agent->m_loaded_nodes)
         {
@@ -217,7 +222,7 @@ namespace sfg_agent
         }
     }
 
-    void Decoder::unload_node_callback(
+    void AgentDecoder::unload_node_callback(
         const std::string &package_name,
         const std::string &plugin_name,
         uint64_t id,
@@ -241,7 +246,7 @@ namespace sfg_agent
     }
 
     std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    Decoder::create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    AgentDecoder::create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
 
@@ -273,7 +278,7 @@ namespace sfg_agent
     }
 
     std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    Decoder::create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    AgentDecoder::create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
 

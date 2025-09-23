@@ -1,4 +1,4 @@
-#include "sfg_agent/status_provider.hpp"
+#include "sfg_agent/agent_status_provider.hpp"
 
 #include <cctype>
 #include <limits.h>
@@ -12,7 +12,7 @@
 
 namespace sfg_agent
 {
-    StatusProvider::StatusProvider(const rclcpp::NodeOptions &options) : Node("status_provider", options)
+    AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
     {
         // Declare and retrieve ROS parameters.
         m_metadata_filepath = declare_parameter(
@@ -37,15 +37,15 @@ namespace sfg_agent
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
             std::chrono::seconds(constants::agent_heartbeat_interval),
-            std::bind(&StatusProvider::publish_heartbeat, this));
+            std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
             RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),
-            std::bind(&StatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_agent_name.c_str());
     }
 
-    void StatusProvider::publish_heartbeat()
+    void AgentStatusProvider::publish_heartbeat()
     {
         auto msg = std::make_unique<sfg_agent_msgs::msg::Heartbeat>();
         msg->header.stamp = now();
@@ -53,15 +53,15 @@ namespace sfg_agent
         m_heartbeat_publisher->publish(std::move(msg));
     }
 
-    void StatusProvider::get_metadata_callback(
-        [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request> request,
+    void AgentStatusProvider::get_metadata_callback(
+        const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request>,
         std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for agent.");
         *response = m_get_metadata_response;
     }
 
-    bool StatusProvider::load_metadata(const std::filesystem::path &filepath)
+    bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
     {
         if (filepath.empty())
         {

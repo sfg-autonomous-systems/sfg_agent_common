@@ -1,4 +1,4 @@
-#include "sfg_agent/discoverer.hpp"
+#include "sfg_agent/agent_discoverer.hpp"
 
 #include "sfg_agent/constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
@@ -6,8 +6,8 @@
 
 namespace sfg_agent
 {
-    Discoverer::Discoverer(const rclcpp::NodeOptions &options)
-        : Node("discoverer", options)
+    AgentDiscoverer::AgentDiscoverer(const rclcpp::NodeOptions &options)
+        : Node("agent_discoverer", options)
     {
         // Declare and retrieve ROS parameters.
         m_keepalive = declare_parameter(
@@ -30,18 +30,18 @@ namespace sfg_agent
         m_heartbeat_subscriber = create_subscription<sfg_agent_msgs::msg::Heartbeat>(
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS(),
-            std::bind(&Discoverer::heartbeat_callback, this, std::placeholders::_1));
+            std::bind(&AgentDiscoverer::heartbeat_callback, this, std::placeholders::_1));
         m_agent_discovery_event_publisher = create_publisher<sfg_agent_msgs::msg::DiscoveryEvent>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10);
         m_get_discovered_agents_service = create_service<sfg_agent_msgs::srv::GetDiscoveredAgents>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build(),
-            std::bind(&Discoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&AgentDiscoverer::get_discovered_agents_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent discovery server.");
     }
 
-    void Discoverer::heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::ConstSharedPtr &msg)
+    void AgentDiscoverer::heartbeat_callback(const sfg_agent_msgs::msg::Heartbeat::ConstSharedPtr &msg)
     {
         auto agent_name = msg->agent_name;
 
@@ -88,7 +88,7 @@ namespace sfg_agent
             });
     }
 
-    void Discoverer::keepalive_callback(const std::string &agent_name)
+    void AgentDiscoverer::keepalive_callback(const std::string &agent_name)
     {
         auto iterator = m_discovered_agents.find(agent_name);
 
@@ -108,7 +108,7 @@ namespace sfg_agent
         RCLCPP_INFO(get_logger(), "Agent '%s' lost.", agent_name.c_str());
     }
 
-    void Discoverer::get_metadata_callback(
+    void AgentDiscoverer::get_metadata_callback(
         const std::string &agent_name,
         rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedFuture future)
     {
@@ -151,8 +151,8 @@ namespace sfg_agent
         m_agent_discovery_event_publisher->publish(msg);
     }
 
-    void sfg_agent::Discoverer::get_discovered_agents_callback(
-        [[maybe_unused]] const std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Request> request,
+    void sfg_agent::AgentDiscoverer::get_discovered_agents_callback(
+        const std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>,
         std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Response> response)
     {
         RCLCPP_INFO(get_logger(), "Received request for discovered agents metadata.");

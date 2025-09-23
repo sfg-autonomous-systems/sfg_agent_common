@@ -1,5 +1,7 @@
 #include "sfg_depthai/camera.hpp"
 
+#include "sfg_utils/fqn/ros_fqn_builder.hpp"
+
 namespace sfg_depthai
 {
     Camera::Camera(const rclcpp::NodeOptions &options)
@@ -48,12 +50,19 @@ namespace sfg_depthai
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The frame id of the camera."));
 
-        setup_device();
+        using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        // ToDo: We should use RosFqnBuilder here!?
-        m_color_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/color/image_raw", rmw_qos_profile_sensor_data);
-        m_depth_publisher = image_transport::create_camera_publisher(this, m_frame_id + "/depth/image_raw", rmw_qos_profile_sensor_data);
+        m_color_publisher = image_transport::create_camera_publisher(
+            this,
+            m_frame_id + "/" + RosFqnBuilder().stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
+            rmw_qos_profile_sensor_data);
+        m_depth_publisher = image_transport::create_camera_publisher(
+            this,
+            m_frame_id + "/" + RosFqnBuilder().stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
+            rmw_qos_profile_sensor_data);
+
+        setup_device();
         m_output_queue->addCallback(std::bind(&Camera::callback, this, std::placeholders::_1));
 
         RCLCPP_INFO(this->get_logger(), "Started camera.");
@@ -135,12 +144,12 @@ namespace sfg_depthai
         }
 
         sensor_msgs::msg::Image::SharedPtr image_msg = m_color_converter->toRosMsgPtr(color);
-        auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_color_camera_info);
+        auto camera_info_msg = std::make_unique<sensor_msgs::msg::CameraInfo>(m_color_camera_info);
         camera_info_msg->header = image_msg->header;
         m_color_publisher.publish(image_msg, camera_info_msg);
 
         image_msg = m_depth_converter->toRosMsgPtr(depth);
-        camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_depth_camera_info);
+        camera_info_msg = std::make_unique<sensor_msgs::msg::CameraInfo>(m_depth_camera_info);
         camera_info_msg->header = image_msg->header;
         m_depth_publisher.publish(image_msg, camera_info_msg);
     }

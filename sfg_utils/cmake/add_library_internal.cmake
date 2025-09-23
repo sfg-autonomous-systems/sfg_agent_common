@@ -7,6 +7,8 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
         "${ARGN}"
     )
 
+    include(GNUInstallDirs)
+
     set(target_name "${TARGET_NAME}")
     set(export_name "${target_name}_targets")
 
@@ -42,9 +44,9 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
     install(
         TARGETS "${target_name}" ${ARG_ADDITIONAL_INSTALL_TARGETS}
         EXPORT "${export_name}"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib"
-        RUNTIME DESTINATION "bin"
-        INCLUDES DESTINATION "include"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     )
 endmacro()

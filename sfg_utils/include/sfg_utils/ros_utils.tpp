@@ -1,6 +1,4 @@
-#pragma once
-
-#include "sfg_utils/ros_utils.tpp"
+#include "sfg_utils/ros_utils.hpp"
 
 namespace sfg_utils::ros_utils
 {

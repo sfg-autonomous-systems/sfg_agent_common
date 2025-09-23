@@ -12,10 +12,10 @@
 
 namespace sfg_agent
 {
-    class Decoder : public rclcpp::Node
+    class AgentDecoder : public rclcpp::Node
     {
     public:
-        Decoder(const rclcpp::NodeOptions &options);
+        AgentDecoder(const rclcpp::NodeOptions &options);
 
     private:
         struct DecodedAgent
@@ -58,7 +58,7 @@ namespace sfg_agent
         std::vector<rcl_interfaces::msg::Parameter> m_camera_info_relay_parameters;
 
         std::regex m_compiled_agent_name_regex;
-        std::map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
+        std::unordered_map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
 
         rclcpp::Subscription<sfg_agent_msgs::msg::DiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
         rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedPtr m_get_discovered_agents_client;

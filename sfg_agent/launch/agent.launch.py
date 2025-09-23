@@ -26,9 +26,9 @@ metadata_filepath_argument = DeclareLaunchArgument(
 
 
 def get_nodes(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:
-    status_provider_node = ComposableNode(
+    agent_status_provider_node = ComposableNode(
         package=package_name,
-        plugin="sfg_agent::StatusProvider",
+        plugin="sfg_agent::AgentStatusProvider",
         namespace=local_namespace,
         parameters=[
             {
@@ -41,7 +41,7 @@ def get_nodes(**arguments: Any) -> tuple[list[Node], list[ComposableNode]]:
         extra_arguments=[{"use_intra_process_comms": True}],
     )
 
-    return [], [status_provider_node]
+    return [], [agent_status_provider_node]
 
 
 def generate_launch_description() -> launch.LaunchDescription:

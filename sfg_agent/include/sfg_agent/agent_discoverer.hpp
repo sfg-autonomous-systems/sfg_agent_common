@@ -9,10 +9,10 @@
 
 namespace sfg_agent
 {
-    class Discoverer : public rclcpp::Node
+    class AgentDiscoverer : public rclcpp::Node
     {
     public:
-        Discoverer(const rclcpp::NodeOptions &options);
+        AgentDiscoverer(const rclcpp::NodeOptions &options);
 
     private:
         struct DiscoveredAgent
@@ -36,8 +36,8 @@ namespace sfg_agent
         bool m_exclude_self;
 
         std::string m_agent_name;
-        std::map<std::string, rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedPtr> m_pending_get_metadata_requests;
-        std::map<std::string, std::shared_ptr<DiscoveredAgent>> m_discovered_agents;
+        std::unordered_map<std::string, rclcpp::Client<sfg_agent_msgs::srv::GetMetadata>::SharedPtr> m_pending_get_metadata_requests;
+        std::unordered_map<std::string, std::shared_ptr<DiscoveredAgent>> m_discovered_agents;
 
         rclcpp::Subscription<sfg_agent_msgs::msg::Heartbeat>::SharedPtr m_heartbeat_subscriber;
         rclcpp::Publisher<sfg_agent_msgs::msg::DiscoveryEvent>::SharedPtr m_agent_discovery_event_publisher;
