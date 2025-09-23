@@ -86,9 +86,10 @@ namespace sfg_utils::fqn
             RosFqnSegment::Scope,
             Resource::None}};
 
-    RosFqnBuilder::RosFqnBuilder() : m_set_segments(RosFqnSegment::None),
-                                     m_segment_values({}),
-                                     m_resource(Resource::None) {}
+    RosFqnBuilder::RosFqnBuilder()
+        : m_set_segments(RosFqnSegment::None),
+          m_segment_values({}),
+          m_resource(Resource::None) {}
 
     RosFqnBuilder &RosFqnBuilder::scope(Scope scope)
     {

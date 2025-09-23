@@ -12,7 +12,8 @@
 
 namespace sfg_agent
 {
-    AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options) : Node("agent_status_provider", options)
+    AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options)
+        : Node("agent_status_provider", options)
     {
         // Declare and retrieve ROS parameters.
         m_metadata_filepath = declare_parameter(

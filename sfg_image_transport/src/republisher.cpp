@@ -8,7 +8,8 @@ namespace sfg_image_transport
     std::unique_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> Republisher::s_plugin_loader = nullptr;
     std::mutex Republisher::s_mutex;
 
-    Republisher::Republisher(const rclcpp::NodeOptions &options) : Node("republisher", options)
+    Republisher::Republisher(const rclcpp::NodeOptions &options)
+        : Node("republisher", options)
     {
         std::lock_guard lock(s_mutex);
 

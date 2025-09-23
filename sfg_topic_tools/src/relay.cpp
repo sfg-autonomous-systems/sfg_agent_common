@@ -2,7 +2,8 @@
 
 namespace sfg_topic_tools
 {
-    Relay::Relay(const rclcpp::NodeOptions &options) : Node("relay", options)
+    Relay::Relay(const rclcpp::NodeOptions &options)
+        : Node("relay", options)
     {
         // Declare and retrieve ROS parameters.
         m_input_topic = declare_parameter<std::string>(
