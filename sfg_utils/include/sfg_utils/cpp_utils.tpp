@@ -1,5 +1,3 @@
-#pragma once
-
 #include "sfg_utils/cpp_utils.hpp"
 
 #include <string_view>
