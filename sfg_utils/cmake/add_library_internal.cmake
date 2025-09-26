@@ -3,7 +3,7 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
         "ARG"
         ""
         ""
-        "SOURCES;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
+        "SOURCES;ADDITIONAL_INCLUDE_DIRS;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
         "${ARGN}"
     )
 
@@ -18,6 +18,14 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     )
+
+    foreach(include_dir IN LISTS ARG_ADDITIONAL_INCLUDE_DIRS)
+        target_include_directories("${target_name}" PUBLIC
+            $<BUILD_INTERFACE:${include_dir}>
+            $<INSTALL_INTERFACE:include>
+        )
+    endforeach()
+
     ament_export_targets("${export_name}" HAS_LIBRARY_TARGET)
 
     foreach(dependency IN LISTS ARG_AMENT_DEPENDENCIES)

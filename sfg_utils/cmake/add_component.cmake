@@ -4,7 +4,7 @@ macro(sfg_utils__add_component EXECUTABLE_NAME PLUGIN_CLASS_NAME)
     cmake_parse_arguments(
         "ARG"
         ""
-        ""
+        "EXECUTOR"
         "SOURCES;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
         "${ARGN}"
     )
@@ -21,5 +21,6 @@ macro(sfg_utils__add_component EXECUTABLE_NAME PLUGIN_CLASS_NAME)
         "${target_name}"
         PLUGIN "${PLUGIN_CLASS_NAME}"
         EXECUTABLE "${EXECUTABLE_NAME}"
+        EXECUTOR "${ARG_EXECUTOR}"
     )
 endmacro()

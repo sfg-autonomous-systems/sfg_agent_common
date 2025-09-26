@@ -5,22 +5,32 @@ macro(sfg_utils__add_library LIBRARY_NAME)
         "ARG"
         ""
         ""
-        "SOURCES;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
+        "SOURCES;ADDITIONAL_INCLUDE_DIRS;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
         "${ARGN}"
     )
 
     set(target_name "${LIBRARY_NAME}")
     sfg_utils__add_library_internal("${target_name}"
         SOURCES "${ARG_SOURCES}"
+        ADDITIONAL_INCLUDE_DIRS ${ARG_ADDITIONAL_INCLUDE_DIRS}
         AMENT_DEPENDENCIES ${ARG_AMENT_DEPENDENCIES}
         SYSTEM_DEPENDENCIES ${ARG_SYSTEM_DEPENDENCIES}
         EXPORT_DEPENDENCIES ${ARG_EXPORT_DEPENDENCIES}
         ADDITIONAL_INSTALL_TARGETS ${ARG_ADDITIONAL_INSTALL_TARGETS}
     )
-    install(DIRECTORY
-        "include/"
+    install(
+        DIRECTORY "include/"
         DESTINATION "include"
     )
+
+    # Install the additional include directories, too.
+    foreach(include_dir IN LISTS ARG_ADDITIONAL_INCLUDE_DIRS)
+        install(
+            DIRECTORY "${include_dir}/"
+            DESTINATION "include"
+        )
+    endforeach()
+
     ament_export_include_directories("include")
     ament_export_libraries("${target_name}")
 endmacro()
