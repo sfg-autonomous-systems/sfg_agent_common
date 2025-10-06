@@ -1,49 +1,15 @@
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
-#include <magic_enum.hpp>
 #include <magic_enum_flags.hpp>
 #include <rmw/validate_full_topic_name.h>
-#include <sstream>
 #include <stdexcept>
 
 #include "sfg_utils/agent_utils.hpp"
+#include "sfg_utils/cpp_utils.hpp"
 
 #define STRINGIFY(x) #x
 
 using namespace magic_enum::bitwise_operators;
-
-namespace
-{
-    template <typename TEnum>
-    std::string enum_value_to_snake_case_string(TEnum value)
-    {
-        auto enum_name = magic_enum::enum_name(value);
-        std::stringstream snake_case_stream = std::stringstream();
-        snake_case_stream << static_cast<unsigned char>(std::tolower(static_cast<unsigned char>(enum_name[0])));
-
-        for (size_t index = 1; index < enum_name.size(); index++)
-        {
-            if (std::islower(enum_name[index]))
-            {
-                snake_case_stream << static_cast<unsigned char>(enum_name[index]);
-                continue;
-            }
-
-            if (index < enum_name.size() - 1 && std::islower(enum_name[index + 1]))
-            {
-                snake_case_stream << "_";
-            }
-            else if (index == enum_name.size() - 1 && std::islower(enum_name[index - 1]))
-            {
-                snake_case_stream << "_";
-            }
-
-            snake_case_stream << static_cast<unsigned char>(std::tolower(static_cast<unsigned char>(enum_name[index])));
-        }
-
-        return snake_case_stream.str();
-    }
-}
 
 namespace sfg_utils::fqn
 {
@@ -53,7 +19,6 @@ namespace sfg_utils::fqn
         {
             throw std::invalid_argument("Invalid segment type.");
         }
-
         // RosFqnSegment is a flag enum, so we use __builtin_ctzll to get the index required to access
         // the corresponding element in s_segment_rules and m_segment_values.
         return __builtin_ctzll(std::underlying_type_t<RosFqnSegment>(segment));
@@ -93,7 +58,7 @@ namespace sfg_utils::fqn
 
     RosFqnBuilder &RosFqnBuilder::scope(Scope scope)
     {
-        m_segment_values[s_get_index(RosFqnSegment::Scope)] = enum_value_to_snake_case_string(scope);
+        m_segment_values[s_get_index(RosFqnSegment::Scope)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(scope);
         m_set_segments |= RosFqnSegment::Scope;
         return *this;
     }
@@ -260,7 +225,7 @@ namespace sfg_utils::fqn
     {
         if (value != TEnum::Custom)
         {
-            m_segment_values[s_get_index(segment)] = enum_value_to_snake_case_string(value) + (name.empty() ? "" : "_" + name);
+            m_segment_values[s_get_index(segment)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(value) + (name.empty() ? "" : "_" + name);
             m_set_segments |= segment;
             return;
         }
