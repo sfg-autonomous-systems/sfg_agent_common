@@ -18,7 +18,7 @@ function(generate_python_stubs TARGET_NAME)
     set(stub_directory "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}")
 
     add_custom_target("${target_name}" ALL
-        COMMAND "${PYBIND11_STUBGEN_EXECUTABLE}" -o "${CMAKE_CURRENT_BINARY_DIR}" ${ARG_STUBGEN_ARGS} "${TARGET_NAME}"
+        COMMAND "${Python3_EXECUTABLE}" -m pybind11_stubgen -o "${CMAKE_CURRENT_BINARY_DIR}" ${ARG_STUBGEN_ARGS} "${TARGET_NAME}"
         DEPENDS "${TARGET_NAME}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         COMMENT "Generating python stubs for ${TARGET_NAME}."
