@@ -144,12 +144,12 @@ namespace sfg_depthai
         }
 
         sensor_msgs::msg::Image::SharedPtr image_msg = m_color_converter->toRosMsgPtr(color);
-        auto camera_info_msg = std::make_unique<sensor_msgs::msg::CameraInfo>(m_color_camera_info);
+        auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_color_camera_info);
         camera_info_msg->header = image_msg->header;
         m_color_publisher.publish(image_msg, camera_info_msg);
 
         image_msg = m_depth_converter->toRosMsgPtr(depth);
-        camera_info_msg = std::make_unique<sensor_msgs::msg::CameraInfo>(m_depth_camera_info);
+        camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_depth_camera_info);
         camera_info_msg->header = image_msg->header;
         m_depth_publisher.publish(image_msg, camera_info_msg);
     }
