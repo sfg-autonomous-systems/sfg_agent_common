@@ -13,7 +13,7 @@ from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
 
-@dataclass
+@dataclass(frozen=True)
 class LaunchDescriptionEntities:
     nodes: list[Node]
     composable_nodes: list[ComposableNode]
