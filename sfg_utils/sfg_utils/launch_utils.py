@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.util
 import inspect
 from dataclasses import dataclass
@@ -16,6 +18,14 @@ class LaunchDescriptionEntities:
     composable_nodes: list[ComposableNode]
     launch_arguments: list[DeclareLaunchArgument]
     other_entities: list[LaunchDescriptionEntity]
+
+    def __add__(self, other: LaunchDescriptionEntities) -> LaunchDescriptionEntities:
+        return LaunchDescriptionEntities(
+            nodes=self.nodes + other.nodes,
+            composable_nodes=self.composable_nodes + other.composable_nodes,
+            launch_arguments=self.launch_arguments + other.launch_arguments,
+            other_entities=self.other_entities + other.other_entities,
+        )
 
 
 def get_launch_description(package_name: str, launch_file: str) -> LaunchDescription:
