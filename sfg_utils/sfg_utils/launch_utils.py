@@ -4,31 +4,28 @@ import importlib.util
 import inspect
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from ament_index_python.packages import get_package_share_directory
-from launch import LaunchDescription, LaunchDescriptionEntity
+from launch import LaunchDescriptionEntity
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
 
-@dataclass(frozen=True)
+@dataclass
 class LaunchDescriptionEntities:
     nodes: list[Node]
     composable_nodes: list[ComposableNode]
     launch_arguments: list[DeclareLaunchArgument]
     other_entities: list[LaunchDescriptionEntity]
 
-    def __add__(self, other: LaunchDescriptionEntities) -> LaunchDescriptionEntities:
-        return LaunchDescriptionEntities(
-            nodes=self.nodes + other.nodes,
-            composable_nodes=self.composable_nodes + other.composable_nodes,
-            launch_arguments=self.launch_arguments + other.launch_arguments,
-            other_entities=self.other_entities + other.other_entities,
-        )
 
-
-def get_launch_description(package_name: str, launch_file: str) -> LaunchDescription:
+def get_launch_description_entities(
+    package_name: str,
+    launch_file: str,
+    override_arguments: dict[str, Any] = {},
+) -> LaunchDescriptionEntities:
     path = Path(get_package_share_directory(package_name)) / "launch" / launch_file
     spec = importlib.util.spec_from_file_location(
         f"{package_name}.launch_file.split('.')[0]", path
@@ -72,12 +69,8 @@ def get_launch_description(package_name: str, launch_file: str) -> LaunchDescrip
             + error_message
         )
 
-    return getattr(module, generate_launch_description_function_name)()
+    launch_description = getattr(module, generate_launch_description_function_name)()
 
-
-def extract_launch_description_entities(
-    launch_description: LaunchDescription,
-) -> LaunchDescriptionEntities:
     nodes: list[Node] = []
     composable_nodes: list[ComposableNode] = []
     launch_arguments: list[DeclareLaunchArgument] = []
@@ -89,7 +82,20 @@ def extract_launch_description_entities(
         elif isinstance(entity, ComposableNodeContainer):
             composable_nodes.extend(entity.__composable_node_descriptions)
         elif isinstance(entity, DeclareLaunchArgument):
-            launch_arguments.append(entity)
+            default_value = default_value = (
+                override_arguments[entity.name]
+                if entity.name in override_arguments
+                else entity.default_value
+            )
+
+            launch_arguments.append(
+                DeclareLaunchArgument(
+                    entity.name,
+                    default_value,
+                    entity.description,
+                    entity.choices,
+                )
+            )
         else:
             other_entities.append(entity)
 
@@ -99,10 +105,3 @@ def extract_launch_description_entities(
         launch_arguments,
         other_entities,
     )
-
-
-def get_launch_description_entities(
-    package_name: str, launch_file: str
-) -> LaunchDescriptionEntities:
-    launch_description = get_launch_description(package_name, launch_file)
-    return extract_launch_description_entities(launch_description)
