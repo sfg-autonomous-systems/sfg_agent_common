@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
-import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -9,6 +7,9 @@ from typing import Any
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescriptionEntity
 from launch.actions import DeclareLaunchArgument
+from launch.launch_description_sources.python_launch_file_utilities import (
+    get_launch_description_from_python_launch_file,
+)
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
 
@@ -24,52 +25,9 @@ class LaunchDescriptionEntities:
 def get_launch_description_entities(
     package_name: str,
     launch_file: str,
-    override_arguments: dict[str, Any] = {},
 ) -> LaunchDescriptionEntities:
     path = Path(get_package_share_directory(package_name)) / "launch" / launch_file
-    spec = importlib.util.spec_from_file_location(
-        f"{package_name}.launch_file.split('.')[0]", path
-    )
-
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not find launch file '{path}'.")
-
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    if module is None:
-        raise ImportError(f"Could not load module from spec '{spec}'.")
-
-    generate_launch_description_function_name = "generate_launch_description"
-    error_message = (
-        f"Please define a {generate_launch_description_function_name} function with the following signature:\n"
-        + f"def {generate_launch_description_function_name}() -> launch.LaunchDescription:"
-    )
-
-    if not hasattr(module, generate_launch_description_function_name):
-        raise AttributeError(
-            f"Module {module.__name__} has no {generate_launch_description_function_name} function.\n"
-            + error_message
-        )
-
-    function = getattr(module, generate_launch_description_function_name)
-
-    if not inspect.isfunction(function):
-        raise AttributeError(
-            f"Attribute {generate_launch_description_function_name} is not a function.\n"
-            + error_message
-        )
-
-    signature = inspect.signature(function)
-    parameters = list(signature.parameters.values())
-
-    if len(parameters) != 0:
-        raise AttributeError(
-            f"Invalid signature for {generate_launch_description_function_name} function.\n"
-            + error_message
-        )
-
-    launch_description = getattr(module, generate_launch_description_function_name)()
+    launch_description = get_launch_description_from_python_launch_file(path.as_posix())
 
     nodes: list[Node] = []
     composable_nodes: list[ComposableNode] = []
@@ -82,20 +40,7 @@ def get_launch_description_entities(
         elif isinstance(entity, ComposableNodeContainer):
             composable_nodes.extend(entity.__composable_node_descriptions)
         elif isinstance(entity, DeclareLaunchArgument):
-            default_value = default_value = (
-                override_arguments[entity.name]
-                if entity.name in override_arguments
-                else entity.default_value
-            )
-
-            launch_arguments.append(
-                DeclareLaunchArgument(
-                    entity.name,
-                    default_value,
-                    entity.description,
-                    entity.choices,
-                )
-            )
+            launch_arguments.append(entity)
         else:
             other_entities.append(entity)
 
