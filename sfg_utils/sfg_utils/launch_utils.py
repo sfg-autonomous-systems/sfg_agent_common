@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescriptionEntity
