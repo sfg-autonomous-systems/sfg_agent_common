@@ -14,14 +14,16 @@ namespace sfg_depthai
         Camera(const rclcpp::NodeOptions &options);
 
     private:
+        struct CameraStream
+        {
+            sensor_msgs::msg::CameraInfo m_camera_info;
+            image_transport::CameraPublisher m_publisher;
+        };
+
         void setup_device();
         void callback(const std::shared_ptr<dai::ADatatype> &data);
-        bool parse_color_resolution(
-            const std::string &resolution,
-            dai::ColorCameraProperties::SensorResolution &monoResolution);
-        bool parse_depth_resolution(
-            const std::string &resolution,
-            dai::MonoCameraProperties::SensorResolution &monoResolution);
+        dai::ColorCameraProperties::SensorResolution parse_color_resolution(const std::string &resolution);
+        dai::MonoCameraProperties::SensorResolution parse_depth_resolution(const std::string &resolution);
 
         // ROS parameters
         dai::ColorCameraProperties::SensorResolution m_color_resolution;
@@ -32,14 +34,9 @@ namespace sfg_depthai
         dai::Pipeline m_pipeline;
         std::unique_ptr<dai::Device> m_device;
         std::shared_ptr<dai::DataOutputQueue> m_output_queue;
+        std::unique_ptr<dai::ros::ImageConverter> m_image_converter;
 
-        std::unique_ptr<dai::ros::ImageConverter> m_color_converter;
-        std::unique_ptr<dai::ros::ImageConverter> m_depth_converter;
-
-        sensor_msgs::msg::CameraInfo m_color_camera_info;
-        sensor_msgs::msg::CameraInfo m_depth_camera_info;
-
-        image_transport::CameraPublisher m_color_publisher;
-        image_transport::CameraPublisher m_depth_publisher;
+        CameraStream m_color_stream;
+        CameraStream m_depth_stream;
     };
 }

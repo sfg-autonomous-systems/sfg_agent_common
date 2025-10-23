@@ -8,31 +8,21 @@ namespace sfg_depthai
         : Node("camera", options)
     {
         // Declare and retrieve ROS parameters.
-        auto color_resolution = declare_parameter(
+        m_color_resolution = parse_color_resolution(declare_parameter(
             "color_resolution",
             "1080p",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the color camera.")
                 .set__additional_constraints(
-                    "Valid values are: 1080p, 4k, 12mp, 13mp, 720p, 800p, 1200p"));
+                    "Valid values are: 1080p, 4k, 12mp, 13mp, 720p, 800p, 1200p")));
 
-        if (!parse_color_resolution(color_resolution, m_color_resolution))
-        {
-            throw std::runtime_error("Invalid color resolution");
-        }
-
-        auto depth_resolution = declare_parameter(
+        m_depth_resolution = parse_depth_resolution(declare_parameter(
             "depth_resolution",
             "720p",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the depth camera.")
                 .set__additional_constraints(
-                    "Valid values are: 720p, 800p, 400p, 480p, 1200p"));
-
-        if (!parse_depth_resolution(depth_resolution, m_depth_resolution))
-        {
-            throw std::runtime_error("Invalid depth resolution");
-        }
+                    "Valid values are: 720p, 800p, 400p, 480p, 1200p")));
 
         m_fps = declare_parameter(
             "fps",
@@ -53,18 +43,17 @@ namespace sfg_depthai
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        m_color_publisher = image_transport::create_camera_publisher(
+        m_color_stream.m_publisher = image_transport::create_camera_publisher(
             this,
             m_frame_id + "/" + RosFqnBuilder().stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
-        m_depth_publisher = image_transport::create_camera_publisher(
+        m_depth_stream.m_publisher = image_transport::create_camera_publisher(
             this,
             m_frame_id + "/" + RosFqnBuilder().stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
 
         setup_device();
         m_output_queue->addCallback(std::bind(&Camera::callback, this, std::placeholders::_1));
-
         RCLCPP_INFO(this->get_logger(), "Started camera.");
     }
 
@@ -77,10 +66,14 @@ namespace sfg_depthai
         auto color = m_pipeline.create<dai::node::ColorCamera>();
         auto left = m_pipeline.create<dai::node::MonoCamera>();
         auto right = m_pipeline.create<dai::node::MonoCamera>();
-        auto depth = m_pipeline.create<dai::node::StereoDepth>();
+        auto stereo = m_pipeline.create<dai::node::StereoDepth>();
         auto sync = m_pipeline.create<dai::node::Sync>();
         auto out = m_pipeline.create<dai::node::XLinkOut>();
-        auto align = m_pipeline.create<dai::node::ImageAlign>();
+
+        color->setBoardSocket(color_socket);
+        color->setResolution(m_color_resolution);
+        color->setFps(m_fps);
+        color->setInterleaved(false);
 
         left->setBoardSocket(left_socket);
         left->setResolution(m_depth_resolution);
@@ -90,143 +83,109 @@ namespace sfg_depthai
         right->setResolution(m_depth_resolution);
         right->setFps(m_fps);
 
-        color->setBoardSocket(color_socket);
-        color->setResolution(m_color_resolution);
-        color->setFps(m_fps);
-        color->setInterleaved(false);
+        stereo->setDefaultProfilePreset(dai::node::StereoDepth::PresetMode::DEFAULT);
+        stereo->setDepthAlign(color_socket);
+        stereo->setLeftRightCheck(true);
 
-        depth->setDefaultProfilePreset(dai::node::StereoDepth::PresetMode::DEFAULT);
-        depth->setDepthAlign(color_socket);
-        depth->setLeftRightCheck(true);
-        depth->setSubpixel(true);
+        sync->setSyncThreshold(std::chrono::milliseconds(static_cast<int>((1.0f / m_fps) * 1000.0f * 0.5f)));
 
         out->setStreamName("out");
 
-        sync->setSyncThreshold(std::chrono::milliseconds(static_cast<int>((1.0f / m_fps) * 1000.0 * 0.5)));
+        // Link the left and right mono camera outputs to the stereo depth inputs.
+        left->out.link(stereo->left);
+        right->out.link(stereo->right);
 
-        color->isp.link(sync->inputs["rgb"]);
-        left->out.link(depth->left);
-        right->out.link(depth->right);
-        depth->depth.link(align->input);
-        align->outputAligned.link(sync->inputs["depth_aligned"]);
-        color->isp.link(align->inputAlignTo);
+        // Link the color and stereo depth outputs to the sync inputs so that we get synchronized frames.
+        color->isp.link(sync->inputs["color"]);
+        stereo->depth.link(sync->inputs["depth"]);
+
+        // Link the sync output to the input of our output.
         sync->out.link(out->input);
 
         m_device = std::make_unique<dai::Device>(m_pipeline);
         m_output_queue = m_device->getOutputQueue("out", 8, false);
-
-        m_color_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
-        m_depth_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
-
-        auto color_width = color->getVideoWidth();
-        auto color_height = color->getVideoHeight();
-        dai::CalibrationHandler calibration = m_device->readCalibration();
-        m_color_camera_info = m_color_converter->calibrationToCameraInfo(calibration, color_socket, color_width, color_height);
-
-        // Technically this is redundant, but if we ever change the alignment, the socket
-        // will change too, so we would need to get the calibration for the new socket.
-        auto depth_width = color_width;
-        auto depth_height = color_width;
-        calibration = m_device->readCalibration();
-        m_depth_camera_info = m_depth_converter->calibrationToCameraInfo(calibration, color_socket, depth_width, depth_height);
+        m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
+        m_color_stream.m_camera_info = m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
+        m_depth_stream.m_camera_info = m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
     }
 
     void Camera::callback(const std::shared_ptr<dai::ADatatype> &data)
     {
         auto message_group = std::dynamic_pointer_cast<dai::MessageGroup>(data);
-        auto color = message_group->get<dai::ImgFrame>("rgb");
-        auto depth = message_group->get<dai::ImgFrame>("depth_aligned");
+        std::array<const char *, 2> frames = {"color", "depth"};
+        std::array<CameraStream *, 2> streams = {&m_color_stream, &m_depth_stream};
 
-        if (!color || !depth)
+        for (size_t index = 0; index < streams.size(); ++index)
         {
-            RCLCPP_ERROR(this->get_logger(), "Failed to get color or depth frame.");
-            return;
+            auto frame = message_group->get<dai::ImgFrame>(frames[index]);
+            const auto &stream = streams[index];
+
+            sensor_msgs::msg::Image::SharedPtr image_msg = m_image_converter->toRosMsgPtr(frame);
+            auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(stream->m_camera_info);
+            camera_info_msg->header = image_msg->header;
+            camera_info_msg->width = image_msg->width;
+            camera_info_msg->height = image_msg->height;
+            stream->m_publisher.publish(image_msg, camera_info_msg);
         }
-
-        sensor_msgs::msg::Image::SharedPtr image_msg = m_color_converter->toRosMsgPtr(color);
-        auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_color_camera_info);
-        camera_info_msg->header = image_msg->header;
-        m_color_publisher.publish(image_msg, camera_info_msg);
-
-        image_msg = m_depth_converter->toRosMsgPtr(depth);
-        camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(m_depth_camera_info);
-        camera_info_msg->header = image_msg->header;
-        m_depth_publisher.publish(image_msg, camera_info_msg);
     }
 
-    bool Camera::parse_color_resolution(
-        const std::string &resolution,
-        dai::ColorCameraProperties::SensorResolution &colorResolution)
+    dai::ColorCameraProperties::SensorResolution Camera::parse_color_resolution(const std::string &resolution)
     {
         if (resolution == "1080p")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_1080_P;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_1080_P;
         }
         else if (resolution == "4k")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_4_K;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_4_K;
         }
         else if (resolution == "12mp")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_12_MP;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_12_MP;
         }
         else if (resolution == "13mp")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_13_MP;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_13_MP;
         }
         else if (resolution == "720p")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_720_P;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_720_P;
         }
         else if (resolution == "800p")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_800_P;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_800_P;
         }
         else if (resolution == "1200p")
         {
-            colorResolution = dai::ColorCameraProperties::SensorResolution::THE_1200_P;
-            return true;
+            return dai::ColorCameraProperties::SensorResolution::THE_1200_P;
         }
 
-        return false;
+        throw std::runtime_error("Invalid color resolution");
     }
 
-    bool Camera::parse_depth_resolution(
-        const std::string &resolution,
-        dai::MonoCameraProperties::SensorResolution &monoResolution)
+    dai::MonoCameraProperties::SensorResolution Camera::parse_depth_resolution(const std::string &resolution)
     {
         if (resolution == "720p")
         {
-            monoResolution = dai::MonoCameraProperties::SensorResolution::THE_720_P;
-            return true;
+            return dai::MonoCameraProperties::SensorResolution::THE_720_P;
         }
         else if (resolution == "800p")
         {
-            monoResolution = dai::MonoCameraProperties::SensorResolution::THE_800_P;
-            return true;
+            return dai::MonoCameraProperties::SensorResolution::THE_800_P;
         }
         else if (resolution == "400p")
         {
-            monoResolution = dai::MonoCameraProperties::SensorResolution::THE_400_P;
-            return true;
+            return dai::MonoCameraProperties::SensorResolution::THE_400_P;
         }
         else if (resolution == "480p")
         {
-            monoResolution = dai::MonoCameraProperties::SensorResolution::THE_480_P;
-            return true;
+            return dai::MonoCameraProperties::SensorResolution::THE_480_P;
         }
         else if (resolution == "1200p")
         {
-            monoResolution = dai::MonoCameraProperties::SensorResolution::THE_1200_P;
-            return true;
+            return dai::MonoCameraProperties::SensorResolution::THE_1200_P;
         }
 
-        return false;
+        throw std::runtime_error("Invalid depth resolution");
     }
 }
