@@ -17,6 +17,6 @@
             </visual>
         </link>
 
-        <!-- ToDo: Implement frames for different camera streams. -->
+        <!-- ToDo Implement frames for different camera streams. -->
     </xacro:macro>
 </robot>
