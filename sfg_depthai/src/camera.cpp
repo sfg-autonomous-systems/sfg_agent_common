@@ -36,20 +36,20 @@ namespace sfg_depthai
 
         m_frame_id = declare_parameter(
             "frame_id",
-            "camera",
+            std::string(get_name()) + "_color_optical_frame",
             rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The frame id of the camera."));
+                .set__description("The frame id of the published color and depth images."));
 
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
         m_color_stream.m_publisher = image_transport::create_camera_publisher(
             this,
-            m_frame_id + "/" + RosFqnBuilder().stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
+            RosFqnBuilder().component(Component::Custom, get_name()).stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Component, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
         m_depth_stream.m_publisher = image_transport::create_camera_publisher(
             this,
-            m_frame_id + "/" + RosFqnBuilder().stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
+            RosFqnBuilder().component(Component::Custom, get_name()).stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Component, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
 
         setup_device();
@@ -104,9 +104,10 @@ namespace sfg_depthai
 
         m_device = std::make_unique<dai::Device>(m_pipeline);
         m_output_queue = m_device->getOutputQueue("out", 8, false);
-        m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
-        m_color_stream.m_camera_info = m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
-        m_depth_stream.m_camera_info = m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
+        m_color_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
+        m_color_stream.m_camera_info = m_color_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
+        m_depth_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
+        m_depth_stream.m_camera_info = m_depth_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
     }
 
     void Camera::callback(const std::shared_ptr<dai::ADatatype> &data)
@@ -120,7 +121,7 @@ namespace sfg_depthai
             auto frame = message_group->get<dai::ImgFrame>(frames[index]);
             const auto &stream = streams[index];
 
-            sensor_msgs::msg::Image::SharedPtr image_msg = m_image_converter->toRosMsgPtr(frame);
+            sensor_msgs::msg::Image::SharedPtr image_msg = stream->m_image_converter->toRosMsgPtr(frame);
             auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(stream->m_camera_info);
             camera_info_msg->header = image_msg->header;
             camera_info_msg->width = image_msg->width;

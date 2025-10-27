@@ -17,6 +17,7 @@ namespace sfg_depthai
         struct CameraStream
         {
             sensor_msgs::msg::CameraInfo m_camera_info;
+            std::unique_ptr<dai::ros::ImageConverter> m_image_converter;
             image_transport::CameraPublisher m_publisher;
         };
 
@@ -34,7 +35,6 @@ namespace sfg_depthai
         dai::Pipeline m_pipeline;
         std::unique_ptr<dai::Device> m_device;
         std::shared_ptr<dai::DataOutputQueue> m_output_queue;
-        std::unique_ptr<dai::ros::ImageConverter> m_image_converter;
 
         CameraStream m_color_stream;
         CameraStream m_depth_stream;
