@@ -4,6 +4,45 @@
 
 namespace sfg_depthai
 {
+    const std::map<std::string, dai::ColorCameraProperties::SensorResolution> Camera::s_color_resolution_map = {
+        {"1280x720", dai::ColorCameraProperties::SensorResolution::THE_720_P},
+        {"1280x800", dai::ColorCameraProperties::SensorResolution::THE_800_P},
+        {"1352x1012", dai::ColorCameraProperties::SensorResolution::THE_1352X1012},
+        {"1440x1080", dai::ColorCameraProperties::SensorResolution::THE_1440X1080},
+        {"1920x1080", dai::ColorCameraProperties::SensorResolution::THE_1080_P},
+        {"1920x1200", dai::ColorCameraProperties::SensorResolution::THE_1200_P},
+        {"2024x1520", dai::ColorCameraProperties::SensorResolution::THE_2024X1520},
+        {"2592x1944", dai::ColorCameraProperties::SensorResolution::THE_5_MP},
+        {"4000x3000", dai::ColorCameraProperties::SensorResolution::THE_4000X3000},
+        {"4056x3040", dai::ColorCameraProperties::SensorResolution::THE_12_MP},
+        {"4208x3120", dai::ColorCameraProperties::SensorResolution::THE_13_MP},
+        {"3840x2160", dai::ColorCameraProperties::SensorResolution::THE_4_K},
+        {"5312x6000", dai::ColorCameraProperties::SensorResolution::THE_5312X6000},
+        {"8000x6000", dai::ColorCameraProperties::SensorResolution::THE_48_MP}};
+
+    const std::map<std::string, dai::MonoCameraProperties::SensorResolution> Camera::s_depth_resolution_map = {
+        {"640x400", dai::MonoCameraProperties::SensorResolution::THE_400_P},
+        {"640x480", dai::MonoCameraProperties::SensorResolution::THE_480_P},
+        {"1280x720", dai::MonoCameraProperties::SensorResolution::THE_720_P},
+        {"1280x800", dai::MonoCameraProperties::SensorResolution::THE_800_P},
+        {"1920x1200", dai::MonoCameraProperties::SensorResolution::THE_1200_P}};
+
+    template <typename MapType>
+    std::string Camera::get_available_resolutions(MapType resolution_map)
+    {
+        if (resolution_map.empty())
+        {
+            return "None";
+        }
+        std::stringstream resolutions;
+
+        for (const auto &pair : resolution_map)
+        {
+            resolutions << pair.first << ", ";
+        }
+        return resolutions.str().erase(resolutions.str().length() - 2);
+    }
+
     Camera::Camera(const rclcpp::NodeOptions &options)
         : Node("camera", options)
     {
@@ -14,7 +53,7 @@ namespace sfg_depthai
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the color camera.")
                 .set__additional_constraints(
-                    "Valid values are: 1080p, 4k, 12mp, 13mp, 720p, 800p, 1200p")));
+                    "Valid values are: " + get_available_resolutions(s_color_resolution_map))));
 
         m_depth_resolution = parse_depth_resolution(declare_parameter(
             "depth_resolution",
@@ -22,7 +61,7 @@ namespace sfg_depthai
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the depth camera.")
                 .set__additional_constraints(
-                    "Valid values are: 720p, 800p, 400p, 480p, 1200p")));
+                    "Valid values are: " + get_available_resolutions(s_depth_resolution_map))));
 
         m_fps = declare_parameter(
             "fps",
@@ -104,9 +143,9 @@ namespace sfg_depthai
 
         m_device = std::make_unique<dai::Device>(m_pipeline);
         m_output_queue = m_device->getOutputQueue("out", 8, false);
-        m_color_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
+        m_color_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, false);
         m_color_stream.m_camera_info = m_color_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
-        m_depth_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, true);
+        m_depth_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, false);
         m_depth_stream.m_camera_info = m_depth_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
     }
 
@@ -132,61 +171,23 @@ namespace sfg_depthai
 
     dai::ColorCameraProperties::SensorResolution Camera::parse_color_resolution(const std::string &resolution)
     {
-        if (resolution == "1080p")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_1080_P;
-        }
-        else if (resolution == "4k")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_4_K;
-        }
-        else if (resolution == "12mp")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_12_MP;
-        }
-        else if (resolution == "13mp")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_13_MP;
-        }
-        else if (resolution == "720p")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_720_P;
-        }
-        else if (resolution == "800p")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_800_P;
-        }
-        else if (resolution == "1200p")
-        {
-            return dai::ColorCameraProperties::SensorResolution::THE_1200_P;
-        }
+        auto iterator = s_color_resolution_map.find(resolution);
 
+        if (iterator != s_color_resolution_map.end())
+        {
+            return iterator->second;
+        }
         throw std::runtime_error("Invalid color resolution");
     }
 
     dai::MonoCameraProperties::SensorResolution Camera::parse_depth_resolution(const std::string &resolution)
     {
-        if (resolution == "720p")
-        {
-            return dai::MonoCameraProperties::SensorResolution::THE_720_P;
-        }
-        else if (resolution == "800p")
-        {
-            return dai::MonoCameraProperties::SensorResolution::THE_800_P;
-        }
-        else if (resolution == "400p")
-        {
-            return dai::MonoCameraProperties::SensorResolution::THE_400_P;
-        }
-        else if (resolution == "480p")
-        {
-            return dai::MonoCameraProperties::SensorResolution::THE_480_P;
-        }
-        else if (resolution == "1200p")
-        {
-            return dai::MonoCameraProperties::SensorResolution::THE_1200_P;
-        }
+        auto iterator = s_depth_resolution_map.find(resolution);
 
+        if (iterator != s_depth_resolution_map.end())
+        {
+            return iterator->second;
+        }
         throw std::runtime_error("Invalid depth resolution");
     }
 }

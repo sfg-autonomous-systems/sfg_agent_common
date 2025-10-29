@@ -21,10 +21,16 @@ namespace sfg_depthai
             image_transport::CameraPublisher m_publisher;
         };
 
+        template <typename MapType>
+        static std::string get_available_resolutions(MapType resolution_map);
+
         void setup_device();
         void callback(const std::shared_ptr<dai::ADatatype> &data);
         dai::ColorCameraProperties::SensorResolution parse_color_resolution(const std::string &resolution);
         dai::MonoCameraProperties::SensorResolution parse_depth_resolution(const std::string &resolution);
+
+        static const std::map<std::string, dai::ColorCameraProperties::SensorResolution> s_color_resolution_map;
+        static const std::map<std::string, dai::MonoCameraProperties::SensorResolution> s_depth_resolution_map;
 
         // ROS parameters
         dai::ColorCameraProperties::SensorResolution m_color_resolution;
