@@ -39,12 +39,12 @@ namespace sfg_utils::fqn
             false,
             RosFqnSegment::Component,
             RosFqnSegment::Agent,
-            Resource::CameraInfo | Resource::CmdVel | Resource::ImageCompressed | Resource::ImageRaw | Resource::Imu | Resource::JointStates | Resource::PointCloud | Resource::Custom},
+            Resource::All & ~(Resource::RobotDescription | Resource::AgentHeartbeat)},
         RosFqnSegmentRule{
             false,
             RosFqnSegment::Stream,
             RosFqnSegment::Component,
-            Resource::CameraInfo | Resource::CmdVel | Resource::ImageCompressed | Resource::ImageRaw | Resource::Imu | Resource::JointStates | Resource::PointCloud | Resource::Custom},
+            Resource::All & ~(Resource::RobotDescription | Resource::AgentHeartbeat)},
         RosFqnSegmentRule{
             true,
             RosFqnSegment::Resource,

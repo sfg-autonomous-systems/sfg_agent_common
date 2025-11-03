@@ -16,10 +16,11 @@ namespace sfg_utils::fqn
         JointStates = 1 << 7,
         PointCloud = 1 << 8,
         RobotDescription = 1 << 9,
+        TriggerAction = 1 << 10,
 
         None = 0,
         Custom = 1,
-        All = AgentHeartbeat | CameraInfo | CmdVel | ImageCompressed | ImageRaw | Imu | JointStates | PointCloud | RobotDescription | Custom
+        All = ~None
     };
 }
 
