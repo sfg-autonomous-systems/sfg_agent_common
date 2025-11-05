@@ -252,11 +252,11 @@ namespace sfg_agent
 
         assert(stream == Stream::Color || stream == Stream::Depth);
 
-        auto agent_fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
-        RCLCPP_INFO(get_logger(), "Adding %s camera decoder for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), agent_fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
+        auto fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
+        RCLCPP_INFO(get_logger(), "Adding %s camera decoder for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
 
-        auto input_topic = agent_fqn_builder.resource(Resource::ImageCompressed).build();
-        auto output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
+        auto input_topic = fqn_builder.resource(Resource::ImageCompressed).build();
+        auto output_topic = fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
 
         std::string in_transport = (stream == Stream::Color ? "ffmpeg" : "compressedDepth");
         std::string out_transport = "raw";
@@ -264,8 +264,8 @@ namespace sfg_agent
         auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
         request->package_name = "sfg_image_transport";
         request->plugin_name = request->package_name + "::Republisher";
-        request->node_name = agent_fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
-        request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
+        request->node_name = fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_decoder";
+        request->node_namespace = fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
         request->parameters = m_camera_decoder_parameters;
         request->parameters.push_back(rclcpp::Parameter("in_transport", in_transport).to_parameter_msg());
         request->parameters.push_back(rclcpp::Parameter("out_transport", out_transport).to_parameter_msg());
@@ -284,17 +284,17 @@ namespace sfg_agent
 
         assert(stream == Stream::Color || stream == Stream::Depth);
 
-        auto agent_fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
-        RCLCPP_INFO(get_logger(), "Adding %s camera info relay for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), agent_fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
+        auto fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
+        RCLCPP_INFO(get_logger(), "Adding %s camera info relay for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
 
-        auto input_topic = agent_fqn_builder.resource(Resource::CameraInfo).build();
-        auto output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::CameraInfo).build();
+        auto input_topic = fqn_builder.resource(Resource::CameraInfo).build();
+        auto output_topic = fqn_builder.scope(Scope::Local).resource(Resource::CameraInfo).build();
 
         auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
         request->package_name = "sfg_topic_tools";
         request->plugin_name = request->package_name + "::Relay";
-        request->node_name = agent_fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_info_relay";
-        request->node_namespace = agent_fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
+        request->node_name = fqn_builder.build(RosFqnSegment::Component) + (stream == Stream::Color ? "_color" : "_depth") + "_info_relay";
+        request->node_namespace = fqn_builder.build(RosFqnSegment::Scope, RosFqnSegment::Agent);
         request->parameters = m_camera_info_relay_parameters;
         request->parameters.push_back(rclcpp::Parameter("input_topic", input_topic).to_parameter_msg());
         request->parameters.push_back(rclcpp::Parameter("output_topic", output_topic).to_parameter_msg());
