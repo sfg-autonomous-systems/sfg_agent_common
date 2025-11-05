@@ -8,7 +8,6 @@ namespace sfg_utils::fqn
         Create3,
         Lidar,
         LocomotionController,
-        RobotStatePublisher,
 
         Custom
     };
