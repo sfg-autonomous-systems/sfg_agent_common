@@ -19,16 +19,16 @@ namespace sfg_utils::fqn
     public:
         RosFqnBuilder();
 
-        RosFqnBuilder &scope(Scope scope);
-        RosFqnBuilder &agent(const std::string &name = "");
-        RosFqnBuilder &component(Component component, const std::string &name = "");
-        RosFqnBuilder &stream(Stream stream, const std::string &name = "");
-        RosFqnBuilder &resource(Resource resource, const std::string &name = "");
+        RosFqnBuilder scope(Scope scope) const;
+        RosFqnBuilder agent(const std::string &name = "") const;
+        RosFqnBuilder component(Component component, const std::string &name = "") const;
+        RosFqnBuilder stream(Stream stream, const std::string &name = "") const;
+        RosFqnBuilder resource(Resource resource, const std::string &name = "") const;
+        RosFqnBuilder reset() const;
+        RosFqnBuilder reset(RosFqnSegment segments) const;
         [[nodiscard]] std::string build(RosFqnSegment begin, RosFqnSegment end) const;
         [[nodiscard]] std::string build(RosFqnSegment segment) const;
         [[nodiscard]] std::string build() const;
-        RosFqnBuilder &reset();
-        RosFqnBuilder &reset(RosFqnSegment segments);
 
     private:
         // Our ROS FQN naming convention follows the segmented structure below:
@@ -53,7 +53,7 @@ namespace sfg_utils::fqn
         static const std::array<RosFqnSegmentRule, magic_enum::enum_count<RosFqnSegment>()> s_segment_rules;
 
         template <typename TEnum>
-        void set_segment(RosFqnSegment segment, TEnum value, const std::string &name);
+        RosFqnBuilder set_segment(RosFqnSegment segment, TEnum value, const std::string &name = "") const;
 
         RosFqnSegment m_set_segments;
 

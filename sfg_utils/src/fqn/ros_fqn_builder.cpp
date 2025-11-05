@@ -56,33 +56,33 @@ namespace sfg_utils::fqn
           m_segment_values({}),
           m_resource(Resource::None) {}
 
-    RosFqnBuilder &RosFqnBuilder::scope(Scope scope)
+    RosFqnBuilder RosFqnBuilder::scope(Scope scope) const
     {
-        m_segment_values[s_get_index(RosFqnSegment::Scope)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(scope);
-        m_set_segments |= RosFqnSegment::Scope;
-        return *this;
+        auto copy = *this;
+        copy.m_segment_values[s_get_index(RosFqnSegment::Scope)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(scope);
+        copy.m_set_segments |= RosFqnSegment::Scope;
+        return copy;
     }
 
-    RosFqnBuilder &RosFqnBuilder::agent(const std::string &name)
+    RosFqnBuilder RosFqnBuilder::agent(const std::string &name) const
     {
-        m_segment_values[s_get_index(RosFqnSegment::Agent)] = agent_utils::sanitize_agent_name(name.empty() ? agent_utils::get_agent_name() : name);
-        m_set_segments |= RosFqnSegment::Agent;
-        return *this;
+        auto copy = *this;
+        copy.m_segment_values[s_get_index(RosFqnSegment::Agent)] = agent_utils::sanitize_agent_name(name.empty() ? agent_utils::get_agent_name() : name);
+        copy.m_set_segments |= RosFqnSegment::Agent;
+        return copy;
     }
 
-    RosFqnBuilder &RosFqnBuilder::component(Component component, const std::string &name)
+    RosFqnBuilder RosFqnBuilder::component(Component component, const std::string &name) const
     {
-        set_segment(RosFqnSegment::Component, component, name);
-        return *this;
+        return set_segment(RosFqnSegment::Component, component, name);
     }
 
-    RosFqnBuilder &RosFqnBuilder::stream(Stream stream, const std::string &name)
+    RosFqnBuilder RosFqnBuilder::stream(Stream stream, const std::string &name) const
     {
-        set_segment(RosFqnSegment::Stream, stream, name);
-        return *this;
+        return set_segment(RosFqnSegment::Stream, stream, name);
     }
 
-    RosFqnBuilder &RosFqnBuilder::resource(Resource resource, const std::string &name)
+    RosFqnBuilder RosFqnBuilder::resource(Resource resource, const std::string &name) const
     {
         // Because Resource is a flag enum, we need to ensure that only one bit is set.
         // __builtin_popcount is used to count the number of bits set in the underlying type.
@@ -91,9 +91,34 @@ namespace sfg_utils::fqn
             throw std::invalid_argument("Invalid resource type.");
         }
 
-        set_segment(RosFqnSegment::Resource, resource, name);
-        m_resource = resource;
-        return *this;
+        auto copy = set_segment(RosFqnSegment::Resource, resource, name);
+        copy.m_resource = resource;
+        return copy;
+    }
+
+    RosFqnBuilder RosFqnBuilder::reset() const
+    {
+        return reset(RosFqnSegment::All);
+    }
+
+    RosFqnBuilder RosFqnBuilder::reset(RosFqnSegment segments) const
+    {
+        auto copy = *this;
+
+        for (size_t index = 0; index < m_segment_values.size(); index++)
+        {
+            if ((segments & s_segment_rules[index].m_segment) == s_segment_rules[index].m_segment)
+            {
+                copy.m_set_segments &= ~s_segment_rules[index].m_segment;
+                copy.m_segment_values[index].reset();
+            }
+        }
+
+        if ((segments & RosFqnSegment::Resource) == RosFqnSegment::Resource)
+        {
+            copy.m_resource = Resource::None;
+        }
+        return copy;
     }
 
     [[nodiscard]] std::string RosFqnBuilder::build(RosFqnSegment begin, RosFqnSegment end) const
@@ -197,37 +222,16 @@ namespace sfg_utils::fqn
         return build(RosFqnSegment::Scope, RosFqnSegment::Resource);
     }
 
-    RosFqnBuilder &RosFqnBuilder::reset()
-    {
-        return reset(RosFqnSegment::All);
-    }
-
-    RosFqnBuilder &RosFqnBuilder::reset(RosFqnSegment segments)
-    {
-        for (size_t index = 0; index < m_segment_values.size(); index++)
-        {
-            if ((segments & s_segment_rules[index].m_segment) == s_segment_rules[index].m_segment)
-            {
-                m_set_segments &= ~s_segment_rules[index].m_segment;
-                m_segment_values[index].reset();
-            }
-        }
-
-        if ((segments & RosFqnSegment::Resource) == RosFqnSegment::Resource)
-        {
-            m_resource = Resource::None;
-        }
-        return *this;
-    }
-
     template <typename TEnum>
-    void RosFqnBuilder::set_segment(RosFqnSegment segment, TEnum value, const std::string &name)
+    RosFqnBuilder RosFqnBuilder::set_segment(RosFqnSegment segment, TEnum value, const std::string &name) const
     {
+        auto copy = *this;
+
         if (value != TEnum::Custom)
         {
-            m_segment_values[s_get_index(segment)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(value) + (name.empty() ? "" : "_" + name);
-            m_set_segments |= segment;
-            return;
+            copy.m_segment_values[s_get_index(segment)] = sfg_utils::cpp_utils::enum_value_to_snake_case_string(value) + (name.empty() ? "" : "_" + name);
+            copy.m_set_segments |= segment;
+            return copy;
         }
 
         if (name.empty())
@@ -235,8 +239,9 @@ namespace sfg_utils::fqn
             throw std::invalid_argument("Parameter " STRINGIFY(name) " is required.");
         }
 
-        m_segment_values[s_get_index(segment)] = name;
-        m_set_segments |= segment;
+        copy.m_segment_values[s_get_index(segment)] = name;
+        copy.m_set_segments |= segment;
+        return copy;
     }
 }
 

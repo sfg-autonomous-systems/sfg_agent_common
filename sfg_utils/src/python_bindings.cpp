@@ -49,9 +49,9 @@ PYBIND11_MODULE(sfg_utils_py, module)
         .def("component", &sfg_utils::fqn::RosFqnBuilder::component, "component"_a, "name"_a = "")
         .def("stream", &sfg_utils::fqn::RosFqnBuilder::stream, "stream"_a, "name"_a = "")
         .def("resource", &sfg_utils::fqn::RosFqnBuilder::resource, "resource"_a, "name"_a = "")
+        .def("reset", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::reset, py::const_))
+        .def("reset", py::overload_cast<sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::reset, py::const_), "segments"_a)
         .def("build", py::overload_cast<sfg_utils::fqn::RosFqnSegment, sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_), "begin"_a, "end"_a)
         .def("build", py::overload_cast<sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_), "segment"_a)
-        .def("build", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_))
-        .def("reset", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::reset))
-        .def("reset", py::overload_cast<sfg_utils::fqn::RosFqnSegment>(&sfg_utils::fqn::RosFqnBuilder::reset), "segments"_a);
+        .def("build", py::overload_cast<>(&sfg_utils::fqn::RosFqnBuilder::build, py::const_));
 }
