@@ -288,7 +288,7 @@ namespace sfg_agent
         RCLCPP_INFO(get_logger(), "Adding %s camera info relay for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), agent_fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
 
         auto input_topic = agent_fqn_builder.resource(Resource::CameraInfo).build();
-        auto output_topic = agent_fqn_builder.scope(Scope::Local).build();
+        auto output_topic = agent_fqn_builder.scope(Scope::Local).resource(Resource::CameraInfo).build();
 
         auto request = std::make_shared<composition_interfaces::srv::LoadNode::Request>();
         request->package_name = "sfg_topic_tools";
