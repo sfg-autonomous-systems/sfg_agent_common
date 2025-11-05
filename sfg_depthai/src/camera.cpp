@@ -48,16 +48,16 @@ namespace sfg_depthai
     {
         // Declare and retrieve ROS parameters.
         m_color_resolution = parse_color_resolution(declare_parameter(
-            "color_resolution",
-            "1080p",
+            "color.resolution",
+            "1920x1080",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the color camera.")
                 .set__additional_constraints(
                     "Valid values are: " + get_available_resolutions(s_color_resolution_map))));
 
         m_depth_resolution = parse_depth_resolution(declare_parameter(
-            "depth_resolution",
-            "720p",
+            "depth.resolution",
+            "1280x720",
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The resolution of the depth camera.")
                 .set__additional_constraints(
@@ -84,11 +84,11 @@ namespace sfg_depthai
         // Set up interfaces.
         m_color_stream.m_publisher = image_transport::create_camera_publisher(
             this,
-            RosFqnBuilder().component(Component::Custom, get_name()).stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Component, RosFqnSegment::Resource),
+            RosFqnBuilder().stream(Stream::Color).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
         m_depth_stream.m_publisher = image_transport::create_camera_publisher(
             this,
-            RosFqnBuilder().component(Component::Custom, get_name()).stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Component, RosFqnSegment::Resource),
+            RosFqnBuilder().stream(Stream::Depth).resource(Resource::ImageRaw).build(RosFqnSegment::Stream, RosFqnSegment::Resource),
             rmw_qos_profile_sensor_data);
 
         setup_device();
