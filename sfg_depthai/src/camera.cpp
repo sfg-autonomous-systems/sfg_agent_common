@@ -143,10 +143,23 @@ namespace sfg_depthai
 
         m_device = std::make_unique<dai::Device>(m_pipeline);
         m_output_queue = m_device->getOutputQueue("out", 8, false);
+
+        // Get a single frame to retrieve calibration data.
+        auto timed_out = false;
+        auto message_group = m_output_queue->get<dai::MessageGroup>(std::chrono::seconds(5), timed_out);
+
+        if (timed_out)
+        {
+            throw std::runtime_error("Timed out waiting for initial frames from camera.");
+        }
+
+        auto color_frame = message_group->get<dai::ImgFrame>("color");
         m_color_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, false);
-        m_color_stream.m_camera_info = m_color_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
+        m_color_stream.m_camera_info = m_color_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, color_frame->getWidth(), color_frame->getHeight());
+
+        auto depth_frame = message_group->get<dai::ImgFrame>("depth");
         m_depth_stream.m_image_converter = std::make_unique<dai::ros::ImageConverter>(m_frame_id, false, false);
-        m_depth_stream.m_camera_info = m_depth_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, 0, 0);
+        m_depth_stream.m_camera_info = m_depth_stream.m_image_converter->calibrationToCameraInfo(m_device->readCalibration(), color_socket, depth_frame->getWidth(), depth_frame->getHeight());
     }
 
     void Camera::callback(const std::shared_ptr<dai::ADatatype> &data)
@@ -163,8 +176,6 @@ namespace sfg_depthai
             sensor_msgs::msg::Image::SharedPtr image_msg = stream->m_image_converter->toRosMsgPtr(frame);
             auto camera_info_msg = std::make_shared<sensor_msgs::msg::CameraInfo>(stream->m_camera_info);
             camera_info_msg->header = image_msg->header;
-            camera_info_msg->width = image_msg->width;
-            camera_info_msg->height = image_msg->height;
             stream->m_publisher.publish(image_msg, camera_info_msg);
         }
     }
