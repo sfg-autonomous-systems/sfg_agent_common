@@ -19,7 +19,7 @@
         <joint name="${name}_point_cloud_frame_joint" type="fixed">
             <parent link="${name}" />
             <child link="${name}_point_cloud_frame" />
-            <origin rpy="0 0 0" xyz="0 0 0.047" />
+            <origin rpy="0 0 ${pi}" xyz="0 0 0.047" />
         </joint>
 
         <link name="${name}_point_cloud_frame" />
@@ -27,7 +27,7 @@
         <joint name="${name}_imu_frame_joint" type="fixed">
             <parent link="${name}" />
             <child link="${name}_imu_frame" />
-            <origin rpy="0 0 0" xyz="-0.02329 -0.011 0.00288" />
+            <origin rpy="0 0 ${pi}" xyz="-0.02329 -0.011 0.00288" />
         </joint>
 
         <link name="${name}_imu_frame" />
