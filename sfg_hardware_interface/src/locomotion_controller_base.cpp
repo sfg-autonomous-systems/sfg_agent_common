@@ -88,7 +88,15 @@ namespace sfg_hardware_interface
         cmd.header = msg->header;
         cmd.twist.linear = clamp_velocity(msg->twist.linear, m_linear_limits);
         cmd.twist.angular = clamp_velocity(msg->twist.angular, m_angular_limits);
-        apply_cmd(cmd);
+
+        try
+        {
+            apply_cmd(cmd);
+        }
+        catch (const std::exception &exception)
+        {
+            RCLCPP_ERROR(get_logger(), "Failed to apply command message: %s", exception.what());
+        }
         m_reset_cmd_timer->reset();
     }
 
@@ -96,8 +104,16 @@ namespace sfg_hardware_interface
     {
         auto msg = geometry_msgs::msg::TwistStamped();
         msg.header.stamp = now();
-        apply_cmd(msg);
-        m_reset_cmd_timer->cancel();
+
+        try
+        {
+            apply_cmd(msg);
+            m_reset_cmd_timer->cancel();
+        }
+        catch (const std::exception &exception)
+        {
+            RCLCPP_ERROR(get_logger(), "Failed to apply command message: %s", exception.what());
+        }
     }
 
     void LocomotionControllerBase::trigger_action_callback(
