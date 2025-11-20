@@ -1,79 +1,79 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <xacro:macro name="luxonis_oakd_pro" params="name parent *origin">
-        <joint name="${name}_joint" type="fixed">
-            <parent link="${parent}" />
-            <child link="${name}" />
-            <xacro:insert_block name="origin" />
-        </joint>
+  <xacro:macro name="luxonis_oakd_pro" params="name parent *origin">
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}" />
+      <child link="${name}" />
+      <xacro:insert_block name="origin" />
+    </joint>
 
-        <link name="${name}">
-            <visual>
-                <geometry>
-                    <mesh
-                        filename="package://sfg_peripherals_description/mesh/luxonis_oakd_pro.dae"
-                        scale="1 1 1" />
-                </geometry>
-            </visual>
-        </link>
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <mesh
+            filename="package://sfg_peripherals_description/mesh/luxonis_oakd_pro.dae"
+            scale="1 1 1" />
+        </geometry>
+      </visual>
+    </link>
 
-        <joint name="${name}_base_frame_joint" type="fixed">
-            <parent link="${name}" />
-            <child link="${name}_base_frame" />
-            <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.00476 0.02273" />
-        </joint>
+    <joint name="${name}_base_frame_joint" type="fixed">
+      <parent link="${name}" />
+      <child link="${name}_base_frame" />
+      <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.00476 0.02273" />
+    </joint>
 
-        <link name="${name}_base_frame" />
+    <link name="${name}_base_frame" />
 
-        <!-- color -->
-        <joint name="${name}_color_frame_joint" type="fixed">
-            <parent link="${name}_base_frame" />
-            <child link="${name}_color_frame" />
-            <origin rpy="0 0 0" xyz="0 0 0" />
-        </joint>
+    <!-- color -->
+    <joint name="${name}_color_frame_joint" type="fixed">
+      <parent link="${name}_base_frame" />
+      <child link="${name}_color_frame" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
+    </joint>
 
-        <link name="${name}_color_frame" />
+    <link name="${name}_color_frame" />
 
-        <joint name="${name}_color_optical_frame_joint" type="fixed">
-            <parent link="${name}_color_frame" />
-            <child link="${name}_color_optical_frame" />
-            <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
-        </joint>
+    <joint name="${name}_color_optical_frame_joint" type="fixed">
+      <parent link="${name}_color_frame" />
+      <child link="${name}_color_optical_frame" />
+      <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
+    </joint>
 
-        <link name="${name}_color_optical_frame" />
+    <link name="${name}_color_optical_frame" />
 
-        <!-- mono left -->
-        <joint name="${name}_mono_left_frame_joint" type="fixed">
-            <parent link="${name}_base_frame" />
-            <child link="${name}_mono_left_frame" />
-            <origin rpy="0 0 0" xyz="0 0.0375 0" />
-        </joint>
+    <!-- mono left -->
+    <joint name="${name}_mono_left_frame_joint" type="fixed">
+      <parent link="${name}_base_frame" />
+      <child link="${name}_mono_left_frame" />
+      <origin rpy="0 0 0" xyz="0 0.0375 0" />
+    </joint>
 
-        <link name="${name}_mono_left_frame" />
+    <link name="${name}_mono_left_frame" />
 
-        <joint name="${name}_mono_left_optical_frame_joint" type="fixed">
-            <parent link="${name}_mono_left_frame" />
-            <child link="${name}_mono_left_optical_frame" />
-            <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
-        </joint>
+    <joint name="${name}_mono_left_optical_frame_joint" type="fixed">
+      <parent link="${name}_mono_left_frame" />
+      <child link="${name}_mono_left_optical_frame" />
+      <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
+    </joint>
 
-        <link name="${name}_mono_left_optical_frame" />
+    <link name="${name}_mono_left_optical_frame" />
 
-        <!-- mono right -->
-        <joint name="${name}_mono_right_frame_joint" type="fixed">
-            <parent link="${name}_base_frame" />
-            <child link="${name}_mono_right_frame" />
-            <origin rpy="0 0 0" xyz="0 -0.0375 0" />
-        </joint>
+    <!-- mono right -->
+    <joint name="${name}_mono_right_frame_joint" type="fixed">
+      <parent link="${name}_base_frame" />
+      <child link="${name}_mono_right_frame" />
+      <origin rpy="0 0 0" xyz="0 -0.0375 0" />
+    </joint>
 
-        <link name="${name}_mono_right_frame" />
+    <link name="${name}_mono_right_frame" />
 
-        <joint name="${name}_mono_right_optical_frame_joint" type="fixed">
-            <parent link="${name}_mono_right_frame" />
-            <child link="${name}_mono_right_optical_frame" />
-            <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
-        </joint>
+    <joint name="${name}_mono_right_optical_frame_joint" type="fixed">
+      <parent link="${name}_mono_right_frame" />
+      <child link="${name}_mono_right_optical_frame" />
+      <origin rpy="${-0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0" />
+    </joint>
 
-        <link name="${name}_mono_right_optical_frame" />
-    </xacro:macro>
+    <link name="${name}_mono_right_optical_frame" />
+  </xacro:macro>
 </robot>
