@@ -11,10 +11,21 @@
       <visual>
         <geometry>
           <mesh
-            filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.dae"
-            scale="1 1 1" />
+            filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.dae" />
         </geometry>
       </visual>
+      <collision>
+        <geometry>
+          <mesh
+            filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.dae" />
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0.001113 -0.0000279 0.012428" rpy="0 0 ${-pi/2}" />
+        <mass value="0.072" />
+        <inertia ixx="0.000017639" ixy="0" ixz="-0.00000035" iyy="0.000055074"
+          iyz="0.000000037" izz="0.000043502" />
+      </inertial>
     </link>
 
     <joint name="${name}_base_frame_joint" type="fixed">
