@@ -28,10 +28,18 @@
       </inertial>
     </link>
 
+    <joint name="${name}_color_frame_joint" type="fixed">
+      <parent link="${name}" />
+      <child link="${name}_color_frame" />
+      <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.0325 0.02085" />
+    </joint>
+
+    <link name="${name}_color_frame" />
+
     <joint name="${name}_color_optical_frame_joint" type="fixed">
       <parent link="${name}" />
       <child link="${name}_color_optical_frame" />
-      <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.0325 0.02085" />
+      <origin rpy="0 0 ${-0.5 * pi}" xyz="0 0.0325 0.02085" />
     </joint>
 
     <link name="${name}_color_optical_frame" />
