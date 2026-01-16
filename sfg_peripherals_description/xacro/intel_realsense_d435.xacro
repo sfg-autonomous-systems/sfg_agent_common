@@ -28,12 +28,12 @@
       </inertial>
     </link>
 
-    <joint name="${name}_base_frame_joint" type="fixed">
+    <joint name="${name}_color_optical_frame_joint" type="fixed">
       <parent link="${name}" />
-      <child link="${name}_base_frame" />
-      <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.0175 0.02075" />
+      <child link="${name}_color_optical_frame" />
+      <origin rpy="0 ${-0.5 * pi} 0" xyz="0 0.0325 0.02085" />
     </joint>
 
-    <link name="${name}_base_frame" />
+    <link name="${name}_color_optical_frame" />
   </xacro:macro>
 </robot>
