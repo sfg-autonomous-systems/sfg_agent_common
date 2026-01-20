@@ -20,6 +20,7 @@ def generate_launch_description() -> launch.LaunchDescription:
         package=package_name,
         plugin="sfg_agent::AgentStatusProvider",
         namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+        name="agent_status_provider",
         parameters=[
             {
                 metadata_filepath_argument.name: LaunchConfiguration(
