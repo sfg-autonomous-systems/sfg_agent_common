@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:macro name="htc_vive_tracker_30" params="name parent *origin">
+  <xacro:macro name="base_marker_tree" params="name parent *origin">
     <joint name="${name}_joint" type="fixed">
       <parent link="${parent}" />
       <child link="${name}" />
@@ -11,7 +11,7 @@
       <visual>
         <geometry>
           <mesh
-            filename="package://sfg_peripherals_description/mesh/htc_vive_tracker_30.dae"
+            filename="package://sfg_peripherals_description/mesh/base_marker_tree.dae"
             scale="1 1 1" />
         </geometry>
       </visual>
@@ -20,7 +20,7 @@
     <joint name="${name}_frame_joint" type="fixed">
       <parent link="${name}" />
       <child link="${name}_frame" />
-      <origin rpy="${0.5 * pi} 0 ${-0.5 * pi}" xyz="0 0 0.0005" />
+      <origin rpy="0 0 0" xyz="0 0 0" />
     </joint>
 
     <link name="${name}_frame" />
