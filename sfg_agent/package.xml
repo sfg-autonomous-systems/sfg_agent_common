@@ -16,8 +16,6 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>magic_enum</build_depend>
-
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>sfg_image_transport</exec_depend>

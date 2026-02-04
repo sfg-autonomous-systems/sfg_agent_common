@@ -10,7 +10,6 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(composition_interfaces REQUIRED)
-find_package(magic_enum CONFIG REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
