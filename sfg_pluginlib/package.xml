@@ -1,17 +1,13 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>sfg_image_transport</name>
+  <name>sfg_pluginlib</name>
   <version>0.0.0</version>
-  <description>Contains backported image_transport functionality.</description>
+  <description>...</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
-  <depend>image_transport</depend>
   <depend>pluginlib</depend>
-  <depend>rclcpp</depend>
-  <depend>rclcpp_components</depend>
-  <depend>sfg_pluginlib</depend>
   <depend>sfg_utils</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

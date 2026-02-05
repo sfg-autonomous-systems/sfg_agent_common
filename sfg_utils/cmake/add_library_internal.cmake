@@ -28,9 +28,9 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
 
     ament_export_targets("${export_name}" HAS_LIBRARY_TARGET)
 
-    foreach(dependency IN LISTS ARG_AMENT_DEPENDENCIES)
-        ament_target_dependencies("${target_name}" PUBLIC "${dependency}")
-    endforeach()
+    if(ARG_AMENT_DEPENDENCIES)
+        ament_target_dependencies("${target_name}" PUBLIC ${ARG_AMENT_DEPENDENCIES})
+    endif()
 
     set(CURRENT_SCOPE "PUBLIC")
 
@@ -42,8 +42,6 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
 
         target_link_libraries("${target_name}" "${CURRENT_SCOPE}" "${dependency}")
     endforeach()
-
-    ament_export_dependencies("${package_name}")
 
     if(ARG_EXPORT_DEPENDENCIES)
         ament_export_dependencies(${ARG_EXPORT_DEPENDENCIES})
