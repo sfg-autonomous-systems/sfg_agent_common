@@ -2,6 +2,7 @@
 
 #include "image_transport/image_transport.hpp"
 #include "image_transport/publisher_plugin.hpp"
+#include "sfg_pluginlib/plugin_loader.hpp"
 
 namespace sfg_image_transport
 {
