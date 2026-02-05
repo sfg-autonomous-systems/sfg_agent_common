@@ -20,7 +20,6 @@ namespace sfg_agent
     private:
         struct DecodedAgent
         {
-        public:
             std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_nodes;
             std::vector<rclcpp::SubscriptionBase::SharedPtr> m_subscribers;
             std::vector<rclcpp::PublisherBase::SharedPtr> m_publishers;

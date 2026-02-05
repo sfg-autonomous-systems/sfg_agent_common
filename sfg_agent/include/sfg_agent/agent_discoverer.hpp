@@ -17,7 +17,6 @@ namespace sfg_agent
     private:
         struct DiscoveredAgent
         {
-        public:
             rclcpp::TimerBase::SharedPtr m_keepalive_timer;
             sfg_agent_msgs::msg::Metadata m_metadata;
         };
