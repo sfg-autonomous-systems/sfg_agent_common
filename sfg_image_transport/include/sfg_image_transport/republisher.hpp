@@ -2,8 +2,8 @@
 
 #include <image_transport/image_transport.hpp>
 #include <image_transport/publisher_plugin.hpp>
-#include <pluginlib/class_loader.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <sfg_pluginlib/plugin_loader.hpp>
 
 namespace sfg_image_transport
 {
@@ -13,16 +13,11 @@ namespace sfg_image_transport
         Republisher(const rclcpp::NodeOptions &options);
 
     private:
-        typedef image_transport::PublisherPlugin Plugin;
-        typedef void (Plugin::*PublishMemberFunction)(const sensor_msgs::msg::Image::ConstSharedPtr &) const;
-
-        static std::unique_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> s_plugin_loader;
-        static std::mutex s_mutex;
-
         // ROS parameters
         std::string m_in_transport;
         std::string m_out_transport;
 
+        std::shared_ptr<pluginlib::ClassLoader<image_transport::PublisherPlugin>> m_plugin_loader;
         image_transport::Subscriber m_subscriber;
         pluginlib::UniquePtr<image_transport::PublisherPlugin> m_publisher_plugin;
     };
