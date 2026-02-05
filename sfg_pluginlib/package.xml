@@ -3,7 +3,8 @@
 <package format="3">
   <name>sfg_pluginlib</name>
   <version>0.0.0</version>
-  <description>...</description>
+  <description>Allows for safe usage of pluginlib::ClassLoader as non-static instances within
+    composable nodes.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
