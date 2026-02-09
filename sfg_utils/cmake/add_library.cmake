@@ -23,8 +23,19 @@ macro(sfg_utils__add_library LIBRARY_NAME)
         DESTINATION "include"
     )
 
-    # Install the additional include directories, too.
+    # Install the additional public include directories, too.
+    set(SCOPE "PUBLIC")
+
     foreach(include_dir IN LISTS ARG_ADDITIONAL_INCLUDE_DIRS)
+        if("${include_dir}" STREQUAL "PUBLIC" OR "${include_dir}" STREQUAL "INTERFACE" OR "${include_dir}" STREQUAL "PRIVATE")
+            set(SCOPE "${include_dir}")
+            continue()
+        endif()
+
+        if("${SCOPE}" STREQUAL "PRIVATE")
+            continue()
+        endif()
+
         install(
             DIRECTORY "${include_dir}/"
             DESTINATION "include"

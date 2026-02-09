@@ -19,8 +19,15 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
         $<INSTALL_INTERFACE:include>
     )
 
+    set(SCOPE "PUBLIC")
+
     foreach(include_dir IN LISTS ARG_ADDITIONAL_INCLUDE_DIRS)
-        target_include_directories("${target_name}" PUBLIC
+        if("${include_dir}" STREQUAL "PUBLIC" OR "${include_dir}" STREQUAL "INTERFACE" OR "${include_dir}" STREQUAL "PRIVATE")
+            set(SCOPE "${include_dir}")
+            continue()
+        endif()
+
+        target_include_directories("${target_name}" "${SCOPE}"
             $<BUILD_INTERFACE:${include_dir}>
             $<INSTALL_INTERFACE:include>
         )
@@ -32,15 +39,15 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
         ament_target_dependencies("${target_name}" PUBLIC ${ARG_AMENT_DEPENDENCIES})
     endif()
 
-    set(CURRENT_SCOPE "PUBLIC")
+    set(SCOPE "PUBLIC")
 
     foreach(dependency IN LISTS ARG_SYSTEM_DEPENDENCIES)
         if("${dependency}" STREQUAL "PUBLIC" OR "${dependency}" STREQUAL "INTERFACE" OR "${dependency}" STREQUAL "PRIVATE")
-            set(CURRENT_SCOPE "${dependency}")
+            set(SCOPE "${dependency}")
             continue()
         endif()
 
-        target_link_libraries("${target_name}" "${CURRENT_SCOPE}" "${dependency}")
+        target_link_libraries("${target_name}" "${SCOPE}" "${dependency}")
     endforeach()
 
     if(ARG_EXPORT_DEPENDENCIES)
