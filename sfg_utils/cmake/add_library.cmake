@@ -18,10 +18,13 @@ macro(sfg_utils__add_library LIBRARY_NAME)
         EXPORT_DEPENDENCIES ${ARG_EXPORT_DEPENDENCIES}
         ADDITIONAL_INSTALL_TARGETS ${ARG_ADDITIONAL_INSTALL_TARGETS}
     )
-    install(
-        DIRECTORY "include/"
-        DESTINATION "include"
-    )
+
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+        install(
+            DIRECTORY "include/"
+            DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        )
+    endif()
 
     # Install the additional public include directories, too.
     set(SCOPE "PUBLIC")
@@ -36,12 +39,6 @@ macro(sfg_utils__add_library LIBRARY_NAME)
             continue()
         endif()
 
-        install(
-            DIRECTORY "${include_dir}/"
-            DESTINATION "include"
-        )
+        install(DIRECTORY "${include_dir}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
     endforeach()
-
-    ament_export_include_directories("include")
-    ament_export_libraries("${target_name}")
 endmacro()
