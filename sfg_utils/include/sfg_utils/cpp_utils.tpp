@@ -1,21 +1,32 @@
 #include "sfg_utils/cpp_utils.hpp"
 
+#include <cxxabi.h>
 #include <magic_enum.hpp>
+#include <memory>
 #include <sstream>
 #include <string_view>
 
 namespace sfg_utils::cpp_utils
 {
-    template <typename T>
-    std::string get_type_name()
+    template <typename Type>
+    std::string get_type()
     {
-        // Only works correctly with GCC.
-        constexpr std::string_view prefix = "with T = ";
-        constexpr std::string_view suffix = ";";
-        constexpr std::string_view function = __PRETTY_FUNCTION__;
-        const auto start = function.find(prefix) + prefix.size();
-        const auto end = function.find(suffix, start);
-        return std::string(function.substr(start, end - start));
+        std::int32_t status = -4;
+        std::unique_ptr<char, void (*)(void *)> result{abi::__cxa_demangle(typeid(Type).name(), nullptr, nullptr, &status), std::free};
+        return (status == 0) ? result.get() : typeid(Type).name();
+    }
+
+    template <typename Type>
+    std::string get_type(const Type *instance)
+    {
+        if (!instance)
+        {
+            return "nullptr";
+        }
+
+        std::int32_t status = -4;
+        std::unique_ptr<char, void (*)(void *)> result{abi::__cxa_demangle(typeid(*instance).name(), nullptr, nullptr, &status), std::free};
+        return (status == 0) ? result.get() : typeid(*instance).name();
     }
 
     template <typename TEnum>

@@ -5,8 +5,10 @@
 
 namespace sfg_utils::cpp_utils
 {
-    template <typename T>
-    std::string get_type_name();
+    template <typename Type>
+    std::string get_type();
+    template <typename Type>
+    std::string get_type(const Type *instance);
 
     template <typename TEnum>
     std::string enum_value_to_snake_case_string(TEnum value);
