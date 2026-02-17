@@ -10,6 +10,7 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
 # ########################################################################################################
@@ -19,6 +20,8 @@ set(msg_files
   "msg/DiscoveryEvent.msg"
   "msg/Heartbeat.msg"
   "msg/Metadata.msg"
+  "msg/Trajectory.msg"
+  "msg/Waypoint.msg"
 )
 set(srv_files
   "srv/GetDiscoveredAgents.srv"
@@ -28,7 +31,9 @@ set(srv_files
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
   ${srv_files}
-  DEPENDENCIES std_msgs
+  DEPENDENCIES
+  geometry_msgs
+  std_msgs
 )
 
 if(BUILD_TESTING)
