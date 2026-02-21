@@ -6,8 +6,8 @@
 #include "sfg_utils/fqn/scope.hpp"
 #include "sfg_utils/fqn/stream.hpp"
 
-#include <string>
 #include <optional>
+#include <string>
 
 namespace sfg_utils::fqn
 {

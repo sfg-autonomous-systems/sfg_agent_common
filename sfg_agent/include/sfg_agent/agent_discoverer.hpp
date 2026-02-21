@@ -4,8 +4,8 @@
 
 #include "sfg_agent_msgs/msg/discovery_event.hpp"
 #include "sfg_agent_msgs/msg/heartbeat.hpp"
-#include "sfg_agent_msgs/srv/get_metadata.hpp"
 #include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
+#include "sfg_agent_msgs/srv/get_metadata.hpp"
 
 namespace sfg_agent
 {

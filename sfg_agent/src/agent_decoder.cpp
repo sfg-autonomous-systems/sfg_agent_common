@@ -4,8 +4,8 @@
 
 #include "sfg_agent/constants.hpp"
 #include "sfg_utils/agent_utils.hpp"
-#include "sfg_utils/ros_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
+#include "sfg_utils/ros_utils.hpp"
 
 namespace sfg_agent
 {
@@ -79,28 +79,28 @@ namespace sfg_agent
 
         switch (event_type)
         {
-        case sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED:
-        {
-            if (iterator != m_decoded_agents.end())
+            case sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED:
             {
-                RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", agent_name.c_str());
-                return;
+                if (iterator != m_decoded_agents.end())
+                {
+                    RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", agent_name.c_str());
+                    return;
+                }
+                auto agent = m_decoded_agents[agent_name] = std::make_shared<DecodedAgent>();
+                load_nodes(agent, metadata);
+                break;
             }
-            auto agent = m_decoded_agents[agent_name] = std::make_shared<DecodedAgent>();
-            load_nodes(agent, metadata);
-            break;
-        }
-        case sfg_agent_msgs::msg::DiscoveryEvent::LOST:
-        {
-            if (iterator == m_decoded_agents.end())
+            case sfg_agent_msgs::msg::DiscoveryEvent::LOST:
             {
-                RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", agent_name.c_str());
-                return;
+                if (iterator == m_decoded_agents.end())
+                {
+                    RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", agent_name.c_str());
+                    return;
+                }
+                unload_nodes(iterator->second);
+                m_decoded_agents.erase(iterator);
+                break;
             }
-            unload_nodes(iterator->second);
-            m_decoded_agents.erase(iterator);
-            break;
-        }
         }
     }
 

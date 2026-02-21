@@ -1,8 +1,8 @@
 #pragma once
 
 #include <eigen3/Eigen/Dense>
-#include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 #include "sfg_agent_msgs/srv/trigger_action.hpp"
 

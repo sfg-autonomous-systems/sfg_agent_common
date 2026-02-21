@@ -4,9 +4,20 @@
 
 namespace sfg_hardware_interface
 {
-    void LocomotionControllerBase::arm() { throw UnsupportedActionException(); }
-    void LocomotionControllerBase::disarm() { throw UnsupportedActionException(); };
-    void LocomotionControllerBase::emergency_stop() { throw UnsupportedActionException(); };
+    void LocomotionControllerBase::arm()
+    {
+        throw UnsupportedActionException();
+    }
+
+    void LocomotionControllerBase::disarm()
+    {
+        throw UnsupportedActionException();
+    };
+
+    void LocomotionControllerBase::emergency_stop()
+    {
+        throw UnsupportedActionException();
+    };
 
     void LocomotionControllerBase::add_action(const std::string &name, std::function<void()> function)
     {

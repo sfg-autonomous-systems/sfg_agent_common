@@ -54,7 +54,9 @@ namespace sfg_utils::fqn
     RosFqnBuilder::RosFqnBuilder()
         : m_set_segments(RosFqnSegment::None),
           m_segment_values({}),
-          m_resource(Resource::None) {}
+          m_resource(Resource::None)
+    {
+    }
 
     RosFqnBuilder RosFqnBuilder::scope(Scope scope) const
     {
