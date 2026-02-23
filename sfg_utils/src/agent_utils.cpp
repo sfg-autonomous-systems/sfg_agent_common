@@ -11,7 +11,7 @@ namespace sfg_utils::agent_utils
 {
     std::string get_agent_name()
     {
-        const char *name = std::getenv("AGENT_NAME");
+        const char *name = std::getenv("SFG_AGENT_NAME");
 
         if (name != nullptr && std::strlen(name) > 0)
         {
