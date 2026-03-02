@@ -16,6 +16,9 @@ find_package(std_msgs REQUIRED)
 # ########################################################################################################
 # Add interfaces.                                                                                        #
 # ########################################################################################################
+set(action_files
+  "action/FollowTrajectory.action"
+)
 set(msg_files
   "msg/DiscoveryEvent.msg"
   "msg/Heartbeat.msg"
@@ -29,6 +32,7 @@ set(srv_files
   "srv/TriggerAction.srv"
 )
 rosidl_generate_interfaces(${PROJECT_NAME}
+  ${action_files}
   ${msg_files}
   ${srv_files}
   DEPENDENCIES
