@@ -1,2 +1,2 @@
-builtin_interfaces/Duration time_from_last
+builtin_interfaces/Duration time_from_start
 geometry_msgs/Pose pose
