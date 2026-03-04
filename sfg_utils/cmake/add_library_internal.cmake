@@ -20,6 +20,7 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
     )
 
     set(SCOPE "PUBLIC")
+    set(IS_SYSTEM "")
 
     foreach(include_dir IN LISTS ARG_ADDITIONAL_INCLUDE_DIRS)
         if("${include_dir}" STREQUAL "PUBLIC" OR "${include_dir}" STREQUAL "INTERFACE" OR "${include_dir}" STREQUAL "PRIVATE")
@@ -27,7 +28,17 @@ macro(sfg_utils__add_library_internal TARGET_NAME)
             continue()
         endif()
 
-        target_include_directories("${target_name}" "${SCOPE}"
+        if("${include_dir}" STREQUAL "SYSTEM")
+            set(IS_SYSTEM "SYSTEM")
+            continue()
+        endif()
+
+        if("${include_dir}" STREQUAL "NO_SYSTEM")
+            set(IS_SYSTEM "")
+            continue()
+        endif()
+
+        target_include_directories("${target_name}" ${IS_SYSTEM} "${SCOPE}"
             $<BUILD_INTERFACE:${include_dir}>
             $<INSTALL_INTERFACE:include>
         )
