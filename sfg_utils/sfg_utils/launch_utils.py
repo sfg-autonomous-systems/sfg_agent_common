@@ -34,10 +34,16 @@ def get_launch_description_entities(
     other_entities: list[LaunchDescriptionEntity] = []
 
     for entity in launch_description.entities:
-        if isinstance(entity, Node):
+        if isinstance(entity, ComposableNodeContainer):
+            descriptions = getattr(
+                # Using name mangling to access the private member __composable_node_descriptions.
+                entity,
+                "_ComposableNodeContainer__composable_node_descriptions",
+                [],
+            )
+            composable_nodes.extend(descriptions)
+        elif isinstance(entity, Node):
             nodes.append(entity)
-        elif isinstance(entity, ComposableNodeContainer):
-            composable_nodes.extend(entity.__composable_node_descriptions)
         elif isinstance(entity, DeclareLaunchArgument):
             launch_arguments.append(entity)
         else:
