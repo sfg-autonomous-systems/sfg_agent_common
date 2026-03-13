@@ -1,18 +1,15 @@
 #include "sfg_image_transport/republisher.hpp"
 
 #include "image_transport/image_transport.hpp"
-#include "image_transport/publisher_plugin.hpp"
 #include "sfg_pluginlib/plugin_loader.hpp"
 
 namespace sfg_image_transport
 {
     Republisher::Republisher(const rclcpp::NodeOptions &options)
         : Node("republisher", options),
-          m_plugin_loader(sfg_pluginlib::PluginLoader<image_transport::PublisherPlugin>::get("image_transport", "image_transport::PublisherPlugin"))
+          m_publisher_plugin_loader(sfg_pluginlib::PluginLoader<image_transport::PublisherPlugin>::get("image_transport", "image_transport::PublisherPlugin")),
+          m_subscriber_plugin_loader(sfg_pluginlib::PluginLoader<image_transport::SubscriberPlugin>::get("image_transport", "image_transport::SubscriberPlugin"))
     {
-        using Plugin = image_transport::PublisherPlugin;
-        using PublishMemberFunction = void (Plugin::*)(const sensor_msgs::msg::Image::ConstSharedPtr &) const;
-
         // Declare and retrieve ROS parameters.
         m_in_transport = declare_parameter<std::string>(
             "in_transport",
@@ -29,20 +26,28 @@ namespace sfg_image_transport
         auto out_topic = rclcpp::expand_topic_or_service_name("out", get_name(), get_namespace());
 
         // Create publisher.
-        std::string lookup_name = Plugin::getLookupName(m_out_transport);
-        m_publisher_plugin = m_plugin_loader->createUniqueInstance(lookup_name);
+        std::string lookup_name = image_transport::PublisherPlugin::getLookupName(m_out_transport);
+        m_publisher_plugin = m_publisher_plugin_loader->createSharedInstance(lookup_name);
         m_publisher_plugin->advertise(this, out_topic, rmw_qos_profile_sensor_data);
-        PublishMemberFunction function = &Plugin::publishPtr;
+        auto weak_publisher_plugin = std::weak_ptr<image_transport::PublisherPlugin>(m_publisher_plugin);
 
-        // Create subscriber.
-        m_subscriber = image_transport::create_subscription(
+        // ToDo: We should only subscribe to the input topic if there is a subscriber on the output topic.
+        //       But ROS2 Humble does not support the corresponding subscription options callback. It's a ROS2 Iron feature...
+        lookup_name = image_transport::SubscriberPlugin::getLookupName(m_in_transport);
+        m_subscriber_plugin = m_subscriber_plugin_loader->createSharedInstance(lookup_name);
+        m_subscriber_plugin->subscribe(
             this,
             in_topic,
-            std::bind(function, m_publisher_plugin.get(), std::placeholders::_1),
-            m_in_transport,
+            [weak_publisher_plugin](const sensor_msgs::msg::Image::ConstSharedPtr &msg)
+            {
+                if (auto publisher_plugin = weak_publisher_plugin.lock(); publisher_plugin && publisher_plugin->getNumSubscribers() > 0)
+                {
+                    publisher_plugin->publishPtr(msg);
+                }
+            },
             rmw_qos_profile_sensor_data);
 
-        in_topic = m_subscriber.getTopic();
+        in_topic = m_subscriber_plugin->getTopic();
         out_topic = m_publisher_plugin->getTopic();
 
         RCLCPP_INFO(

@@ -37,6 +37,7 @@ namespace sfg_topic_tools
             m_output_topic,
             m_msg_type,
             publisher_qos);
+        auto weak_publisher = std::weak_ptr<rclcpp::GenericPublisher>(m_publisher);
 
         // We need to manually declare and retrieve the QoS override parameters because
         // rclcpp::GenericSubscription does not do this by itself yet.
@@ -47,10 +48,17 @@ namespace sfg_topic_tools
             default_qos,
             rclcpp::detail::SubscriptionQosParametersTraits{});
 
+        // ToDo: We should only subscribe to the input topic if there is a subscriber on the output topic.
+        //       But ROS2 Humble does not support the corresponding subscription options callback. It's a ROS2 Iron feature...
         m_subscriber = create_generic_subscription(
             m_input_topic, m_msg_type, subscription_qos,
-            [this](std::shared_ptr<rclcpp::SerializedMessage> msg)
-            { m_publisher->publish(*msg); });
+            [weak_publisher](std::shared_ptr<rclcpp::SerializedMessage> msg)
+            {
+                if (auto publisher = weak_publisher.lock(); publisher && publisher->get_subscription_count() > 0)
+                {
+                    publisher->publish(*msg);
+                }
+            });
 
         RCLCPP_INFO(get_logger(), "Started relaying messages of type '%s' from topic '%s' to topic '%s'.", m_msg_type.c_str(), m_input_topic.c_str(), m_output_topic.c_str());
     }

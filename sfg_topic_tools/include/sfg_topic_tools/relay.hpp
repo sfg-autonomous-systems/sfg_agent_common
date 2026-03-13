@@ -16,7 +16,7 @@ namespace sfg_topic_tools
         std::string m_msg_type;
         std::string m_qos_profile;
 
-        rclcpp::GenericSubscription::SharedPtr m_subscriber;
         rclcpp::GenericPublisher::SharedPtr m_publisher;
+        rclcpp::GenericSubscription::SharedPtr m_subscriber;
     };
 }
