@@ -23,6 +23,10 @@ namespace sfg_composition_interfaces
             rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr load_node_client,
             rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr unload_node_client,
             rclcpp::Logger logger);
+        LazyComposableNodeLoader(const LazyComposableNodeLoader &) = default;
+        LazyComposableNodeLoader &operator=(const LazyComposableNodeLoader &) = default;
+        LazyComposableNodeLoader(LazyComposableNodeLoader &&) = default;
+        LazyComposableNodeLoader &operator=(LazyComposableNodeLoader &&) = default;
         ~LazyComposableNodeLoader();
 
         const std::string &get_output_topic() const;

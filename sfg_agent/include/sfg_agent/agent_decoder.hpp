@@ -25,8 +25,8 @@ namespace sfg_agent
             std::vector<std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> m_decoders;
         };
 
-        AgentDecoder &operator=(const AgentDecoder &) = default;
         AgentDecoder(const AgentDecoder &) = default;
+        AgentDecoder &operator=(const AgentDecoder &) = default;
         AgentDecoder(AgentDecoder &&) = default;
         AgentDecoder &operator=(AgentDecoder &&) = default;
 
