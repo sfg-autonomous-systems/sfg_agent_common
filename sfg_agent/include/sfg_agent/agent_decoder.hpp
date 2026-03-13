@@ -1,13 +1,12 @@
 #pragma once
 
-#include <composition_interfaces/srv/load_node.hpp>
-#include <composition_interfaces/srv/unload_node.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <regex>
+#include <thread>
 
 #include "sfg_agent_msgs/msg/discovery_event.hpp"
 #include "sfg_agent_msgs/msg/metadata.hpp"
 #include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
+#include "sfg_composition_interfaces/lazy_composable_node_loader.hpp"
 #include "sfg_utils/fqn/stream.hpp"
 
 namespace sfg_agent
@@ -16,48 +15,36 @@ namespace sfg_agent
     {
     public:
         AgentDecoder(const rclcpp::NodeOptions &options);
+        ~AgentDecoder();
 
     private:
-        struct DecodedAgent
+        struct Agent
         {
-            std::vector<std::tuple<std::string, std::string, uint64_t>> m_loaded_nodes;
-            std::vector<rclcpp::SubscriptionBase::SharedPtr> m_subscribers;
-            std::vector<rclcpp::PublisherBase::SharedPtr> m_publishers;
+        public:
+            sfg_agent_msgs::msg::Metadata m_metadata;
+            std::vector<std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> m_decoders;
         };
 
-        void agent_discovery_event_callback(
-            const sfg_agent_msgs::msg::Metadata &metadata,
-            uint8_t event_type);
+        AgentDecoder &operator=(const AgentDecoder &) = default;
+        AgentDecoder(const AgentDecoder &) = default;
+        AgentDecoder(AgentDecoder &&) = default;
+        AgentDecoder &operator=(AgentDecoder &&) = default;
+
+        void listen_to_graph_events();
+        void agent_discovery_event_callback(const sfg_agent_msgs::msg::DiscoveryEvent::ConstSharedPtr msg);
         void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);
-
-        void load_nodes(
-            std::shared_ptr<DecodedAgent> agent,
-            const sfg_agent_msgs::msg::Metadata &metadata);
-        void load_node_callback(
-            std::weak_ptr<DecodedAgent> weak_agent,
-            const std::string &package_name,
-            const std::string &plugin_name,
-            rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future);
-
-        void unload_nodes(std::shared_ptr<DecodedAgent> agent);
-        void unload_node_callback(
-            const std::string &package_name,
-            const std::string &plugin_name,
-            uint64_t id,
-            rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future);
-
-        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
-        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
 
         // ROS parameters
         std::string m_container_name;
-        std::string m_agent_name_regex;
-
         std::vector<rcl_interfaces::msg::Parameter> m_camera_decoder_parameters;
         std::vector<rcl_interfaces::msg::Parameter> m_camera_info_relay_parameters;
 
-        std::regex m_compiled_agent_name_regex;
-        std::unordered_map<std::string, std::shared_ptr<DecodedAgent>> m_decoded_agents;
+        std::thread m_thread;
+        std::atomic<bool> m_done = false;
+        std::mutex m_agents_mutex;
+        std::unordered_map<std::string, Agent> m_agents;
 
         rclcpp::Subscription<sfg_agent_msgs::msg::DiscoveryEvent>::SharedPtr m_agent_discovery_event_subscriber;
         rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedPtr m_get_discovered_agents_client;

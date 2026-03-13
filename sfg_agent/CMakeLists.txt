@@ -13,6 +13,7 @@ find_package(composition_interfaces REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
+find_package(sfg_composition_interfaces REQUIRED)
 find_package(sfg_utils REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -48,10 +49,10 @@ sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   "src/agent_decoder_component.cpp"
   "src/agent_decoder.cpp"
   AMENT_DEPENDENCIES
-  composition_interfaces
   rclcpp
   rclcpp_components
   sfg_agent_msgs
+  sfg_composition_interfaces
   sfg_utils
 )
 

@@ -2,8 +2,6 @@
 
 #include <magic_enum.hpp>
 
-#include "sfg_agent/constants.hpp"
-#include "sfg_utils/agent_utils.hpp"
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 #include "sfg_utils/ros_utils.hpp"
 
@@ -19,15 +17,6 @@ namespace sfg_agent
             rcl_interfaces::msg::ParameterDescriptor()
                 .set__description("The name of the container decoder nodes should be dymically loaded in."));
 
-        m_agent_name_regex = sfg_utils::ros_utils::declare_parameter_if_not_declared(
-            *this,
-            "agent_name_regex",
-            ".*",
-            rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The regex to match agent names against."
-                                  "If the agent name matches, the agent will be decoded."));
-        m_compiled_agent_name_regex = std::regex(m_agent_name_regex);
-
         m_camera_decoder_parameters = sfg_utils::ros_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_decoder_parameters");
         m_camera_info_relay_parameters = sfg_utils::ros_utils::extract_parameters<rcl_interfaces::msg::Parameter>(*this, "camera_info_relay_parameters");
 
@@ -37,68 +26,113 @@ namespace sfg_agent
         m_agent_discovery_event_subscriber = create_subscription<sfg_agent_msgs::msg::DiscoveryEvent>(
             RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "agent_discovery_event").build(),
             10,
-            [this](const sfg_agent_msgs::msg::DiscoveryEvent::ConstSharedPtr &msg)
-            {
-                agent_discovery_event_callback(msg->metadata, msg->event_type);
-            });
+            std::bind(&AgentDecoder::agent_discovery_event_callback, this, std::placeholders::_1));
 
         m_get_discovered_agents_client = create_client<sfg_agent_msgs::srv::GetDiscoveredAgents>(RosFqnBuilder().scope(Scope::Local).agent().resource(Resource::Custom, "get_discovered_agents").build());
 
         std::string load_node_service = m_container_name + "/_container/load_node";
         RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", load_node_service.c_str());
-        m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(
-            load_node_service);
-
+        m_load_node_client = create_client<composition_interfaces::srv::LoadNode>(load_node_service);
         std::string unload_node_service = m_container_name + "/_container/unload_node";
         RCLCPP_INFO(get_logger(), "Creating client for service '%s'.", unload_node_service.c_str());
-        m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(
-            unload_node_service);
+        m_unload_node_client = create_client<composition_interfaces::srv::UnloadNode>(unload_node_service);
 
-        RCLCPP_INFO(get_logger(), "Started agent decoder for agents matching regex '%s'.", m_agent_name_regex.c_str());
-
+        m_thread = std::thread(&AgentDecoder::listen_to_graph_events, this);
         auto request = std::make_shared<sfg_agent_msgs::srv::GetDiscoveredAgents::Request>();
-        m_get_discovered_agents_client->async_send_request(
-            request,
-            std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
+        m_get_discovered_agents_client->async_send_request(request, std::bind(&AgentDecoder::get_discovered_agents_callback, this, std::placeholders::_1));
 
+        RCLCPP_INFO(get_logger(), "Started agent decoder.");
         // ToDo: Perhaps we should query the currently loaded nodes in the container and populate m_decoded_agents accordingly.
         // This would allow the agent decoder to recover from a crash. Although, I think if the agent decoder crashes, the container
         // would also crash, so perhaps this is not necessary.
     }
 
-    void AgentDecoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::Metadata &metadata, uint8_t event_type)
+    AgentDecoder::~AgentDecoder()
     {
-        auto agent_name = metadata.agent_name;
+        m_done = true;
+        // Manually trigger a graph change to unblock the graph listener thread if it's currently waiting.
+        get_node_graph_interface()->notify_graph_change();
 
-        if (!std::regex_match(agent_name, m_compiled_agent_name_regex))
+        if (m_thread.joinable())
         {
-            return;
+            m_thread.join();
         }
 
-        auto iterator = m_decoded_agents.find(agent_name);
+        for (auto &[agent_name, agent] : m_agents)
+        {
+            for (auto &decoder : agent.m_decoders)
+            {
+                decoder->unload();
+            }
+        }
+    }
 
-        switch (event_type)
+    void AgentDecoder::listen_to_graph_events()
+    {
+        while (rclcpp::ok() && !m_done)
+        {
+            auto event = get_graph_event();
+            wait_for_graph_change(event, std::chrono::seconds(1));
+
+            if (!rclcpp::ok() || m_done)
+            {
+                break;
+            }
+
+            std::lock_guard lock(m_agents_mutex);
+
+            for (const auto &[agent_name, agent] : m_agents)
+            {
+                for (const auto &decoder : agent.m_decoders)
+                {
+                    // ToDo: Implement some sort of delayed unloading.
+                    // ToDo: Verify that count_subscribers respects intra-process subscribers.
+                    count_subscribers(decoder->get_output_topic()) > 0 ? decoder->load() : decoder->unload();
+                }
+            }
+        }
+    }
+
+    void AgentDecoder::agent_discovery_event_callback(const sfg_agent_msgs::msg::DiscoveryEvent::ConstSharedPtr msg)
+    {
+        std::lock_guard lock(m_agents_mutex);
+        auto agent_name = msg->metadata.agent_name;
+        auto iterator = m_agents.find(agent_name);
+
+        switch (msg->event_type)
         {
             case sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED:
             {
-                if (iterator != m_decoded_agents.end())
+                if (iterator != m_agents.end())
                 {
-                    RCLCPP_WARN(get_logger(), "Skipping loading nodes for agent '%s': Agent already exists in decoded agents.", agent_name.c_str());
                     return;
                 }
-                auto agent = m_decoded_agents[agent_name] = std::make_shared<DecodedAgent>();
-                load_nodes(agent, metadata);
+                auto agent = Agent{msg->metadata, {}};
+
+                for (const auto &camera : msg->metadata.cameras)
+                {
+                    for (auto stream : {sfg_utils::fqn::Stream::Color, sfg_utils::fqn::Stream::Depth})
+                    {
+                        agent.m_decoders.push_back(create_camera_decoder(agent_name, camera, stream));
+                        agent.m_decoders.push_back(create_camera_info_decoder(agent_name, camera, stream));
+                    }
+                }
+                m_agents.emplace(agent_name, std::move(agent));
                 break;
             }
             case sfg_agent_msgs::msg::DiscoveryEvent::LOST:
             {
-                if (iterator == m_decoded_agents.end())
+                if (iterator == m_agents.end())
                 {
-                    RCLCPP_WARN(get_logger(), "Cannot unload nodes for agent '%s': Agent not found in decoded agents.", agent_name.c_str());
                     return;
                 }
-                unload_nodes(iterator->second);
-                m_decoded_agents.erase(iterator);
+                auto &agent = iterator->second;
+
+                for (auto &decoder : agent.m_decoders)
+                {
+                    decoder->unload();
+                }
+                m_agents.erase(iterator);
                 break;
             }
         }
@@ -126,135 +160,20 @@ namespace sfg_agent
 
         for (const auto &metadata : response->metadata)
         {
-            agent_discovery_event_callback(metadata, sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED);
+            auto msg = std::make_shared<sfg_agent_msgs::msg::DiscoveryEvent>();
+            msg->header.stamp = now();
+            msg->metadata = metadata;
+            msg->event_type = sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED;
+            agent_discovery_event_callback(msg);
         }
     }
 
-    void AgentDecoder::load_nodes(
-        std::shared_ptr<DecodedAgent> agent,
-        const sfg_agent_msgs::msg::Metadata &metadata)
+    std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> AgentDecoder::create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
-
-        auto weak_agent = std::weak_ptr<DecodedAgent>(agent);
-
-        for (const auto &camera : metadata.cameras)
-        {
-            for (auto stream : {Stream::Color, Stream::Depth})
-            {
-                for (auto request : {create_load_camera_decoder_request(metadata.agent_name, camera, stream), create_load_camera_info_relay_request(metadata.agent_name, camera, stream)})
-                {
-                    auto package_name = request->package_name;
-                    auto plugin_name = request->plugin_name;
-
-                    m_load_node_client->async_send_request(
-                        request, [this, weak_agent, package_name, plugin_name](rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
-                        { load_node_callback(weak_agent, package_name, plugin_name, future); });
-                }
-            }
-        }
-    }
-
-    void AgentDecoder::load_node_callback(
-        std::weak_ptr<DecodedAgent> weak_agent,
-        const std::string &package_name,
-        const std::string &plugin_name,
-        rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedFuture future)
-    {
-        // ToDo: Perhaps we should think of implementing some sort of retry logic if loading of the node failed.
-        if (!future.valid())
-        {
-            RCLCPP_ERROR(get_logger(), "Failed to load node '%s' from package '%s': Future is invalid", plugin_name.c_str(), package_name.c_str());
-            return;
-        }
-
-        auto response = future.get();
-
-        if (!response->success)
-        {
-            RCLCPP_ERROR(
-                get_logger(),
-                "Failed to load node '%s' from package '%s': %s",
-                plugin_name.c_str(),
-                package_name.c_str(),
-                response->error_message.c_str());
-            return;
-        }
-
-        auto id = response->unique_id;
-
-        if (auto agent = weak_agent.lock())
-        {
-            agent->m_loaded_nodes.push_back(std::make_tuple(package_name, plugin_name, id));
-            RCLCPP_INFO(get_logger(), "Loaded node '%s' from package '%s'.", plugin_name.c_str(), package_name.c_str());
-        }
-        else
-        {
-            // The agent has been lost since the service to load the node was called.
-            // Therefore, the node is no longer needed and we should unload it.
-            auto unload_request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
-            unload_request->unique_id = id;
-
-            m_unload_node_client->async_send_request(
-                unload_request,
-                [this, package_name, plugin_name, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
-                {
-                    unload_node_callback(package_name, plugin_name, id, future);
-                });
-
-            RCLCPP_WARN(get_logger(), "Loaded node '%s' from package '%s' but associated agent was lost in the meantime. Unloading node again.", plugin_name.c_str(), package_name.c_str());
-        }
-    }
-
-    void AgentDecoder::unload_nodes(std::shared_ptr<DecodedAgent> agent)
-    {
-        for (const auto &[package_name, plugin_name, id] : agent->m_loaded_nodes)
-        {
-            auto request = std::make_shared<composition_interfaces::srv::UnloadNode::Request>();
-            request->unique_id = id;
-
-            m_unload_node_client->async_send_request(
-                request,
-                [this, package_name, plugin_name, id](rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
-                {
-                    unload_node_callback(package_name, plugin_name, id, future);
-                });
-        }
-    }
-
-    void AgentDecoder::unload_node_callback(
-        const std::string &package_name,
-        const std::string &plugin_name,
-        uint64_t id,
-        rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
-    {
-        if (!future.valid())
-        {
-            RCLCPP_ERROR(get_logger(), "Failed to unload node '%s' from package '%s' with ID '%lu': Future is invalid.", package_name.c_str(), plugin_name.c_str(), id);
-            return;
-        }
-
-        auto response = future.get();
-
-        if (!response->success)
-        {
-            RCLCPP_ERROR(get_logger(), "Failed to unload node '%s' from package '%s' with ID '%lu': %s", package_name.c_str(), plugin_name.c_str(), id, response->error_message.c_str());
-            return;
-        }
-
-        RCLCPP_INFO(get_logger(), "Unloaded node with ID '%lu'.", id);
-    }
-
-    std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    AgentDecoder::create_load_camera_decoder_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
-    {
-        using namespace sfg_utils::fqn;
-
         assert(stream == Stream::Color || stream == Stream::Depth);
 
         auto fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
-        RCLCPP_INFO(get_logger(), "Adding %s camera decoder for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
-
         auto input_topic = fqn_builder.resource(Resource::ImageCompressed).build();
         auto output_topic = fqn_builder.scope(Scope::Local).resource(Resource::ImageRaw).build();
 
@@ -274,19 +193,15 @@ namespace sfg_agent
             "in/" + in_transport + ":=" + input_topic,
             "out:=" + output_topic};
 
-        return request;
+        return std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(output_topic, request, m_load_node_client, m_unload_node_client, get_logger());
     }
 
-    std::shared_ptr<composition_interfaces::srv::LoadNode::Request>
-    AgentDecoder::create_load_camera_info_relay_request(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> AgentDecoder::create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
-
         assert(stream == Stream::Color || stream == Stream::Depth);
 
         auto fqn_builder = RosFqnBuilder().scope(Scope::Global).agent(agent_name).component(Component::Camera, camera).stream(stream);
-        RCLCPP_INFO(get_logger(), "Adding %s camera info relay for '%s' for agent '%s'.", magic_enum::enum_name(stream).data(), fqn_builder.build(RosFqnSegment::Component).c_str(), agent_name.c_str());
-
         auto input_topic = fqn_builder.resource(Resource::CameraInfo).build();
         auto output_topic = fqn_builder.scope(Scope::Local).resource(Resource::CameraInfo).build();
 
@@ -303,6 +218,6 @@ namespace sfg_agent
         request->parameters.push_back(rclcpp::Parameter("qos_overrides." + output_topic + ".publisher.reliability", "best_effort").to_parameter_msg());
         request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
 
-        return request;
+        return std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(output_topic, request, m_load_node_client, m_unload_node_client, get_logger());
     }
 }
