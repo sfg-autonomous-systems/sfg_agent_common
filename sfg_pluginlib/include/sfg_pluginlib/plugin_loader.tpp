@@ -1,5 +1,7 @@
 #include "sfg_pluginlib/plugin_loader.hpp"
 
+#include <thread>
+
 namespace sfg_pluginlib
 {
     template <typename PluginType>
@@ -56,14 +58,12 @@ namespace sfg_pluginlib
         {
             return;
         }
-
         auto &instance = iterator->second;
 
         if (--instance.m_lease_count != 0)
         {
             return;
         }
-
         auto timer_version = instance.m_timer_version;
 
         std::thread(

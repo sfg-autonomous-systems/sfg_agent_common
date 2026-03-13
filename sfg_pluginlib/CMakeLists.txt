@@ -18,7 +18,7 @@ find_package(sfg_utils REQUIRED)
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(DUMMY_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp")
-file(WRITE "${DUMMY_SOURCE}" "")
+file(WRITE "${DUMMY_SOURCE}" "#include \"sfg_pluginlib/plugin_loader.hpp\"\n")
 
 sfg_utils__add_library("${PROJECT_NAME}"
   SOURCES
