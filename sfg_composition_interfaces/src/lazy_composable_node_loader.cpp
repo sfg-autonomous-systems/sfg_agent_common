@@ -3,28 +3,15 @@
 namespace sfg_composition_interfaces
 {
     LazyComposableNodeLoader::LazyComposableNodeLoader(
-        std::string output_topic,
         std::shared_ptr<composition_interfaces::srv::LoadNode::Request> load_request,
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr load_node_client,
         rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr unload_node_client,
         rclcpp::Logger logger)
-        : m_output_topic(std::move(output_topic)),
-          m_load_request(std::move(load_request)),
+        : m_load_request(std::move(load_request)),
           m_load_node_client(load_node_client),
           m_unload_node_client(unload_node_client),
           m_logger(std::move(logger))
     {
-        RCLCPP_INFO(m_logger, "Created lazy composable node loader for topic '%s'. Upon request, will load node '%s' from package '%s'.", m_output_topic.c_str(), m_load_request->plugin_name.c_str(), m_load_request->package_name.c_str());
-    }
-
-    LazyComposableNodeLoader::~LazyComposableNodeLoader()
-    {
-        RCLCPP_INFO(m_logger, "Deleting lazy composable node loader for topic '%s'.", m_output_topic.c_str());
-    }
-
-    const std::string &LazyComposableNodeLoader::get_output_topic() const
-    {
-        return m_output_topic;
     }
 
     void LazyComposableNodeLoader::load()
@@ -54,7 +41,7 @@ namespace sfg_composition_interfaces
         if (auto shared_this = context.m_weak_this.lock())
         {
             std::lock_guard lock(shared_this->m_mutex);
-            RCLCPP_INFO(context.m_logger, "Loading composable node for topic '%s'.", context.m_output_topic.c_str());
+            RCLCPP_INFO(context.m_logger, "Loading composable node for node '%s' from package '%s'.", context.m_plugin_name.c_str(), context.m_package_name.c_str());
 
             shared_this->m_state = State::Loading;
             context.m_load_node_client->async_send_request(
@@ -68,7 +55,7 @@ namespace sfg_composition_interfaces
 
     void LazyComposableNodeLoader::initiate_unload(std::uint64_t id, const CallbackContext &context)
     {
-        RCLCPP_INFO(context.m_logger, "Unloading composable node for topic '%s'.", context.m_output_topic.c_str());
+        RCLCPP_INFO(context.m_logger, "Unloading composable node for node '%s' from package '%s' with ID '%lu'.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
 
         if (auto shared_this = context.m_weak_this.lock())
         {
@@ -91,7 +78,7 @@ namespace sfg_composition_interfaces
         // ToDo: Perhaps we should think of implementing some sort of retry logic if loading of the node failed.
         if (!future.valid())
         {
-            RCLCPP_ERROR(context.m_logger, "Failed to load composable node for topic '%s'.", context.m_output_topic.c_str());
+            RCLCPP_ERROR(context.m_logger, "Failed to load composable node for node '%s' from package '%s'. Future is invalid.", context.m_plugin_name.c_str(), context.m_package_name.c_str());
 
             if (auto shared_this = context.m_weak_this.lock())
             {
@@ -105,7 +92,7 @@ namespace sfg_composition_interfaces
 
         if (!response->success)
         {
-            RCLCPP_ERROR(context.m_logger, "Failed to load composable node for topic '%s'.", context.m_output_topic.c_str());
+            RCLCPP_ERROR(context.m_logger, "Failed to load composable node for node '%s' from package '%s'.", context.m_plugin_name.c_str(), context.m_package_name.c_str());
 
             if (auto shared_this = context.m_weak_this.lock())
             {
@@ -122,7 +109,7 @@ namespace sfg_composition_interfaces
         {
             // We have been deleted since the service to load the node was called.
             initiate_unload(id, context);
-            RCLCPP_WARN(context.m_logger, "Loaded composable node for topic '%s' with ID '%lu' but it is no longer required. Unloading node again.", context.m_output_topic.c_str(), id);
+            RCLCPP_WARN(context.m_logger, "Loaded composable node for node '%s' from package '%s' with ID '%lu' but it is no longer required. Unloading node again.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
             return;
         }
 
@@ -132,13 +119,13 @@ namespace sfg_composition_interfaces
         {
             // Someone has requested to unload the node again since the service to load the node was called.
             initiate_unload(id, context);
-            RCLCPP_WARN(context.m_logger, "Loaded composable node for topic '%s' with ID '%lu' but it is no longer required. Unloading node again.", context.m_output_topic.c_str(), id);
+            RCLCPP_WARN(context.m_logger, "Loaded composable node for node '%s' from package '%s' with ID '%lu' but it is no longer required. Unloading node again.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
             return;
         }
 
         shared_this->m_id = id;
         shared_this->m_state = State::Loaded;
-        RCLCPP_INFO(context.m_logger, "Loaded composable node for topic '%s' with ID '%lu'.", context.m_output_topic.c_str(), id);
+        RCLCPP_INFO(context.m_logger, "Loaded composable node for node '%s' from package '%s' with ID '%lu'.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
     }
 
     void LazyComposableNodeLoader::unload_callback(std::uint64_t id, const CallbackContext &context, rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedFuture future)
@@ -146,7 +133,7 @@ namespace sfg_composition_interfaces
         // ToDo: Perhaps we should implement some sort of retry logic if unloading of the node failed.
         if (!future.valid())
         {
-            RCLCPP_ERROR(context.m_logger, "Failed to unload composable node for topic '%s' with ID '%lu': Future is invalid.", context.m_output_topic.c_str(), id);
+            RCLCPP_ERROR(context.m_logger, "Failed to unload composable node for node '%s' from package '%s' with ID '%lu': Future is invalid.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
 
             if (auto shared_this = context.m_weak_this.lock())
             {
@@ -160,7 +147,7 @@ namespace sfg_composition_interfaces
 
         if (!response->success)
         {
-            RCLCPP_ERROR(context.m_logger, "Failed to unload composable node for topic '%s' with ID '%lu': %s", context.m_output_topic.c_str(), id, response->error_message.c_str());
+            RCLCPP_ERROR(context.m_logger, "Failed to unload composable node for node '%s' from package '%s' with ID '%lu': %s", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id, response->error_message.c_str());
 
             if (auto shared_this = context.m_weak_this.lock())
             {
@@ -179,14 +166,14 @@ namespace sfg_composition_interfaces
             {
                 // Someone has requested to load the node again since the service to unload the node was called.
                 initiate_load(context);
-                RCLCPP_WARN(context.m_logger, "Unloaded composable node for topic '%s' with ID '%lu' but it is still required. Loading node again.", context.m_output_topic.c_str(), id);
+                RCLCPP_WARN(context.m_logger, "Unloaded composable node for node '%s' from package '%s' with ID '%lu' but it is still required. Loading node again.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
             }
         }
-        RCLCPP_INFO(context.m_logger, "Unloaded composable node for topic '%s' with ID '%lu'.", context.m_output_topic.c_str(), id);
+        RCLCPP_INFO(context.m_logger, "Unloaded composable node for node '%s' from package '%s' with ID '%lu'.", context.m_plugin_name.c_str(), context.m_package_name.c_str(), id);
     }
 
     LazyComposableNodeLoader::CallbackContext LazyComposableNodeLoader::create_callback_context()
     {
-        return CallbackContext{weak_from_this(), m_load_node_client, m_unload_node_client, m_logger, m_output_topic};
+        return CallbackContext{weak_from_this(), m_load_node_client, m_unload_node_client, m_logger, m_load_request->plugin_name, m_load_request->package_name};
     }
 }

@@ -18,18 +18,10 @@ namespace sfg_composition_interfaces
         };
 
         LazyComposableNodeLoader(
-            std::string output_topic,
             std::shared_ptr<composition_interfaces::srv::LoadNode::Request> load_request,
             rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr load_node_client,
             rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr unload_node_client,
             rclcpp::Logger logger);
-        LazyComposableNodeLoader(const LazyComposableNodeLoader &) = default;
-        LazyComposableNodeLoader &operator=(const LazyComposableNodeLoader &) = default;
-        LazyComposableNodeLoader(LazyComposableNodeLoader &&) = default;
-        LazyComposableNodeLoader &operator=(LazyComposableNodeLoader &&) = default;
-        ~LazyComposableNodeLoader();
-
-        const std::string &get_output_topic() const;
 
         void load();
         void unload();
@@ -44,7 +36,8 @@ namespace sfg_composition_interfaces
             rclcpp::Logger m_logger;
 
             // For logging purposes only.
-            std::string m_output_topic;
+            std::string m_plugin_name;
+            std::string m_package_name;
         };
 
         static void initiate_load(const CallbackContext &context);
@@ -54,13 +47,12 @@ namespace sfg_composition_interfaces
 
         CallbackContext create_callback_context();
 
-        std::string m_output_topic;
         State m_state = State::Unloaded;
         State m_desired_state = State::Unloaded;
         std::uint64_t m_id = 0;
         std::recursive_mutex m_mutex;
 
-        std::shared_ptr<composition_interfaces::srv::LoadNode::Request> m_load_request;
+        const std::shared_ptr<composition_interfaces::srv::LoadNode::Request> m_load_request;
         rclcpp::Client<composition_interfaces::srv::LoadNode>::SharedPtr m_load_node_client;
         rclcpp::Client<composition_interfaces::srv::UnloadNode>::SharedPtr m_unload_node_client;
         rclcpp::Logger m_logger;

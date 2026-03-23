@@ -60,7 +60,7 @@ namespace sfg_agent
 
         for (auto &[agent_name, agent] : m_agents)
         {
-            for (auto &decoder : agent.m_decoders)
+            for (auto &[output_topic, decoder] : agent.m_decoders)
             {
                 decoder->unload();
             }
@@ -83,11 +83,11 @@ namespace sfg_agent
 
             for (const auto &[agent_name, agent] : m_agents)
             {
-                for (const auto &decoder : agent.m_decoders)
+                for (const auto &[output_topic, decoder] : agent.m_decoders)
                 {
                     // ToDo: Implement some sort of delayed unloading.
                     // ToDo: Verify that count_subscribers respects intra-process subscribers.
-                    count_subscribers(decoder->get_output_topic()) > 0 ? decoder->load() : decoder->unload();
+                    count_subscribers(output_topic) > 0 ? decoder->load() : decoder->unload();
                 }
             }
         }
@@ -128,7 +128,7 @@ namespace sfg_agent
                 }
                 auto &agent = iterator->second;
 
-                for (auto &decoder : agent.m_decoders)
+                for (auto &[output_topic, decoder] : agent.m_decoders)
                 {
                     decoder->unload();
                 }
@@ -168,7 +168,7 @@ namespace sfg_agent
         }
     }
 
-    std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> AgentDecoder::create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> AgentDecoder::create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
         assert(stream == Stream::Color || stream == Stream::Depth);
@@ -193,10 +193,10 @@ namespace sfg_agent
             "in/" + in_transport + ":=" + input_topic,
             "out:=" + output_topic};
 
-        return std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(output_topic, request, m_load_node_client, m_unload_node_client, get_logger());
+        return std::make_pair(output_topic, std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
     }
 
-    std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader> AgentDecoder::create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> AgentDecoder::create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
         assert(stream == Stream::Color || stream == Stream::Depth);
@@ -218,6 +218,6 @@ namespace sfg_agent
         request->parameters.push_back(rclcpp::Parameter("qos_overrides." + output_topic + ".publisher.reliability", "best_effort").to_parameter_msg());
         request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
 
-        return std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(output_topic, request, m_load_node_client, m_unload_node_client, get_logger());
+        return std::make_pair(output_topic, std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
     }
 }
