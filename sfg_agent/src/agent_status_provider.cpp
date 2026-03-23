@@ -58,7 +58,7 @@ namespace sfg_agent
         const std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Request>,
         std::shared_ptr<sfg_agent_msgs::srv::GetMetadata::Response> response)
     {
-        RCLCPP_INFO(get_logger(), "Received request for agent.");
+        RCLCPP_INFO(get_logger(), "Received request for agent metadata.");
         *response = m_get_metadata_response;
     }
 
