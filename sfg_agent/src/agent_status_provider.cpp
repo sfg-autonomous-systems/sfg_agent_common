@@ -64,13 +64,13 @@ namespace sfg_agent
 
     bool AgentStatusProvider::load_metadata(const std::filesystem::path &filepath)
     {
+        m_get_metadata_response.metadata.agent_name = m_agent_name;
+
         if (filepath.empty())
         {
             RCLCPP_WARN(get_logger(), "No metadata file specified. Did you forget to specify one?");
             return true;
         }
-
-        m_get_metadata_response.metadata.agent_name = m_agent_name;
 
         // Load the YAML file.
         try
