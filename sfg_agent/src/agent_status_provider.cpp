@@ -13,7 +13,8 @@
 namespace sfg_agent
 {
     AgentStatusProvider::AgentStatusProvider(const rclcpp::NodeOptions &options)
-        : Node("agent_status_provider", options)
+        : Node("agent_status_provider", options),
+          m_bootup_heartbeat_count(constants::bootup_heartbeat_count)
     {
         // Declare and retrieve ROS parameters.
         m_metadata_filepath = declare_parameter(
@@ -37,17 +38,26 @@ namespace sfg_agent
             RosFqnBuilder().scope(Scope::Global).resource(Resource::AgentHeartbeat).build(),
             rclcpp::SensorDataQoS());
         m_heartbeat_timer = create_wall_timer(
-            std::chrono::seconds(constants::agent_heartbeat_interval),
+            std::chrono::seconds(constants::bootup_heartbeat_interval),
             std::bind(&AgentStatusProvider::publish_heartbeat, this));
         m_get_metadata_service = create_service<sfg_agent_msgs::srv::GetMetadata>(
             RosFqnBuilder().scope(Scope::Global).agent().resource(Resource::Custom, "get_metadata").build(),
             std::bind(&AgentStatusProvider::get_metadata_callback, this, std::placeholders::_1, std::placeholders::_2));
 
         RCLCPP_INFO(get_logger(), "Started agent status provider for '%s'.", m_agent_name.c_str());
+        publish_heartbeat();
     }
 
     void AgentStatusProvider::publish_heartbeat()
     {
+        if (m_bootup_heartbeat_count > 0 && --m_bootup_heartbeat_count == 0)
+        {
+            m_heartbeat_timer->cancel();
+            m_heartbeat_timer = create_wall_timer(
+                std::chrono::seconds(constants::steady_state_heartbeat_interval),
+                std::bind(&AgentStatusProvider::publish_heartbeat, this));
+        }
+
         auto msg = std::make_unique<sfg_agent_msgs::msg::Heartbeat>();
         msg->header.stamp = now();
         msg->agent_name = m_agent_name;
