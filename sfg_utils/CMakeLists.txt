@@ -53,6 +53,12 @@ generate_python_stubs("${target_name_py}"
   STUBGEN_ARGS "--enum-class-locations" "RosFqnSegment:${target_name_py}.fqn"
 )
 
+install(PROGRAMS
+  "sfg_utils/onshape/export.py"
+  DESTINATION "lib/${PROJECT_NAME}"
+  RENAME "onshape_export"
+)
+
 # ########################################################################################################
 # Add other files/directories.                                                                           #
 # ########################################################################################################
