@@ -9,10 +9,10 @@
 
     <link name="${name}">
       <visual>
+        <origin xyz="0 0 0" rpy="${0.5 * pi} 0 ${0.5 * pi}" />
         <geometry>
           <mesh
-            filename="package://sfg_peripherals_description/mesh/luxonis_oakd_pro.dae"
-            scale="1 1 1" />
+            filename="package://sfg_peripherals_description/mesh/luxonis_oakd_pro.glb" scale="1 1 1" />
         </geometry>
       </visual>
     </link>

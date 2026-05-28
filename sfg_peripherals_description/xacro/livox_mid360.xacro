@@ -9,9 +9,9 @@
 
     <link name="${name}">
       <visual>
+        <origin xyz="0 0 0" rpy="${0.5 * pi} 0 ${-0.5 * pi}" />
         <geometry>
-          <mesh filename="package://sfg_peripherals_description/mesh/livox_mid360.dae"
-            scale="1 1 1" />
+          <mesh filename="package://sfg_peripherals_description/mesh/livox_mid360.glb" scale="1 1 1" />
         </geometry>
       </visual>
     </link>
@@ -27,7 +27,7 @@
     <joint name="${name}_imu_frame_joint" type="fixed">
       <parent link="${name}" />
       <child link="${name}_imu_frame" />
-      <origin rpy="0 0 ${pi}" xyz="-0.02329 -0.011 0.00288" />
+      <origin rpy="0 0 ${pi}" xyz="-0.011 -0.02329 0.00288" />
     </joint>
 
     <link name="${name}_imu_frame" />

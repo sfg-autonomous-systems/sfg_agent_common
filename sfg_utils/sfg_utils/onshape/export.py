@@ -213,7 +213,7 @@ def optimize_mesh(
         str(output_glb),
         "-kn",
         "-km",
-        "-tc",
+        "-noq",
     ]
 
     if simplify_ratio is not None:
@@ -258,7 +258,7 @@ def main():
     parser.add_argument(
         "--angular_tolerance",
         type=float,
-        default=25.0,
+        default=20.0,
         help="Angular tolerance in degrees",
     )
     parser.add_argument(
