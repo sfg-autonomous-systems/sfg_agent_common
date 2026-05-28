@@ -12,8 +12,7 @@
         <origin xyz="0 0 0" rpy="${0.5 * pi} 0 ${0.5 * pi}" />
         <geometry>
           <mesh
-            filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.glb"
-            scale="1 1 1" />
+            filename="package://sfg_peripherals_description/mesh/intel_realsense_d435.glb" />
         </geometry>
       </visual>
     </link>

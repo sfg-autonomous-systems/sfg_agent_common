@@ -11,7 +11,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="${0.5 * pi} 0 ${-0.5 * pi}" />
         <geometry>
-          <mesh filename="package://sfg_peripherals_description/mesh/livox_mid360.glb" scale="1 1 1" />
+          <mesh filename="package://sfg_peripherals_description/mesh/livox_mid360.glb" />
         </geometry>
       </visual>
     </link>
