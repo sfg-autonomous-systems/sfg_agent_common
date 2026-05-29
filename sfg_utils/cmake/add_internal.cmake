@@ -3,7 +3,7 @@ macro(sfg_utils__add_internal TARGET_NAME)
         "ARG"
         "EXECUTABLE"
         ""
-        "SOURCES;ADDITIONAL_INCLUDE_DIRS;AMENT_DEPENDENCIES;SYSTEM_DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
+        "SOURCES;ADDITIONAL_INCLUDE_DIRS;DEPENDENCIES;EXPORT_DEPENDENCIES;ADDITIONAL_INSTALL_TARGETS"
         "${ARGN}"
     )
 
@@ -62,13 +62,9 @@ macro(sfg_utils__add_internal TARGET_NAME)
         endif()
     endforeach()
 
-    if(ARG_AMENT_DEPENDENCIES)
-        ament_target_dependencies("${target_name}" PUBLIC ${ARG_AMENT_DEPENDENCIES})
-    endif()
-
     set(SCOPE "PUBLIC")
 
-    foreach(dependency IN LISTS ARG_SYSTEM_DEPENDENCIES)
+    foreach(dependency IN LISTS ARG_DEPENDENCIES)
         if("${dependency}" STREQUAL "PUBLIC" OR "${dependency}" STREQUAL "INTERFACE" OR "${dependency}" STREQUAL "PRIVATE")
             set(SCOPE "${dependency}")
             continue()

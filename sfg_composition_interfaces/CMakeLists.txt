@@ -19,9 +19,9 @@ find_package(sfg_utils REQUIRED)
 sfg_utils__add_library("${PROJECT_NAME}"
   SOURCES
   "src/lazy_composable_node_loader.cpp"
-  AMENT_DEPENDENCIES
-  composition_interfaces
-  rclcpp
+  DEPENDENCIES
+  ${composition_interfaces_TARGETS}
+  rclcpp::rclcpp
 )
 
 if(BUILD_TESTING)

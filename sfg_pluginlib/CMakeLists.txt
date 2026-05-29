@@ -23,8 +23,8 @@ file(WRITE "${DUMMY_SOURCE}" "#include \"sfg_pluginlib/plugin_loader.hpp\"\n")
 sfg_utils__add_library("${PROJECT_NAME}"
   SOURCES
   "${DUMMY_SOURCE}"
-  AMENT_DEPENDENCIES
-  pluginlib
+  DEPENDENCIES
+  pluginlib::pluginlib
 )
 
 if(BUILD_TESTING)

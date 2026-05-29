@@ -29,10 +29,9 @@ sfg_utils__add_library("${target_name_cpp}"
   "src/agent_utils.cpp"
   "src/ros_utils.cpp"
   "src/cpp_utils.cpp"
-  AMENT_DEPENDENCIES
-  rclcpp
-  rmw
-  SYSTEM_DEPENDENCIES
+  DEPENDENCIES
+  rclcpp::rclcpp
+  rmw::rmw
   magic_enum::magic_enum
   EXPORT_DEPENDENCIES
   magic_enum

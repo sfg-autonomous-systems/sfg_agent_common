@@ -1,6 +1,6 @@
 #include "sfg_agent/agent_decoder.hpp"
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 #include "sfg_utils/ros_utils.hpp"

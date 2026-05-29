@@ -1,7 +1,7 @@
 #include "sfg_utils/cpp_utils.hpp"
 
 #include <cxxabi.h>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <memory>
 #include <sstream>
 #include <string_view>

@@ -22,16 +22,15 @@ set(target_name "${PROJECT_NAME}")
 sfg_utils__add_library("${target_name}"
     SOURCES
     "src/locomotion_controller_base.cpp"
-    AMENT_DEPENDENCIES
-    geometry_msgs
-    rclcpp
-    sfg_agent_msgs
-    sfg_utils
-    SYSTEM_DEPENDENCIES
+    DEPENDENCIES
+    ${geometry_msgs_TARGETS}
+    rclcpp::rclcpp
+    ${sfg_agent_msgs_TARGETS}
+    sfg_utils::sfg_utils
     Eigen3::Eigen
     EXPORT_DEPENDENCIES
     Eigen3
-    geometry_msgs
+    ${geometry_msgs_TARGETS}
 )
 
 if(BUILD_TESTING)

@@ -24,13 +24,13 @@ sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   SOURCES
   "src/camera_component.cpp"
   "src/camera.cpp"
-  AMENT_DEPENDENCIES
-  depthai_bridge
-  image_transport
-  rclcpp
-  rclcpp_components
-  rcl_interfaces
-  sfg_utils
+  DEPENDENCIES
+  depthai_bridge::depthai_bridge
+  image_transport::image_transport
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rcl_interfaces::rcl_interfaces
+  sfg_utils::sfg_utils
   SYSTEM_DEPENDENCIES
   depthai::opencv
 )

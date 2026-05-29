@@ -1,6 +1,6 @@
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
-#include <magic_enum_flags.hpp>
+#include <magic_enum/magic_enum_flags.hpp>
 #include <rmw/validate_full_topic_name.h>
 #include <stdexcept>
 

@@ -24,12 +24,11 @@ sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusPr
   SOURCES
   "src/agent_status_provider_component.cpp"
   "src/agent_status_provider.cpp"
-  AMENT_DEPENDENCIES
-  rclcpp
-  rclcpp_components
-  sfg_agent_msgs
-  sfg_utils
-  SYSTEM_DEPENDENCIES
+  DEPENDENCIES
+  rclcpp::rclcpp
+  rclcpp_components::component
+  ${sfg_agent_msgs_TARGETS}
+  sfg_utils::sfg_utils
   yaml-cpp
 )
 
@@ -37,23 +36,23 @@ sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
   SOURCES
   "src/agent_discoverer_component.cpp"
   "src/agent_discoverer.cpp"
-  AMENT_DEPENDENCIES
-  rclcpp
-  rclcpp_components
-  sfg_agent_msgs
-  sfg_utils
+  DEPENDENCIES
+  rclcpp::rclcpp
+  rclcpp_components::component
+  ${sfg_agent_msgs_TARGETS}
+  sfg_utils::sfg_utils
 )
 
 sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   SOURCES
   "src/agent_decoder_component.cpp"
   "src/agent_decoder.cpp"
-  AMENT_DEPENDENCIES
-  rclcpp
-  rclcpp_components
-  sfg_agent_msgs
-  sfg_composition_interfaces
-  sfg_utils
+  DEPENDENCIES
+  rclcpp::rclcpp
+  rclcpp_components::component
+  ${sfg_agent_msgs_TARGETS}
+  sfg_composition_interfaces::sfg_composition_interfaces
+  sfg_utils::sfg_utils
 )
 
 # ########################################################################################################

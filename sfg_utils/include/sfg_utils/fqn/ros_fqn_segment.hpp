@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cctype>
-#include <magic_enum_flags.hpp>
+#include <magic_enum/magic_enum_flags.hpp>
 
 namespace sfg_utils::fqn
 {

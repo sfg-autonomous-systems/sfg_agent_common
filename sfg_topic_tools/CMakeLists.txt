@@ -20,9 +20,9 @@ sfg_utils__add_component("relay" "${PROJECT_NAME}::Relay"
   SOURCES
   "src/relay_component.cpp"
   "src/relay.cpp"
-  AMENT_DEPENDENCIES
-  rclcpp
-  rclcpp_components
+  DEPENDENCIES
+  rclcpp::rclcpp
+  rclcpp_components::component
 )
 
 if(BUILD_TESTING)

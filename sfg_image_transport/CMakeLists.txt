@@ -23,12 +23,12 @@ sfg_utils__add_component("republisher" "${PROJECT_NAME}::Republisher"
   SOURCES
   "src/republisher_component.cpp"
   "src/republisher.cpp"
-  AMENT_DEPENDENCIES
-  image_transport
-  pluginlib
-  rclcpp
-  rclcpp_components
-  sfg_pluginlib
+  DEPENDENCIES
+  image_transport::image_transport
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  sfg_pluginlib::sfg_pluginlib
 )
 
 if(BUILD_TESTING)

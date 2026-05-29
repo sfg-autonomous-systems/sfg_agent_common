@@ -69,8 +69,7 @@ namespace sfg_agent
         using namespace sfg_utils::fqn;
 
         auto metadata_client = m_pending_get_metadata_requests[agent_name] = create_client<sfg_agent_msgs::srv::GetMetadata>(
-            RosFqnBuilder().scope(Scope::Global).agent(agent_name).resource(Resource::Custom, "get_metadata").build(),
-            rmw_qos_profile_services_default);
+            RosFqnBuilder().scope(Scope::Global).agent(agent_name).resource(Resource::Custom, "get_metadata").build());
 
         if (!metadata_client->service_is_ready())
         {
