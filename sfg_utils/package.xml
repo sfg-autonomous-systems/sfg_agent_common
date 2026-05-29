@@ -14,8 +14,12 @@
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <build_depend>pybind11_vendor</build_depend>
+  <build_depend>python3-dev</build_depend>
   <build_depend>rmw</build_depend>
 
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
   <exec_depend>python3-requests</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

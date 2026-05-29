@@ -24,7 +24,10 @@ sfg_utils__add_library("${PROJECT_NAME}"
   SOURCES
   "${DUMMY_SOURCE}"
   DEPENDENCIES
+  PUBLIC
   pluginlib::pluginlib
+  EXPORT_DEPENDENCIES
+  pluginlib
 )
 
 if(BUILD_TESTING)

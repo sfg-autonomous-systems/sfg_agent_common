@@ -30,11 +30,14 @@ sfg_utils__add_library("${target_name_cpp}"
   "src/ros_utils.cpp"
   "src/cpp_utils.cpp"
   DEPENDENCIES
-  rclcpp::rclcpp
+  PRIVATE
   rmw::rmw
+  PUBLIC
+  rclcpp::rclcpp
   magic_enum::magic_enum
   EXPORT_DEPENDENCIES
   magic_enum
+  rclcpp
 )
 
 set(target_name_py "${PROJECT_NAME}_py")

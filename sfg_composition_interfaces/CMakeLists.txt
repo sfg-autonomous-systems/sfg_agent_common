@@ -22,6 +22,9 @@ sfg_utils__add_library("${PROJECT_NAME}"
   DEPENDENCIES
   ${composition_interfaces_TARGETS}
   rclcpp::rclcpp
+  EXPORT_DEPENDENCIES
+  composition_interfaces
+  rclcpp
 )
 
 if(BUILD_TESTING)

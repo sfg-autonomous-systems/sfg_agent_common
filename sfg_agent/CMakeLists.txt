@@ -10,6 +10,7 @@ endif()
 # ########################################################################################################
 find_package(ament_cmake REQUIRED)
 find_package(composition_interfaces REQUIRED)
+find_package(magic_enum REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
@@ -25,11 +26,16 @@ sfg_utils__add_component("agent_status_provider" "${PROJECT_NAME}::AgentStatusPr
   "src/agent_status_provider_component.cpp"
   "src/agent_status_provider.cpp"
   DEPENDENCIES
-  rclcpp::rclcpp
+  PRIVATE
   rclcpp_components::component
-  ${sfg_agent_msgs_TARGETS}
   sfg_utils::sfg_utils
   yaml-cpp
+  PUBLIC
+  rclcpp::rclcpp
+  ${sfg_agent_msgs_TARGETS}
+  EXPORT_DEPENDENCIES
+  rclcpp
+  sfg_agent_msgs
 )
 
 sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
@@ -37,10 +43,15 @@ sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
   "src/agent_discoverer_component.cpp"
   "src/agent_discoverer.cpp"
   DEPENDENCIES
-  rclcpp::rclcpp
+  PRIVATE
   rclcpp_components::component
-  ${sfg_agent_msgs_TARGETS}
   sfg_utils::sfg_utils
+  PUBLIC
+  rclcpp::rclcpp
+  ${sfg_agent_msgs_TARGETS}
+  EXPORT_DEPENDENCIES
+  rclcpp
+  sfg_agent_msgs
 )
 
 sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
@@ -48,11 +59,17 @@ sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   "src/agent_decoder_component.cpp"
   "src/agent_decoder.cpp"
   DEPENDENCIES
-  rclcpp::rclcpp
+  PRIVATE
+  magic_enum::magic_enum
   rclcpp_components::component
+  PUBLIC
   ${sfg_agent_msgs_TARGETS}
   sfg_composition_interfaces::sfg_composition_interfaces
   sfg_utils::sfg_utils
+  EXPORT_DEPENDENCIES
+  sfg_agent_msgs
+  sfg_composition_interfaces
+  sfg_utils
 )
 
 # ########################################################################################################

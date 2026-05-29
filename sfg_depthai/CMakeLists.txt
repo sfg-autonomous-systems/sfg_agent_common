@@ -14,7 +14,7 @@ find_package(depthai_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(rcl_interfaces REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
 
 # ########################################################################################################
@@ -25,14 +25,21 @@ sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   "src/camera_component.cpp"
   "src/camera.cpp"
   DEPENDENCIES
+  PRIVATE
+  rclcpp_components::component
+  sfg_utils::sfg_utils
+  PUBLIC
+  depthai::opencv
   depthai_bridge::depthai_bridge
   image_transport::image_transport
   rclcpp::rclcpp
-  rclcpp_components::component
-  rcl_interfaces::rcl_interfaces
-  sfg_utils::sfg_utils
-  SYSTEM_DEPENDENCIES
-  depthai::opencv
+  sensor_msgs::sensor_msgs
+  EXPORT_DEPENDENCIES
+  depthai
+  depthai_bridge
+  image_transport
+  rclcpp
+  sensor_msgs
 )
 
 if(BUILD_TESTING)

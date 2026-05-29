@@ -3,10 +3,12 @@
 <package format="3">
   <name>sfg_agent</name>
   <version>0.0.0</version>
-  <description>Contains nodes central to all SFG agents such as a status_provider node.</description>
+  <description>Contains nodes central to all SFG agents such as an agent status provider node.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
 
+  <depend>composition_interfaces</depend>
+  <depend>magic_enum</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>

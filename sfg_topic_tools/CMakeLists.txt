@@ -21,8 +21,12 @@ sfg_utils__add_component("relay" "${PROJECT_NAME}::Relay"
   "src/relay_component.cpp"
   "src/relay.cpp"
   DEPENDENCIES
-  rclcpp::rclcpp
+  PRIVATE
   rclcpp_components::component
+  PUBLIC
+  rclcpp::rclcpp
+  EXPORT_DEPENDENCIES
+  rclcpp
 )
 
 if(BUILD_TESTING)
