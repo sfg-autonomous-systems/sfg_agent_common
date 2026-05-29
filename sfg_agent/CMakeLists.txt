@@ -43,12 +43,12 @@ sfg_utils__add_component("agent_discoverer" "${PROJECT_NAME}::AgentDiscoverer"
   "src/agent_discoverer_component.cpp"
   "src/agent_discoverer.cpp"
   DEPENDENCIES
-  PRIVATE
-  rclcpp_components::component
-  sfg_utils::sfg_utils
   PUBLIC
   rclcpp::rclcpp
   ${sfg_agent_msgs_TARGETS}
+  PRIVATE
+  rclcpp_components::component
+  sfg_utils::sfg_utils
   EXPORT_DEPENDENCIES
   rclcpp
   sfg_agent_msgs

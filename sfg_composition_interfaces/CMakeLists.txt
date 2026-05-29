@@ -20,6 +20,7 @@ sfg_utils__add_library("${PROJECT_NAME}"
   SOURCES
   "src/lazy_composable_node_loader.cpp"
   DEPENDENCIES
+  PUBLIC
   ${composition_interfaces_TARGETS}
   rclcpp::rclcpp
   EXPORT_DEPENDENCIES

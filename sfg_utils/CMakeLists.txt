@@ -30,11 +30,11 @@ sfg_utils__add_library("${target_name_cpp}"
   "src/ros_utils.cpp"
   "src/cpp_utils.cpp"
   DEPENDENCIES
-  PRIVATE
-  rmw::rmw
   PUBLIC
   rclcpp::rclcpp
   magic_enum::magic_enum
+  PRIVATE
+  rmw::rmw
   EXPORT_DEPENDENCIES
   magic_enum
   rclcpp

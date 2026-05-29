@@ -25,15 +25,15 @@ sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   "src/camera_component.cpp"
   "src/camera.cpp"
   DEPENDENCIES
-  PRIVATE
-  rclcpp_components::component
-  sfg_utils::sfg_utils
   PUBLIC
   depthai::opencv
   depthai_bridge::depthai_bridge
   image_transport::image_transport
   rclcpp::rclcpp
   sensor_msgs::sensor_msgs
+  PRIVATE
+  rclcpp_components::component
+  sfg_utils::sfg_utils
   EXPORT_DEPENDENCIES
   depthai
   depthai_bridge

@@ -24,13 +24,13 @@ sfg_utils__add_component("republisher" "${PROJECT_NAME}::Republisher"
   "src/republisher_component.cpp"
   "src/republisher.cpp"
   DEPENDENCIES
-  PRIVATE
-  rclcpp_components::component
-  sfg_pluginlib::sfg_pluginlib
   PUBLIC
   image_transport::image_transport
   pluginlib::pluginlib
   rclcpp::rclcpp
+  PRIVATE
+  rclcpp_components::component
+  sfg_pluginlib::sfg_pluginlib
   EXPORT_DEPENDENCIES
   image_transport
   pluginlib

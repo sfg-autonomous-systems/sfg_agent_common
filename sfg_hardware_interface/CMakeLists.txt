@@ -23,13 +23,13 @@ sfg_utils__add_library("${target_name}"
     SOURCES
     "src/locomotion_controller_base.cpp"
     DEPENDENCIES
-    PRIVATE
-    sfg_utils::sfg_utils
     PUBLIC
     Eigen3::Eigen
     ${geometry_msgs_TARGETS}
     rclcpp::rclcpp
     ${sfg_agent_msgs_TARGETS}
+    PRIVATE
+    sfg_utils::sfg_utils
     EXPORT_DEPENDENCIES
     Eigen3
     geometry_msgs
