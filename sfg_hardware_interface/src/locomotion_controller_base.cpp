@@ -75,7 +75,7 @@ namespace sfg_hardware_interface
         // Set up interfaces.
         m_cmd_vel_subscriber = create_subscription<geometry_msgs::msg::TwistStamped>(
             RosFqnBuilder().resource(Resource::CmdVel).build(RosFqnSegment::Resource),
-            10,
+            rclcpp::SensorDataQoS(),
             std::bind(&LocomotionControllerBase::cmd_vel_callback, this, std::placeholders::_1));
         m_reset_cmd_timer = create_wall_timer(
             std::chrono::duration<float>(m_cmd_timeout),
