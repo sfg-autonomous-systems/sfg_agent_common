@@ -17,6 +17,10 @@ find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
 
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set_property(TARGET depthai::core APPEND PROPERTY INTERFACE_COMPILE_OPTIONS -Wno-psabi)
+endif()
+
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
@@ -26,11 +30,11 @@ sfg_utils__add_component("camera" "${PROJECT_NAME}::Camera"
   "src/camera.cpp"
   DEPENDENCIES
   PUBLIC
-  depthai::opencv
+  depthai::core
   depthai_bridge::depthai_bridge
   image_transport::image_transport
   rclcpp::rclcpp
-  sensor_msgs::sensor_msgs
+  ${sensor_msgs_TARGETS}
   PRIVATE
   rclcpp_components::component
   sfg_utils::sfg_utils

@@ -17,30 +17,28 @@ namespace sfg_depthai
         struct CameraStream
         {
             sensor_msgs::msg::CameraInfo m_camera_info;
-            std::unique_ptr<dai::ros::ImageConverter> m_image_converter;
+            std::unique_ptr<depthai_bridge::ImageConverter> m_image_converter;
             image_transport::CameraPublisher m_publisher;
         };
 
-        template <typename MapType>
-        static std::string get_available_resolutions(MapType resolution_map);
-
-        void setup_device();
+        void setup_pipeline();
+        void start_pipeline();
         void callback(const std::shared_ptr<dai::ADatatype> &data);
-        dai::ColorCameraProperties::SensorResolution parse_color_resolution(const std::string &resolution);
-        dai::MonoCameraProperties::SensorResolution parse_depth_resolution(const std::string &resolution);
+        std::pair<int, int> parse_resolution(const std::string &resolution);
 
-        static const std::map<std::string, dai::ColorCameraProperties::SensorResolution> s_color_resolution_map;
-        static const std::map<std::string, dai::MonoCameraProperties::SensorResolution> s_depth_resolution_map;
+        static constexpr auto s_color_socket = dai::CameraBoardSocket::CAM_A;
+        static constexpr auto s_left_socket = dai::CameraBoardSocket::CAM_B;
+        static constexpr auto s_right_socket = dai::CameraBoardSocket::CAM_C;
 
         // ROS parameters
-        dai::ColorCameraProperties::SensorResolution m_color_resolution;
-        dai::MonoCameraProperties::SensorResolution m_depth_resolution;
+        std::pair<int, int> m_color_resolution;
+        std::pair<int, int> m_depth_resolution;
         int m_fps;
         std::string m_frame_id;
 
         dai::Pipeline m_pipeline;
-        std::unique_ptr<dai::Device> m_device;
-        std::shared_ptr<dai::DataOutputQueue> m_output_queue;
+        std::shared_ptr<dai::Device> m_device;
+        std::shared_ptr<dai::MessageQueue> m_output_queue;
 
         CameraStream m_color_stream;
         CameraStream m_depth_stream;
