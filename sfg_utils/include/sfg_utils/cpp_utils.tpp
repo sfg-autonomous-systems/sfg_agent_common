@@ -38,21 +38,21 @@ namespace sfg_utils::cpp_utils
 
         for (size_t index = 1; index < enum_name.size(); index++)
         {
-            if (std::islower(enum_name[index]))
-            {
-                snake_case_stream << static_cast<unsigned char>(enum_name[index]);
-                continue;
-            }
+            auto previous = static_cast<unsigned char>(enum_name[index - 1]);
+            auto current = static_cast<unsigned char>(enum_name[index]);
+            auto next = (index < enum_name.size() - 1) ? static_cast<unsigned char>(enum_name[index + 1]) : '\0';
 
-            if (index < enum_name.size() - 1 && std::islower(enum_name[index + 1]))
+            if (std::isupper(current) && std::islower(previous))
             {
                 snake_case_stream << "_";
             }
-            else if (index == enum_name.size() - 1 && std::islower(enum_name[index - 1]))
+            else if (std::isupper(current) && next != '\0' && std::islower(next))
             {
                 snake_case_stream << "_";
             }
-            snake_case_stream << static_cast<unsigned char>(std::tolower(static_cast<unsigned char>(enum_name[index])));
+            
+            // Finally append the character converted to lowercase.
+            snake_case_stream << static_cast<char>(std::tolower(current));
         }
         return snake_case_stream.str();
     }
