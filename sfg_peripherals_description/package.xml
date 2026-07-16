@@ -6,6 +6,7 @@
   <description>Contains xacro files for common/shared robot peripherals like sensors.</description>
   <maintainer email="constantin.blessing@hs-esslingen.de">Constantin Blessing</maintainer>
   <license>MIT</license>
+  <license>Proprietary</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
