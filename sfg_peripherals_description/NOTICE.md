@@ -7,7 +7,7 @@ This software incorporates or modifies third-party open-source software. The fol
 * **Author:** Intel Corporation
 * **License:** Proprietary / Provided for Integration
 * **Affected Directories/Files:** 
-    * [`intel_realsense_d435.glb`](sfg_peripherals_description/mesh/intel_realsense_d435.glb)
+    * [`intel_realsense_d435.glb`](mesh/intel_realsense_d435.glb)
 
 ### License Notice
 
@@ -20,7 +20,7 @@ The 3D models and CAD files representing Intel RealSense products are the proper
 * **Author:** Livox
 * **License:** Proprietary / Provided for Integration
 * **Affected Directories/Files:** 
-    * [`livox_mid360.glb`](sfg_peripherals_description/mesh/livox_mid360.glb)
+    * [`livox_mid360.glb`](mesh/livox_mid360.glb)
 
 ### License Notice
 
@@ -33,7 +33,7 @@ The 3D models and CAD files representing Livox products are the property of Livo
 * **Author:** Luxonis
 * **License:** MIT
 * **Affected Directories/Files:** 
-    * [`luxonis_oakd_pro.glb`](sfg_peripherals_description/mesh/luxonis_oakd_pro.glb)
+    * [`luxonis_oakd_pro.glb`](mesh/luxonis_oakd_pro.glb)
 
 ### License Notice
 
