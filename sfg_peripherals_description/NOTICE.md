@@ -2,7 +2,7 @@
 
 This software incorporates or modifies third-party open-source software. The following sections provide attribution, copyright notices, and license terms for these components.
 
-## Intel RealSense
+## [Intel RealSense](https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html)
 
 * **Author:** Intel Corporation
 * **License:** Proprietary / Provided for Integration
@@ -15,7 +15,7 @@ Copyright (C) Intel Corporation.
 
 The 3D models and CAD files representing Intel RealSense products are the property of Intel Corporation. They are distributed here in a converted format solely for the purpose of integration, physical representation, and simulation within the ROS ecosystem. No formal open-source license is provided by the manufacturer.
 
-## Livox Mid-360
+## [Livox Mid-360](https://www.livoxtech.com/)
 
 * **Author:** Livox
 * **License:** Proprietary / Provided for Integration
