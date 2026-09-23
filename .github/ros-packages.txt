@@ -1,0 +1,10 @@
+sfg_agent
+sfg_agent_msgs
+sfg_composition_interfaces
+sfg_depthai
+sfg_hardware_interface
+sfg_image_transport
+sfg_peripherals_description
+sfg_pluginlib
+sfg_topic_tools
+sfg_utils
