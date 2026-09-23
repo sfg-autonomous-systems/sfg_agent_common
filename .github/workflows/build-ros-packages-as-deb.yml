@@ -1,0 +1,89 @@
+name: Build changed ROS Debian packages
+
+on:
+  pull_request:
+    branches:
+      - humble
+      - kilted
+    types:
+      - closed
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: ROS package to build
+        required: true
+        type: choice
+        options:
+          - sfg_agent
+          - sfg_agent_msgs
+          - sfg_composition_interfaces
+          - sfg_depthai
+          - sfg_hardware_interface
+          - sfg_image_transport
+          - sfg_peripherals_description
+          - sfg_pluginlib
+          - sfg_topic_tools
+          - sfg_utils
+        default: sfg_utils
+      ros_distribution:
+        description: ROS 2 distribution to build against
+        required: true
+        type: choice
+        options:
+          - humble
+          - kilted
+        default: kilted
+  # temporary trigger for testing
+  push:
+    branches:
+      - build_deb_packages
+
+jobs:
+  build-manual:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    uses: ./.github/workflows/build-ros-package-as-deb.yml
+    with:
+      package_name: ${{ github.event_name == 'push' && 'sfg_utils' || inputs.package_name }}
+      ros_distribution: ${{ github.event_name == 'push' && 'humble' || inputs.ros_distribution }}
+
+  select-packages:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.packages.outputs.matrix }}
+      ros_distribution: ${{ steps.packages.outputs.ros_distribution }}
+    steps:
+      - name: Check out merged source
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Select packages
+        id: packages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          packages='[]'
+          while IFS= read -r package; do
+            [ -n "${package}" ] || continue
+            if ! git diff --quiet "${BASE_SHA}" "${HEAD_SHA}" -- "${package}"; then
+              packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
+            fi
+          done < .github/ros-packages.txt
+
+          echo "matrix={\"package_name\":${packages}}" >> "${GITHUB_OUTPUT}"
+          echo "ros_distribution=${GITHUB_BASE_REF}" >> "${GITHUB_OUTPUT}"
+
+  build:
+    needs: select-packages
+    if: needs.select-packages.outputs.matrix != '{"package_name":[]}'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select-packages.outputs.matrix) }}
+    uses: ./.github/workflows/build-ros-package-as-deb.yml
+    with:
+      package_name: ${{ matrix.package_name }}
+      ros_distribution: ${{ needs.select-packages.outputs.ros_distribution }}

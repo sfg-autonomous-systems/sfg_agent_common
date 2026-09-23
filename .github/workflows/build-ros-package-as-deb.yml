@@ -1,0 +1,76 @@
+name: Build ROS Debian package
+
+on:
+  workflow_call:
+    inputs:
+      package_name:
+        description: Name of the ROS package to build
+        required: true
+        type: string
+      ros_distribution:
+        description: ROS 2 distribution to build against
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ inputs.package_name }} for ${{ inputs.ros_distribution }}
+    runs-on: ${{ inputs.ros_distribution == 'humble' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    env:
+      PACKAGE_NAME: ${{ inputs.package_name }}
+      ROS_DISTRO: ${{ inputs.ros_distribution }}
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up ROS 2
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: ${{ env.ROS_DISTRO }}
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update && \
+          sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python
+
+      - name: Install package dependencies
+        run: |
+          rosdep update
+          rosdep install \
+            --from-paths "${PACKAGE_NAME}" \
+            --ignore-src \
+            --rosdistro "${ROS_DISTRO}" \
+            --default-yes
+      
+      # temporary workaround for testing
+      - name: Install package with pip
+        if: github.ref_name == 'build_deb_packages'
+        working-directory: ${{ env.PACKAGE_NAME }}
+        run: python3 -m pip install "pybind11[global]"
+
+      - name: Generate Debian package
+        working-directory: ${{ env.PACKAGE_NAME }}
+        run: bloom-generate rosdebian
+
+      - name: Build Debian package
+        working-directory: ${{ env.PACKAGE_NAME }}
+        run: |
+          export DH_VERBOSE=1  
+          fakeroot debian/rules binary
+
+          # Debian prohibits underscores in package names. Bloom automatically
+          # converts ROS package underscores (_) to dashes (-) when building DEBs.
+          # https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names
+          DEB_PACKAGE_NAME="${{ inputs.package_name }}"
+          DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME//_/-}"
+                 
+          mkdir -p "${GITHUB_WORKSPACE}/deb"
+          cp ../ros-${ROS_DISTRO}-${DEB_PACKAGE_NAME}_*.deb "${GITHUB_WORKSPACE}/deb/"
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}
+          path: deb/ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}_*.deb
+          if-no-files-found: error
