@@ -55,6 +55,12 @@ jobs:
             --rosdistro "${ROS_DISTRO}" \
             --default-yes
 
+      # temporary workaround for testing
+      - name: Install package with pip
+        if: github.ref_name == 'build_deb_packages'
+        working-directory: ${{ env.PACKAGE_NAME }}
+        run: python3 -m pip install "pybind11[global]"
+
       - name: Build local package dependencies
         run: |
           source "/opt/ros/${ROS_DISTRO}/setup.bash"
@@ -62,17 +68,13 @@ jobs:
             --packages-up-to "${PACKAGE_NAME}" \
             --packages-skip "${PACKAGE_NAME}" \
             --merge-install
-      
-      # temporary workaround for testing
-      - name: Install package with pip
-        if: github.ref_name == 'build_deb_packages'
-        working-directory: ${{ env.PACKAGE_NAME }}
-        run: python3 -m pip install "pybind11[global]"
 
       - name: Generate Debian package
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
-          #
+          if [[ -f "../install/setup.bash" ]]; then
+            source ../install/setup.bash
+          fi
           bloom-generate rosdebian
 
       - name: Build Debian package
