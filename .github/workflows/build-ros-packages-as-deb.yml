@@ -56,18 +56,25 @@ jobs:
         run: |
           packages='[]'
           while IFS= read -r -d '' package_xml; do
-            # Read the package version from the current and base revisions.
-            current_version="$(python3 -c 'import sys, xml.etree.ElementTree as ET; print(ET.parse(sys.stdin).findtext("version", "").strip())' < "${package_xml}")"
-            base_version="$(git show "${BASE_SHA}:${package_xml}" 2>/dev/null | python3 -c 'import sys, xml.etree.ElementTree as ET; print(ET.parse(sys.stdin).findtext("version", "").strip())')"
-
             # Convert the package.xml path to its package directory.
             package="${package_xml%/package.xml}"
             package="${package#./}"
 
-            if [[ -z "${current_version}" || -z "${base_version}" ]]; then
+            # Read the package version from the current revision.
+            current_version="$(python3 -c 'import sys, xml.etree.ElementTree as ET; print(ET.parse(sys.stdin).findtext("version", "").strip())' < "${package_xml}")"
+            if [[ -z "${current_version}" ]]; then
               echo "Package '${package}' has an empty or missing version" >&2
               exit 1
             fi
+            # Add packages that are new in the current revision.
+            if ! git cat-file -e "${BASE_SHA}:${package_xml}" 2>/dev/null; then
+              packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
+              continue
+            fi
+
+            # Read the package version from the base revision.
+            base_version="$(git show "${BASE_SHA}:${package_xml}" | python3 -c 'import sys, xml.etree.ElementTree as ET; print(ET.parse(sys.stdin).findtext("version", "").strip())')"
+
             # Add packages whose version changed to the build matrix.
             if [[ "${current_version}" != "${base_version}" ]]; then
               packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
