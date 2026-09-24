@@ -44,11 +44,23 @@ jobs:
       - name: Install package dependencies
         run: |
           rosdep update
+          mapfile -t dependency_paths < <(
+            colcon list \
+              --packages-up-to "${PACKAGE_NAME}" \
+              --paths-only
+          )
           rosdep install \
-            --from-paths "${PACKAGE_NAME}" \
+            --from-paths "${dependency_paths[@]}" \
             --ignore-src \
             --rosdistro "${ROS_DISTRO}" \
             --default-yes
+
+      - name: Build local package dependencies
+        run: |
+          colcon build \
+            --packages-up-to "${PACKAGE_NAME}" \
+            --packages-skip "${PACKAGE_NAME}" \
+            --merge-install
       
       # temporary workaround for testing
       - name: Install package with pip
@@ -58,12 +70,19 @@ jobs:
 
       - name: Generate Debian package
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: bloom-generate rosdebian
+        run: |
+          if [[ -f "../install/setup.bash" ]]; then
+            source ../install/setup.bash
+          fi
+          bloom-generate rosdebian
 
       - name: Build Debian package
         id: build_deb
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
+          if [[ -f "../install/setup.bash" ]]; then
+            source ../install/setup.bash
+          fi
           fakeroot debian/rules binary
 
           # Debian prohibits underscores in package names. Bloom automatically
