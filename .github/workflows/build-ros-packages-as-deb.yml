@@ -1,4 +1,4 @@
-name: Build changed ROS Debian packages
+name: Select and Build ROS 2 Debian Packages
 
 on:
   pull_request:
@@ -118,7 +118,7 @@ jobs:
       - name: Upload all deb packages
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.repository }}-deb-packages-{{ github.run_id }}
+          name: deb-packages-${{ github.run_id }}
           path: deb/*.deb  
           if-no-files-found: error
           retention-days: 1
@@ -128,4 +128,4 @@ jobs:
         with:
           dispatcher_app_id: ${{ secrets.SFG_APT_REPO_DISPATCHER_APP_ID }}
           dispatcher_app_private_key: ${{ secrets.SFG_APT_REPO_DISPATCHER_APP_PRIVATE_KEY }}
-          artifact_name: ${{ github.repository }}-deb-packages-{{ github.run_id }}
+          artifact_name: deb-packages-${{ github.run_id }}

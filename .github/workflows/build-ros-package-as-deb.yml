@@ -111,3 +111,4 @@ jobs:
           name: ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}
           path: deb/ros-${{ env.ROS_DISTRO }}-${{ steps.build_deb.outputs.deb_package_name }}_*.deb
           if-no-files-found: error
+          retention-days: 1
