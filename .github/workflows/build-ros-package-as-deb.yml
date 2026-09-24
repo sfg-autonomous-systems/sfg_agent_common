@@ -22,7 +22,14 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4   
+
+      - name: Check package exists
+        run: |
+          if [[ ! -d "${PACKAGE_NAME}" || ! -f "${PACKAGE_NAME}/package.xml" ]]; then
+            echo "ROS package '${PACKAGE_NAME}' was not found or has no package.xml" >&2
+            exit 1
+          fi
 
       - name: Set up ROS 2
         uses: ros-tooling/setup-ros@v0.7
@@ -54,9 +61,9 @@ jobs:
         run: bloom-generate rosdebian
 
       - name: Build Debian package
+        id: build_deb
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
-          export DH_VERBOSE=1  
           fakeroot debian/rules binary
 
           # Debian prohibits underscores in package names. Bloom automatically
@@ -64,6 +71,7 @@ jobs:
           # https://www.debian.org/doc/manuals/debian-reference/ch02.en.html#_debian_package_file_names
           DEB_PACKAGE_NAME="${{ inputs.package_name }}"
           DEB_PACKAGE_NAME="${DEB_PACKAGE_NAME//_/-}"
+          echo "deb_package_name=${DEB_PACKAGE_NAME}" >> "${GITHUB_OUTPUT}"
                  
           mkdir -p "${GITHUB_WORKSPACE}/deb"
           cp ../ros-${ROS_DISTRO}-${DEB_PACKAGE_NAME}_*.deb "${GITHUB_WORKSPACE}/deb/"
@@ -72,5 +80,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}
-          path: deb/ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}_*.deb
+          path: deb/ros-${{ env.ROS_DISTRO }}-${{ steps.build_deb.outputs.deb_package_name }}_*.deb
           if-no-files-found: error
