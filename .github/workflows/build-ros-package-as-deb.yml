@@ -57,6 +57,7 @@ jobs:
 
       - name: Build local package dependencies
         run: |
+          source "/opt/ros/${ROS_DISTRO}/setup.bash"
           colcon build \
             --packages-up-to "${PACKAGE_NAME}" \
             --packages-skip "${PACKAGE_NAME}" \
@@ -71,18 +72,13 @@ jobs:
       - name: Generate Debian package
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
-          if [[ -f "../install/setup.bash" ]]; then
-            source ../install/setup.bash
-          fi
+          #
           bloom-generate rosdebian
 
       - name: Build Debian package
         id: build_deb
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
-          if [[ -f "../install/setup.bash" ]]; then
-            source ../install/setup.bash
-          fi
           fakeroot debian/rules binary
 
           # Debian prohibits underscores in package names. Bloom automatically
