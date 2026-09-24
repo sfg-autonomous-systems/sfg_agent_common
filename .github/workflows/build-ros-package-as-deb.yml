@@ -43,6 +43,17 @@ jobs:
 
       - name: Install package dependencies
         run: |
+          mapfile -t local_package_names < <(colcon list --names-only)
+          ubuntu_codename="$(. /etc/os-release && printf '%s' "${VERSION_CODENAME}")"
+          local_rosdep_file="${RUNNER_TEMP}/sfg-local-rosdep.yaml"
+          {
+            for package_name in "${local_package_names[@]}"; do
+              printf '%s:\n  ubuntu:\n    %s: [ros-%s-%s]\n' \
+                "${package_name}" "${ubuntu_codename}" "${ROS_DISTRO}" "${package_name//_/-}"
+            done
+          } > "${local_rosdep_file}"
+          printf 'yaml file://%s\n' "${local_rosdep_file}" | \
+            sudo tee /etc/ros/rosdep/sources.list.d/99-sfg-local.list >/dev/null
           rosdep update
           mapfile -t dependency_paths < <(
             colcon list \
@@ -59,7 +70,7 @@ jobs:
       - name: Install package with pip
         if: github.ref_name == 'build_deb_packages'
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: python3 -m pip install "pybind11[global]"
+        run: python3 -m pip install pybind11[global] pybind11-stubgen
 
       - name: Build local package dependencies
         run: |
