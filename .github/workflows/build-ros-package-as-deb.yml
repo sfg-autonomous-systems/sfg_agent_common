@@ -43,6 +43,7 @@ jobs:
 
       - name: Install package dependencies
         run: |
+          # temporary workaround for testing
           mapfile -t local_package_names < <(colcon list --names-only)
           ubuntu_codename="$(. /etc/os-release && printf '%s' "${VERSION_CODENAME}")"
           local_rosdep_file="${RUNNER_TEMP}/sfg-local-rosdep.yaml"
@@ -82,11 +83,7 @@ jobs:
 
       - name: Generate Debian package
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: |
-          if [[ -f "../install/setup.bash" ]]; then
-            source ../install/setup.bash
-          fi
-          bloom-generate rosdebian
+        run: bloom-generate rosdebian
 
       - name: Build Debian package
         id: build_deb
