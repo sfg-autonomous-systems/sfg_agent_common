@@ -92,6 +92,10 @@ jobs:
         id: build_deb
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
+          source "/opt/ros/${ROS_DISTRO}/setup.bash"
+          if [[ -f "../install/setup.bash" ]]; then
+            source ../install/setup.bash
+          fi
           fakeroot debian/rules binary
 
           # Debian prohibits underscores in package names. Bloom automatically
