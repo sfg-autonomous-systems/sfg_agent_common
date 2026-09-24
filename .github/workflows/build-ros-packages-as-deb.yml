@@ -68,7 +68,7 @@ jobs:
             fi
             # Add packages that are new in the current revision.
             if ! git cat-file -e "${BASE_SHA}:${package_xml}" 2>/dev/null; then
-              packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
+              packages="$(jq --compact-output --arg package "${package}" '. + [$package]' <<< "${packages}")"
               continue
             fi
 
@@ -77,11 +77,11 @@ jobs:
 
             # Add packages whose version changed to the build matrix.
             if [[ "${current_version}" != "${base_version}" ]]; then
-              packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
+              packages="$(jq --compact-output --arg package "${package}" '. + [$package]' <<< "${packages}")"
             else
                 echo "Package '${package}' version has not changed"
                 # temporary for testing
-                packages="$(jq --arg package "${package}" '. + [$package]' <<< "${packages}")"
+                packages="$(jq --compact-output --arg package "${package}" '. + [$package]' <<< "${packages}")"
             fi
           # Recursively find ROS packages, excluding Git metadata.
           done < <(find . -type f -name package.xml -not -path './.git/*' -print0 | sort -z)
