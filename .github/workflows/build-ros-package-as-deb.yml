@@ -83,7 +83,12 @@ jobs:
 
       - name: Generate Debian package
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: bloom-generate rosdebian
+        run: |
+          . /etc/os-release
+          bloom-generate rosdebian \
+            --ros-distro "${ROS_DISTRO}" \
+            --os-name ubuntu \
+            --os-version "${VERSION_CODENAME}"
 
       - name: Build Debian package
         id: build_deb
