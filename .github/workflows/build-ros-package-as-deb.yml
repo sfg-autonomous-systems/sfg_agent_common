@@ -22,27 +22,27 @@ jobs:
       UBUNTU_CODENAME: ${{ inputs.ros_distribution == 'humble' && 'jammy' || 'noble' }}
 
     steps:
-      - name: Check out source
+      - name: Check Out Source
         uses: actions/checkout@v4   
 
-      - name: Check package exists
+      - name: Check Package Exists
         run: |
           if [[ ! -d "${PACKAGE_NAME}" || ! -f "${PACKAGE_NAME}/package.xml" ]]; then
             echo "ROS package '${PACKAGE_NAME}' was not found or has no package.xml" >&2
             exit 1
           fi
 
-      - name: Set up ROS 2
+      - name: Set Up ROS 2
         uses: ros-tooling/setup-ros@v0.7
         with:
           required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-      - name: Install packaging tools
+      - name: Install Packaging Tools
         run: |
           sudo apt-get update && \
           sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python
 
-      - name: Install package dependencies
+      - name: Install Package Dependencies
         run: |
           # temporary workaround for testing
           mapfile -t local_package_names < <(colcon list --names-only)
@@ -68,12 +68,12 @@ jobs:
             --default-yes
 
       # temporary workaround for testing
-      - name: Install package with pip
+      - name: Install Package With Pip
         if: github.ref_name == 'build_deb_packages'
         working-directory: ${{ env.PACKAGE_NAME }}
         run: python3 -m pip install pybind11[global] pybind11-stubgen
 
-      - name: Build local package dependencies
+      - name: Build Local Package Dependencies
         run: |
           source "/opt/ros/${ROS_DISTRO}/setup.bash"
           colcon build \
@@ -81,11 +81,11 @@ jobs:
             --packages-skip "${PACKAGE_NAME}" \
             --merge-install
 
-      - name: Generate Debian package
+      - name: Generate Debian Package
         working-directory: ${{ env.PACKAGE_NAME }}
         run: bloom-generate rosdebian
 
-      - name: Build Debian package
+      - name: Build Debian Package
         id: build_deb
         working-directory: ${{ env.PACKAGE_NAME }}
         run: |
@@ -105,7 +105,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}/deb"
           cp ../ros-${ROS_DISTRO}-${DEB_PACKAGE_NAME}_*.deb "${GITHUB_WORKSPACE}/deb/"
 
-      - name: Upload Debian package
+      - name: Upload Debian Package
         uses: actions/upload-artifact@v4
         with:
           name: ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}
