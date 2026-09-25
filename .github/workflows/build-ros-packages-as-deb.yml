@@ -42,13 +42,13 @@ jobs:
       matrix: ${{ steps.packages.outputs.matrix }}
       ros_distribution: ${{ steps.packages.outputs.ros_distribution }}
     steps:
-      - name: Check out merged source
+      - name: Check Out Merged Source
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
 
-      - name: Select packages
+      - name: Select Packages
         id: packages
         env:
           BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
@@ -108,14 +108,14 @@ jobs:
     if: needs.build.result == 'success'
     runs-on: ubuntu-24.04
     steps:
-      - name: Download Debian package(s)
+      - name: Download Debian Package(s)
         uses: actions/download-artifact@v4
         with:
           pattern: ros-${{ needs.select-packages.outputs.ros_distribution }}-*
           path: deb
           merge-multiple: true
 
-      - name: Upload all deb packages
+      - name: Upload All Deb Packages
         uses: actions/upload-artifact@v4
         with:
           name: deb-packages-${{ github.run_id }}
