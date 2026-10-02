@@ -22,7 +22,7 @@ jobs:
         shell: bash
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
-      #ROS_DISTRO: ${{ inputs.ros_distribution }}
+      ROS_DISTRO: ${{ inputs.ros_distribution }}
       UBUNTU_CODENAME: ${{ inputs.ros_distribution == 'humble' && 'jammy' || 'noble' }}
 
     steps:
