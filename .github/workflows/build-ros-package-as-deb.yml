@@ -16,9 +16,10 @@ jobs:
   build:
     name: Build ${{ inputs.package_name }} for ${{ inputs.ros_distribution }}
     runs-on: ${{ inputs.ros_distribution == 'humble' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    container: ros:${{ inputs.ros_distribution }}-ros-base
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
-      ROS_DISTRO: ${{ inputs.ros_distribution }}
+      #ROS_DISTRO: ${{ inputs.ros_distribution }}
       UBUNTU_CODENAME: ${{ inputs.ros_distribution == 'humble' && 'jammy' || 'noble' }}
 
     steps:
