@@ -25,7 +25,7 @@ on:
   # temporary trigger for testing
   push:
     branches:
-      - build_deb_packages
+      - build_deb_packages_kilted
 
 jobs:
   build-manual:
@@ -87,7 +87,7 @@ jobs:
           done < <(find . -type f -name package.xml -not -path './.git/*' -print0 | sort -z)
 
           echo "matrix={\"package_name\":${packages}}" >> "${GITHUB_OUTPUT}"
-          echo "ros_distribution=${{ github.event_name == 'push' && 'humble' || github.base_ref }}" >> "${GITHUB_OUTPUT}"
+          echo "ros_distribution=${{ github.event_name == 'push' && 'kilted' || github.base_ref }}" >> "${GITHUB_OUTPUT}"
 
   build:
     needs: select-packages
