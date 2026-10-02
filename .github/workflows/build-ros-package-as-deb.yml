@@ -16,6 +16,10 @@ jobs:
   build:
     name: Build ${{ inputs.package_name }} for ${{ inputs.ros_distribution }}
     runs-on: ${{ inputs.ros_distribution == 'humble' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    container: ros:${{ inputs.ros_distribution }}-ros-base
+    defaults:
+      run:
+        shell: bash
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
       ROS_DISTRO: ${{ inputs.ros_distribution }}
@@ -32,15 +36,10 @@ jobs:
             exit 1
           fi
 
-      - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ env.ROS_DISTRO }}
-
       - name: Install packaging tools
         run: |
           sudo apt-get update && \
-          sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python
+          sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python python3-pip
 
       - name: Install package dependencies
         run: |
@@ -71,7 +70,7 @@ jobs:
       - name: Install package with pip
         if: github.ref_name == 'build_deb_packages_kilted'
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: python3 -m pip install pybind11[global] pybind11-stubgen
+        run: python3 -m pip install --break-system-packages pybind11[global] pybind11-stubgen
 
       - name: Build local package dependencies
         run: |
