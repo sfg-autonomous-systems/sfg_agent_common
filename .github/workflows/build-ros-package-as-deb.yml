@@ -70,7 +70,7 @@ jobs:
       - name: Install package with pip
         if: github.ref_name == 'build_deb_packages_kilted'
         working-directory: ${{ env.PACKAGE_NAME }}
-        run: python3 -m pip install pybind11[global] pybind11-stubgen
+        run: python3 -m pip install --break-system-packages pybind11[global] pybind11-stubgen
 
       - name: Build local package dependencies
         run: |
