@@ -17,6 +17,9 @@ jobs:
     name: Build ${{ inputs.package_name }} for ${{ inputs.ros_distribution }}
     runs-on: ${{ inputs.ros_distribution == 'humble' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
     container: ros:${{ inputs.ros_distribution }}-ros-base
+    defaults:
+      run:
+        shell: bash
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
       #ROS_DISTRO: ${{ inputs.ros_distribution }}
@@ -32,11 +35,6 @@ jobs:
             echo "ROS package '${PACKAGE_NAME}' was not found or has no package.xml" >&2
             exit 1
           fi
-
-      - name: Set up ROS 2
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ env.ROS_DISTRO }}
 
       - name: Install packaging tools
         run: |
