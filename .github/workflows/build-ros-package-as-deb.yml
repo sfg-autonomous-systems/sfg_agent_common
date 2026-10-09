@@ -16,6 +16,10 @@ jobs:
   build:
     name: Build ${{ inputs.package_name }} for ${{ inputs.ros_distribution }}
     runs-on: ${{ inputs.ros_distribution == 'humble' && 'ubuntu-22.04' || 'ubuntu-24.04' }}
+    container: ros:${{ inputs.ros_distribution }}-ros-base
+    defaults:
+      run:
+        shell: bash
     env:
       PACKAGE_NAME: ${{ inputs.package_name }}
       ROS_DISTRO: ${{ inputs.ros_distribution }}
@@ -32,15 +36,10 @@ jobs:
             exit 1
           fi
 
-      - name: Set Up ROS 2
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: ${{ env.ROS_DISTRO }}
-
       - name: Install Packaging Tools
         run: |
           sudo apt-get update && \
-          sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python
+          sudo apt-get install --yes python3-bloom python3-rosdep fakeroot debhelper dh-python python3-pip
 
       - name: Install Package Dependencies
         run: |
@@ -112,3 +111,4 @@ jobs:
           path: deb/ros-${{ env.ROS_DISTRO }}-${{ steps.build_deb.outputs.deb_package_name }}_*.deb
           if-no-files-found: error
           retention-days: 1
+
