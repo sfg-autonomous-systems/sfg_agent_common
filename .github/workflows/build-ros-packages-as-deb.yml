@@ -43,7 +43,7 @@ jobs:
       ros_distribution: ${{ steps.packages.outputs.ros_distribution }}
     steps:
       - name: Check Out Merged Source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.merge_commit_sha || github.sha }}
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Download Debian Package(s)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: ros-${{ needs.select-packages.outputs.ros_distribution }}-*
           path: deb

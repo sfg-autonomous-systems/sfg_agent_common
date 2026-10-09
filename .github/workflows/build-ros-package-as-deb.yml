@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Check Out Source
-        uses: actions/checkout@v4   
+        uses: actions/checkout@v7
 
       - name: Check Package Exists
         run: |
@@ -106,7 +106,7 @@ jobs:
           cp ../ros-${ROS_DISTRO}-${DEB_PACKAGE_NAME}_*.deb "${GITHUB_WORKSPACE}/deb/"
 
       - name: Upload Debian Package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ros-${{ env.ROS_DISTRO }}-${{ inputs.package_name }}
           path: deb/ros-${{ env.ROS_DISTRO }}-${{ steps.build_deb.outputs.deb_package_name }}_*.deb
