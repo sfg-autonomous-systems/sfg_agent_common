@@ -115,18 +115,10 @@ jobs:
           path: deb
           merge-multiple: true
 
-      - name: Upload all deb packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: deb-packages-${{ github.run_id }}
-          path: deb/*.deb  
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Submit Package(s)
         uses: sfg-autonomous-systems/sfg_apt_repo/.github/actions/submit_packages@fix
         with:
-          dispatcher_app_id: ${{ secrets.SFG_APT_REPO_DISPATCHER_APP_ID }}
+          dispatcher_client_id: ${{ secrets.SFG_APT_REPO_DISPATCHER_CLIENT_ID }}
           dispatcher_app_private_key: ${{ secrets.SFG_APT_REPO_DISPATCHER_APP_PRIVATE_KEY }}
           distribution: ${{ needs.select-packages.outputs.ros_distribution == 'humble' && 'jammy' || 'noble' }}
-          artifact_name: deb-packages-${{ github.run_id }}
+          path: deb/*.deb
