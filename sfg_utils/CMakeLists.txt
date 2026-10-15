@@ -15,7 +15,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(magic_enum CONFIG REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-find_package(pybind11 3.0 REQUIRED)
+find_package(pybind11 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rmw REQUIRED)
 
