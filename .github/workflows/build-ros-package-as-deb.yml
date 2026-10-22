@@ -66,12 +66,6 @@ jobs:
             --rosdistro "${ROS_DISTRO}" \
             --default-yes
 
-      # temporary workaround for testing
-      - name: Install Package With Pip
-        if: github.ref_name == 'build_deb_packages'
-        working-directory: ${{ env.PACKAGE_NAME }}
-        run: python3 -m pip install pybind11[global] pybind11-stubgen
-
       - name: Build Local Package Dependencies
         run: |
           source "/opt/ros/${ROS_DISTRO}/setup.bash"
