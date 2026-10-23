@@ -1,2 +1,0 @@
-# SFG Vicon localizer
-
