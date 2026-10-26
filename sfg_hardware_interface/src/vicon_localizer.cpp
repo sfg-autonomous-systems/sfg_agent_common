@@ -28,12 +28,14 @@ namespace sfg_hardware_interface
           m_tf_broadcaster(std::make_unique<tf2_ros::TransformBroadcaster>(this))
     {
         const auto agent_name = sfg_utils::agent_utils::get_agent_name();
-        m_server_address = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
+
+        // Declare and retrieve ROS parameters.
+        m_server_address = sfg_utils::ros_utils::declare_parameter_if_not_declared(
             *this,
-            "hostname",
-            std::string("sfg-tracker:801"),
+            "server_address",
+            "sfg-tracker:801",
             rcl_interfaces::msg::ParameterDescriptor()
-                .set__description("The address of the Vicon server."));
+                .set__description("The address (host:port) of the Vicon server."));
 
         m_buffer_size = sfg_utils::ros_utils::declare_parameter_if_not_declared(
             *this,
@@ -106,7 +108,7 @@ namespace sfg_hardware_interface
             return;
         }
 
-        RCLCPP_INFO(get_logger(), "Connected to Vicon server at %s.", m_hostname.c_str());
+        RCLCPP_INFO(get_logger(), "Connected to Vicon server at %s.", m_server_address.c_str());
 
         m_client.SetBufferSize(m_buffer_size);
         throw_on_failure(m_client.EnableSegmentData(), "Failed to enable segment data from Vicon server.");
@@ -181,8 +183,8 @@ namespace sfg_hardware_interface
         tf2::Transform marker_to_base_link_transform;
         try
         {
-            const auto marker_to_base_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_frame_id, stamp);
-            tf2::fromMsg(marker_to_base_message.transform, marker_to_base_link_transform);
+            const auto marker_to_base_link_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_frame_id, stamp);
+            tf2::fromMsg(marker_to_base_link_message.transform, marker_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
@@ -193,8 +195,8 @@ namespace sfg_hardware_interface
         tf2::Transform odom_to_base_link_transform;
         try
         {
-            const auto odom_to_base_message = m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_frame_id, stamp, std::chrono::milliseconds(50));
-            tf2::fromMsg(odom_to_base_message.transform, odom_to_base_link_transform);
+            const auto odom_to_base_link_message = m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_frame_id, stamp, std::chrono::milliseconds(50));
+            tf2::fromMsg(odom_to_base_link_message.transform, odom_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
@@ -206,7 +208,7 @@ namespace sfg_hardware_interface
         msg.header.stamp = stamp;
         msg.header.frame_id = m_map_frame_id;
         msg.child_frame_id = m_odom_frame_id;
-        msg.transform = tf2::toMsg(map_to_marker_transform * marker_to_base_frame_transform * odom_to_base_frame_transform.inverse());
+        msg.transform = tf2::toMsg(map_to_marker_transform * marker_to_base_link_transform * odom_to_base_link_transform.inverse());
         m_tf_broadcaster->sendTransform(msg);
     }
 }
