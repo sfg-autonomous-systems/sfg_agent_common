@@ -51,10 +51,10 @@ sfg_utils__add_library("${target_name}"
     sfg_agent_msgs
 )
 
-sfg_utils__add_component("localizer" "${PROJECT_NAME}::Localizer"
+sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
     SOURCES
-    "src/localizer_component.cpp"
-    "src/localizer.cpp"
+    "src/vicon_localizer_component.cpp"
+    "src/vicon_localizer.cpp"
     DEPENDENCIES
     PRIVATE
     rclcpp_components::component
@@ -66,9 +66,9 @@ sfg_utils__add_component("localizer" "${PROJECT_NAME}::Localizer"
     tf2_ros::tf2_ros
     EXPORT_DEPENDENCIES
     rclcpp
-    tf2_ros
-    tf2_geometry_msgs
     sfg_utils
+    tf2_geometry_msgs
+    tf2_ros
 )
 
 if(BUILD_TESTING)

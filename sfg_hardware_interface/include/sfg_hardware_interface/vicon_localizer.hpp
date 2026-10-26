@@ -13,28 +13,28 @@
 
 namespace sfg_hardware_interface
 {
-    class Localizer final : public rclcpp::Node
+    class ViconLocalizer final : public rclcpp::Node
     {
     public:
-        Localizer(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
-        Localizer(const Localizer &) = delete;
-        Localizer &operator=(const Localizer &) = delete;
-        Localizer(Localizer &&) = delete;
-        Localizer &operator=(Localizer &&) = delete;
-        ~Localizer() override;
+        ViconLocalizer(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+        ViconLocalizer(const ViconLocalizer &) = delete;
+        ViconLocalizer &operator=(const ViconLocalizer &) = delete;
+        ViconLocalizer(ViconLocalizer &&) = delete;
+        ViconLocalizer &operator=(ViconLocalizer &&) = delete;
+        ~ViconLocalizer() override;
 
     private:
         void initialize_client();
         void poll_client();
         void process_frame();
 
-        std::string m_hostname;
+        std::string m_server_address;
+        std::uint32_t m_buffer_size;
         std::string m_subject_name;
         std::string m_map_frame_id;
         std::string m_odom_frame_id;
         std::string m_marker_frame_id;
         std::string m_base_frame_id;
-        std::uint32_t m_buffer_size;
 
         ViconDataStreamSDK::CPP::Client m_client;
         std::thread m_client_polling_thread;
