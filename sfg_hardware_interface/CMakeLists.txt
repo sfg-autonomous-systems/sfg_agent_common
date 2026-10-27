@@ -57,6 +57,7 @@ sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
     "src/vicon_localizer.cpp"
     DEPENDENCIES
     PRIVATE
+    ${geometry_msgs_TARGETS}
     rclcpp_components::component
     sfg_utils::sfg_utils
     tf2_geometry_msgs::tf2_geometry_msgs

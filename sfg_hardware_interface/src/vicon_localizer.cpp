@@ -128,6 +128,7 @@ namespace sfg_hardware_interface
         while (!m_done && rclcpp::ok() && m_client.IsConnected().Connected)
         {
             const auto frame_result = m_client.GetFrame().Result;
+
             if (frame_result == ViconDataStreamSDK::CPP::Result::NoFrame)
             {
                 if (!rclcpp::sleep_for(std::chrono::milliseconds(10)))
@@ -136,6 +137,7 @@ namespace sfg_hardware_interface
                 }
                 continue;
             }
+            
             if (frame_result != ViconDataStreamSDK::CPP::Result::Success)
             {
                 throw std::runtime_error("Failed to retrieve a Vicon frame.");
