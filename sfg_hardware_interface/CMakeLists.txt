@@ -12,8 +12,22 @@ find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    vicon_datastream_sdk
+    GIT_REPOSITORY https://github.com/whoenig/vicon-datastream-sdk.git
+    GIT_TAG a5096f283f484acca98b434c08810cd922551701
+    GIT_PROGRESS TRUE
+)
+FetchContent_MakeAvailable(vicon_datastream_sdk)
+set_target_properties(ViconDataStreamSDK_CPP PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
@@ -35,6 +49,27 @@ sfg_utils__add_library("${target_name}"
     geometry_msgs
     rclcpp
     sfg_agent_msgs
+)
+
+sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
+    SOURCES
+    "src/vicon_localizer_component.cpp"
+    "src/vicon_localizer.cpp"
+    DEPENDENCIES
+    PRIVATE
+    ${geometry_msgs_TARGETS}
+    rclcpp_components::component
+    sfg_utils::sfg_utils
+    tf2_geometry_msgs::tf2_geometry_msgs
+    ViconDataStreamSDK_CPP
+    PUBLIC
+    rclcpp::rclcpp
+    tf2_ros::tf2_ros
+    EXPORT_DEPENDENCIES
+    rclcpp
+    sfg_utils
+    tf2_geometry_msgs
+    tf2_ros
 )
 
 if(BUILD_TESTING)
