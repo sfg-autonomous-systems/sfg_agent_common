@@ -183,8 +183,7 @@ namespace sfg_hardware_interface
         tf2::Transform marker_to_base_link_transform;
         try
         {
-            const auto marker_to_base_link_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_link_frame_id, stamp);
-            tf2::fromMsg(marker_to_base_link_message.transform, marker_to_base_link_transform);
+            tf2::fromMsg(marker_to_base_link_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_link_frame_id, stamp).transform, marker_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
@@ -195,8 +194,7 @@ namespace sfg_hardware_interface
         tf2::Transform odom_to_base_link_transform;
         try
         {
-            const auto odom_to_base_link_message = m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_link_frame_id, stamp, std::chrono::milliseconds(50));
-            tf2::fromMsg(odom_to_base_link_message.transform, odom_to_base_link_transform);
+            tf2::fromMsg(m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_link_frame_id, stamp, std::chrono::milliseconds(50)).transform, odom_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
