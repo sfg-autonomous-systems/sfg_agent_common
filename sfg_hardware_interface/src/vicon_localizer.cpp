@@ -27,8 +27,6 @@ namespace sfg_hardware_interface
           m_transform_listener(std::make_unique<tf2_ros::TransformListener>(*m_transform_buffer)),
           m_tf_broadcaster(std::make_unique<tf2_ros::TransformBroadcaster>(this))
     {
-        const auto agent_name = sfg_utils::agent_utils::get_agent_name();
-
         // Declare and retrieve ROS parameters.
         m_server_address = sfg_utils::ros_utils::declare_parameter_if_not_declared(
             *this,
@@ -47,7 +45,7 @@ namespace sfg_hardware_interface
         m_subject_name = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "subject_name",
-            agent_name);
+            sfg_utils::agent_utils::get_agent_name());
 
         m_map_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
@@ -64,14 +62,14 @@ namespace sfg_hardware_interface
             "marker_frame_id",
             m_subject_name);
 
-        m_base_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
+        m_base_link_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "base_frame_id",
             m_subject_name);
 
         m_client_polling_thread = std::thread(&ViconLocalizer::poll_client, this);
 
-        RCLCPP_INFO(get_logger(), "Started Vicon localizer for subject '%s', estimating %s -> %s from Vicon and odometry.", m_subject_name.c_str(), m_map_frame_id.c_str(), m_odom_frame_id.c_str());
+        RCLCPP_INFO(get_logger(), "Started Vicon localizer for subject '%s', estimating '%s -> %s' from Vicon and odometry.", m_subject_name.c_str(), m_map_frame_id.c_str(), m_odom_frame_id.c_str());
     }
 
     ViconLocalizer::~ViconLocalizer()
@@ -183,24 +181,24 @@ namespace sfg_hardware_interface
         tf2::Transform marker_to_base_link_transform;
         try
         {
-            const auto marker_to_base_link_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_frame_id, stamp);
+            const auto marker_to_base_link_message = m_transform_buffer->lookupTransform(m_marker_frame_id, m_base_link_frame_id, stamp);
             tf2::fromMsg(marker_to_base_link_message.transform, marker_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
-            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Failed to look up transform from marker frame ID '%s' to base frame ID '%s': %s", m_marker_frame_id.c_str(), m_base_frame_id.c_str(), exception.what());
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Failed to look up transform from marker frame ID '%s' to base frame ID '%s': %s", m_marker_frame_id.c_str(), m_base_link_frame_id.c_str(), exception.what());
             return;
         }
 
         tf2::Transform odom_to_base_link_transform;
         try
         {
-            const auto odom_to_base_link_message = m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_frame_id, stamp, std::chrono::milliseconds(50));
+            const auto odom_to_base_link_message = m_transform_buffer->lookupTransform(m_odom_frame_id, m_base_link_frame_id, stamp, std::chrono::milliseconds(50));
             tf2::fromMsg(odom_to_base_link_message.transform, odom_to_base_link_transform);
         }
         catch (const tf2::TransformException &exception)
         {
-            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Cannot look up odometry transform '%s' -> '%s': %s", m_odom_frame_id.c_str(), m_base_frame_id.c_str(), exception.what());
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Cannot look up odometry transform '%s' -> '%s': %s", m_odom_frame_id.c_str(), m_base_link_frame_id.c_str(), exception.what());
             return;
         }
 

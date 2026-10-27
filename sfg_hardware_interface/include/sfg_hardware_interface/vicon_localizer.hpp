@@ -28,13 +28,14 @@ namespace sfg_hardware_interface
         void poll_client();
         void process_frame();
 
+        // ROS parameters
         std::string m_server_address;
         std::uint32_t m_buffer_size;
         std::string m_subject_name;
         std::string m_map_frame_id;
         std::string m_odom_frame_id;
         std::string m_marker_frame_id;
-        std::string m_base_frame_id;
+        std::string m_base_link_frame_id;
 
         ViconDataStreamSDK::CPP::Client m_client;
         std::thread m_client_polling_thread;
