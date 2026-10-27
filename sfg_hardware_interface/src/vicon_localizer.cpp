@@ -68,7 +68,6 @@ namespace sfg_hardware_interface
             m_subject_name);
 
         m_client_polling_thread = std::thread(&ViconLocalizer::poll_client, this);
-
         RCLCPP_INFO(get_logger(), "Started Vicon localizer for subject '%s', estimating '%s -> %s' from Vicon and odometry.", m_subject_name.c_str(), m_map_frame_id.c_str(), m_odom_frame_id.c_str());
     }
 
