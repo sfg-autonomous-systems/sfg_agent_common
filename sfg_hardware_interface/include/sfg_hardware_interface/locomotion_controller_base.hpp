@@ -2,7 +2,9 @@
 
 #include <eigen3/Eigen/Dense>
 #include <geometry_msgs/msg/twist_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_broadcaster.hpp>
 
 #include "sfg_agent_msgs/srv/trigger_action.hpp"
 
@@ -20,6 +22,11 @@ namespace sfg_hardware_interface
         virtual void apply_cmd(const geometry_msgs::msg::TwistStamped &cmd) = 0;
 
         void add_action(const std::string &name, std::function<void()> function);
+        bool try_publish_odometry(std::unique_ptr<nav_msgs::msg::Odometry> msg);
+
+        // ROS parameters
+        std::string m_odom_frame_id;
+        std::string m_base_link_frame_id;
 
         std::map<std::string, std::function<void()>> m_action_map;
 
@@ -44,5 +51,7 @@ namespace sfg_hardware_interface
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr m_cmd_vel_subscriber;
         rclcpp::TimerBase::SharedPtr m_reset_cmd_timer;
         rclcpp::Service<sfg_agent_msgs::srv::TriggerAction>::SharedPtr m_trigger_action_service;
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_odometry_publisher;
+        std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
     };
 }

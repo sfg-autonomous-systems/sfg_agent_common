@@ -45,7 +45,7 @@ namespace sfg_hardware_interface
         m_subject_name = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "subject_name",
-            sfg_utils::agent_utils::get_agent_name());
+            sfg_utils::agent_utils::sanitize_agent_name(sfg_utils::agent_utils::get_agent_name()));
 
         m_map_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
@@ -55,17 +55,17 @@ namespace sfg_hardware_interface
         m_odom_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "odom_frame_id",
-            "odom");
+            sfg_utils::agent_utils::sanitize_agent_name(sfg_utils::agent_utils::get_agent_name()) + "/odom");
 
         m_marker_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "marker_frame_id",
-            m_subject_name);
+            sfg_utils::agent_utils::sanitize_agent_name(sfg_utils::agent_utils::get_agent_name()) + "/marker");
 
         m_base_link_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
-            "base_frame_id",
-            m_subject_name);
+            "base_link_frame_id",
+            sfg_utils::agent_utils::sanitize_agent_name(sfg_utils::agent_utils::get_agent_name()) + "/base");
 
         m_client_polling_thread = std::thread(&ViconLocalizer::poll_client, this);
         RCLCPP_INFO(get_logger(), "Started Vicon localizer for subject '%s', estimating '%s -> %s' from Vicon and odometry.", m_subject_name.c_str(), m_map_frame_id.c_str(), m_odom_frame_id.c_str());
@@ -136,7 +136,7 @@ namespace sfg_hardware_interface
                 }
                 continue;
             }
-            
+
             if (frame_result != ViconDataStreamSDK::CPP::Result::Success)
             {
                 throw std::runtime_error("Failed to retrieve a Vicon frame.");

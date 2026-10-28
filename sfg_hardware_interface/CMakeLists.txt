@@ -11,6 +11,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
@@ -40,15 +41,19 @@ sfg_utils__add_library("${target_name}"
     PUBLIC
     Eigen3::Eigen
     ${geometry_msgs_TARGETS}
+    ${nav_msgs_TARGETS}
     rclcpp::rclcpp
     ${sfg_agent_msgs_TARGETS}
+    tf2_ros::tf2_ros
     PRIVATE
     sfg_utils::sfg_utils
     EXPORT_DEPENDENCIES
     Eigen3
     geometry_msgs
+    nav_msgs
     rclcpp
     sfg_agent_msgs
+    tf2_ros
 )
 
 sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
