@@ -1,7 +1,6 @@
 #include "sfg_hardware_interface/locomotion_controller_base.hpp"
 
 #include <cmath>
-
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include "sfg_utils/agent_utils.hpp"
