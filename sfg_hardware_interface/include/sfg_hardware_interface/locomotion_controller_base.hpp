@@ -22,11 +22,14 @@ namespace sfg_hardware_interface
         virtual void apply_cmd(const geometry_msgs::msg::TwistStamped &cmd) = 0;
 
         void add_action(const std::string &name, std::function<void()> function);
-        bool try_publish_odometry(std::unique_ptr<nav_msgs::msg::Odometry> msg);
 
-        // ROS parameters
-        std::string m_odom_frame_id;
-        std::string m_base_link_frame_id;
+        // Publishes the odometry message and the corresponding odom -> base_link transform.
+        // stamp is the time the measurement was taken, pose is expressed in the odom frame and
+        // twist in the base_link frame. Returns false if the values are invalid.
+        bool try_publish_odometry(
+            const rclcpp::Time &stamp,
+            const geometry_msgs::msg::PoseWithCovariance &pose,
+            const geometry_msgs::msg::TwistWithCovariance &twist);
 
         std::map<std::string, std::function<void()>> m_action_map;
 
@@ -47,6 +50,8 @@ namespace sfg_hardware_interface
         float m_cmd_timeout;
         Eigen::Matrix<float, 3, 2> m_linear_limits;
         Eigen::Matrix<float, 3, 2> m_angular_limits;
+        std::string m_odom_frame_id;
+        std::string m_base_link_frame_id;
 
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr m_cmd_vel_subscriber;
         rclcpp::TimerBase::SharedPtr m_reset_cmd_timer;
