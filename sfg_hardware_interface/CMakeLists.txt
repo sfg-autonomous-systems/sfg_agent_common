@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(sfg_hardware_interface)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
 # ########################################################################################################
@@ -22,75 +22,71 @@ find_package(tf2_ros REQUIRED)
 include(FetchContent)
 
 FetchContent_Declare(
-    vicon_datastream_sdk
-    GIT_REPOSITORY https://github.com/whoenig/vicon-datastream-sdk.git
-    GIT_TAG a5096f283f484acca98b434c08810cd922551701
-    GIT_PROGRESS TRUE
+  vicon_datastream_sdk
+  GIT_REPOSITORY https://github.com/sfg-autonomous-systems/sfg_vicon_datastream_sdk.git
+  GIT_TAG 5aa21b4f493b88349b7c76e3761799d5b0a6223d
 )
 FetchContent_MakeAvailable(vicon_datastream_sdk)
-set_target_properties(ViconDataStreamSDK_CPP PROPERTIES POSITION_INDEPENDENT_CODE ON)
-# The SDK's demo executable is not needed and only produces compiler warnings.
-set_target_properties(ViconDataStreamSDK_CPPTest PROPERTIES EXCLUDE_FROM_ALL ON)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
 # ########################################################################################################
 set(target_name "${PROJECT_NAME}")
 sfg_utils__add_library("${target_name}"
-    SOURCES
-    "src/locomotion_controller_base.cpp"
-    DEPENDENCIES
-    PUBLIC
-    Eigen3::Eigen
-    ${geometry_msgs_TARGETS}
-    ${nav_msgs_TARGETS}
-    rclcpp::rclcpp
-    ${sfg_agent_msgs_TARGETS}
-    tf2_ros::tf2_ros
-    PRIVATE
-    sfg_utils::sfg_utils
-    EXPORT_DEPENDENCIES
-    Eigen3
-    geometry_msgs
-    nav_msgs
-    rclcpp
-    sfg_agent_msgs
-    tf2_ros
+  SOURCES
+  "src/locomotion_controller_base.cpp"
+  DEPENDENCIES
+  PUBLIC
+  Eigen3::Eigen
+  ${geometry_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  rclcpp::rclcpp
+  ${sfg_agent_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  PRIVATE
+  sfg_utils::sfg_utils
+  EXPORT_DEPENDENCIES
+  Eigen3
+  geometry_msgs
+  nav_msgs
+  rclcpp
+  sfg_agent_msgs
+  tf2_ros
 )
 
 sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
-    SOURCES
-    "src/vicon_localizer_component.cpp"
-    "src/vicon_localizer.cpp"
-    DEPENDENCIES
-    PRIVATE
-    ${geometry_msgs_TARGETS}
-    rclcpp_components::component
-    sfg_utils::sfg_utils
-    tf2_geometry_msgs::tf2_geometry_msgs
-    ViconDataStreamSDK_CPP
-    PUBLIC
-    rclcpp::rclcpp
-    tf2_ros::tf2_ros
-    EXPORT_DEPENDENCIES
-    rclcpp
-    sfg_utils
-    tf2_geometry_msgs
-    tf2_ros
+  SOURCES
+  "src/vicon_localizer_component.cpp"
+  "src/vicon_localizer.cpp"
+  DEPENDENCIES
+  PRIVATE
+  ${geometry_msgs_TARGETS}
+  rclcpp_components::component
+  sfg_utils::sfg_utils
+  tf2_geometry_msgs::tf2_geometry_msgs
+  ViconDataStreamSDK_CPP
+  PUBLIC
+  rclcpp::rclcpp
+  tf2_ros::tf2_ros
+  EXPORT_DEPENDENCIES
+  rclcpp
+  sfg_utils
+  tf2_geometry_msgs
+  tf2_ros
 )
 
 if(BUILD_TESTING)
-    find_package(ament_lint_auto REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
 
-    # The following line skips the linter which checks for copyrights.
-    # Comment the line when a copyright and license is added to all source files.
-    set(ament_cmake_copyright_FOUND TRUE)
+  # The following line skips the linter which checks for copyrights.
+  # Comment the line when a copyright and license is added to all source files.
+  set(ament_cmake_copyright_FOUND TRUE)
 
-    # The following line skips cpplint (only works in a git repo).
-    # Comment the line when this package is in a git repo and when
-    # a copyright and license is added to all source files.
-    set(ament_cmake_cpplint_FOUND TRUE)
-    ament_lint_auto_find_test_dependencies()
+  # The following line skips cpplint (only works in a git repo).
+  # Comment the line when this package is in a git repo and when
+  # a copyright and license is added to all source files.
+  set(ament_cmake_cpplint_FOUND TRUE)
+  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_package()
