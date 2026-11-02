@@ -29,6 +29,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vicon_datastream_sdk)
 set_target_properties(ViconDataStreamSDK_CPP PROPERTIES POSITION_INDEPENDENT_CODE ON)
+# The SDK's demo executable is not needed and only produces compiler warnings.
+set_target_properties(ViconDataStreamSDK_CPPTest PROPERTIES EXCLUDE_FROM_ALL ON)
 
 # ########################################################################################################
 # Add nodes and libraries.                                                                               #
