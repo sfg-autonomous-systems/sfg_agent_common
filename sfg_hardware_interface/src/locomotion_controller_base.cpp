@@ -131,13 +131,13 @@ namespace sfg_hardware_interface
         const geometry_msgs::msg::PoseWithCovariance &pose,
         const geometry_msgs::msg::TwistWithCovariance &twist)
     {
-        const double quaternion_norm = std::sqrt(
-            static_cast<double>(pose.pose.orientation.x) * pose.pose.orientation.x +
-            static_cast<double>(pose.pose.orientation.y) * pose.pose.orientation.y +
-            static_cast<double>(pose.pose.orientation.z) * pose.pose.orientation.z +
-            static_cast<double>(pose.pose.orientation.w) * pose.pose.orientation.w);
+        const auto quaternion_norm = std::sqrt(
+            pose.pose.orientation.x * pose.pose.orientation.x +
+            pose.pose.orientation.y * pose.pose.orientation.y +
+            pose.pose.orientation.z * pose.pose.orientation.z +
+            pose.pose.orientation.w * pose.pose.orientation.w);
 
-        constexpr double quaternion_norm_tolerance = 1e-3;
+        constexpr auto quaternion_norm_tolerance = 4e-3;
 
         if (!std::isfinite(quaternion_norm) || std::abs(quaternion_norm - 1.0) > quaternion_norm_tolerance)
         {
@@ -145,11 +145,7 @@ namespace sfg_hardware_interface
             return false;
         }
 
-        if (!std::isfinite(pose.pose.position.x) || !std::isfinite(pose.pose.position.y) ||
-            !std::isfinite(pose.pose.position.z) || !std::isfinite(twist.twist.linear.x) ||
-            !std::isfinite(twist.twist.linear.y) || !std::isfinite(twist.twist.linear.z) ||
-            !std::isfinite(twist.twist.angular.x) || !std::isfinite(twist.twist.angular.y) ||
-            !std::isfinite(twist.twist.angular.z))
+        if (!is_finite(pose.pose.position) || !is_finite(twist.twist.linear) || !is_finite(twist.twist.angular))
         {
             RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Ignoring odometry message with non-finite values.");
             return false;
