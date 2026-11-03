@@ -8,6 +8,12 @@
 
 namespace sfg_hardware_interface
 {
+    template <typename VectorT>
+    bool is_finite(const VectorT &vector)
+    {
+        return std::isfinite(vector.x) && std::isfinite(vector.y) && std::isfinite(vector.z);
+    }
+
     LocomotionControllerBase::LocomotionControllerBase(const std::string &name, const rclcpp::NodeOptions &options) : Node(name, options)
     {
         // Declare and retrieve ROS parameters.
@@ -19,29 +25,46 @@ namespace sfg_hardware_interface
                     "Messages that have been received with a timestamp older "
                     "than this value will be ignored. Unit is [s]."));
 
-        m_linear_limits = Eigen::Matrix<double, 3, 2>(
-                              declare_parameter(
-                                  "linear_limits",
-                                  std::vector<double>{0.5, 0.5, 0.5, 0.5, 0.5, 0.5},
-                                  rcl_interfaces::msg::ParameterDescriptor()
-                                      .set__description(
-                                          "The linear velocity limits along the robot's x, y, and z axes in [m/s]. "
-                                          "Each consecutive pair of values defines the minimum and maximum absolute speed for the respective axis. "
-                                          "The first two values are for x, the next two for y, and the last two for z."))
-                                  .data())
-                              .cast<float>();
+        // The trailing return type is required because else Eigen returns a lazily evaluated expression that relies on the local matrix 'parsed_limits'.
+        auto declare_limits_parameter = [this](const std::string &parameter_name, const std::vector<double> &default_values, const std::string &description) -> Eigen::Matrix<float, 3, 2>
+        {
+            auto raw_limits = declare_parameter(
+                parameter_name,
+                default_values,
+                rcl_interfaces::msg::ParameterDescriptor().set__description(description));
 
-        m_angular_limits = Eigen::Matrix<double, 3, 2>(
-                               declare_parameter(
-                                   "angular_limits",
-                                   std::vector<double>{1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
-                                   rcl_interfaces::msg::ParameterDescriptor()
-                                       .set__description(
-                                           "The angular velocity limits around the robot's x, y, and z axes in [rad/s]. "
-                                           "Each consecutive pair of values defines the minimum and maximum absolute speed for the respective axis. "
-                                           "The first two values are for x, the next two for y, and the last two for z."))
-                                   .data())
-                               .cast<float>();
+            if (raw_limits.size() != 6)
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must contain exactly 6 values.");
+            }
+
+            const Eigen::Matrix<double, 3, 2> parsed_limits = Eigen::Matrix<double, 2, 3>(raw_limits.data()).transpose();
+
+            if ((parsed_limits.col(0).array() > 0.0).any() || (parsed_limits.col(1).array() < 0.0).any())
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must satisfy min <= 0 <= max for every axis.");
+            }
+
+            if (!parsed_limits.allFinite())
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must contain only finite values.");
+            }
+            return parsed_limits.cast<float>();
+        };
+
+        m_linear_limits = declare_limits_parameter(
+            "linear_limits",
+            std::vector<double>{-0.5, 0.5, -0.5, 0.5, -0.5, 0.5},
+            "The linear velocity limits along the robot's x, y, and z axes in [m/s]. "
+            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
+            "The first two values are for x, the next two for y, and the last two for z.");
+
+        m_angular_limits = declare_limits_parameter(
+            "angular_limits",
+            std::vector<double>{-1.0, 1.0, -1.0, 1.0, -1.0, 1.0},
+            "The angular velocity limits around the robot's x, y, and z axes in [rad/s]. "
+            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
+            "The first two values are for x, the next two for y, and the last two for z.");
 
         m_odom_frame_id = declare_parameter<std::string>(
             "odom_frame_id",
@@ -154,11 +177,15 @@ namespace sfg_hardware_interface
 
     void LocomotionControllerBase::cmd_vel_callback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr &msg)
     {
-        if (now() - msg->header.stamp > rclcpp::Duration::from_seconds(m_cmd_timeout))
+        if (std::abs((now() - msg->header.stamp).seconds()) >= m_cmd_timeout)
         {
-            // Just to be safe...
-            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Received outdated command message. Ignoring.");
-            m_reset_cmd_timer->reset();
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Received command message outside the accepted time window. Ignoring.");
+            return;
+        }
+
+        if (!is_finite(msg->twist.linear) || !is_finite(msg->twist.angular))
+        {
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Received command message with non-finite values. Ignoring.");
             return;
         }
 
@@ -241,8 +268,15 @@ namespace sfg_hardware_interface
             static_cast<float>(velocity.y),
             static_cast<float>(velocity.z),
         };
-        Eigen::Vector3f sign = clamped_velocity.cwiseSign();
-        clamped_velocity = clamped_velocity.cwiseAbs().cwiseMin(limits.col(1)).cwiseMax(limits.col(0)).cwiseProduct(sign);
+        clamped_velocity = clamped_velocity.cwiseMax(limits.col(0)).cwiseMin(limits.col(1));
+
+        const auto max_speed = limits.cwiseAbs().maxCoeff();
+        const auto speed = clamped_velocity.norm();
+
+        if (speed > max_speed)
+        {
+            clamped_velocity *= max_speed / speed;
+        }
 
         geometry_msgs::msg::Vector3 result;
         result.x = clamped_velocity.x();
