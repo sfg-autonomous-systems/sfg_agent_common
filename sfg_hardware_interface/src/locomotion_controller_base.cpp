@@ -284,7 +284,7 @@ namespace sfg_hardware_interface
         // 1. Clamp each axis to its max negative/positive speed.
         clamped_velocity = clamped_velocity.max(limits.array().col(0)).min(limits.array().col(5));
 
-        // 2. Limit the total speed before applying the minimums, so it can't push them below min again.
+        // 2. Limit the total speed before applying the mins, so it can't push them below min again.
         const float max_speed = limits.array().abs().maxCoeff();
         const float speed = clamped_velocity.matrix().norm();
 
