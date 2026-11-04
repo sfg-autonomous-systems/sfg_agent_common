@@ -34,6 +34,8 @@ namespace sfg_hardware_interface
         std::map<std::string, std::function<void()>> m_action_map;
 
     private:
+        using LimitsMatrix = Eigen::Matrix<float, 3, 6>;
+
         class UnsupportedActionException : public std::exception
         {
         };
@@ -44,12 +46,12 @@ namespace sfg_hardware_interface
             const std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Request> request,
             std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Response> response);
 
-        geometry_msgs::msg::Vector3 clamp_velocity(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits);
+        geometry_msgs::msg::Vector3 apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const LimitsMatrix &limits);
 
         // ROS parameters
         float m_cmd_timeout;
-        Eigen::Matrix<float, 3, 2> m_linear_limits;
-        Eigen::Matrix<float, 3, 2> m_angular_limits;
+        LimitsMatrix m_linear_limits;
+        LimitsMatrix m_angular_limits;
         std::string m_odom_frame_id;
         std::string m_base_link_frame_id;
 

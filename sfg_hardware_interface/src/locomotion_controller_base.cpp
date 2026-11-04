@@ -26,45 +26,62 @@ namespace sfg_hardware_interface
                     "than this value will be ignored. Unit is [s]."));
 
         // The trailing return type is required because else Eigen returns a lazily evaluated expression that relies on the local matrix 'parsed_limits'.
-        auto declare_limits_parameter = [this](const std::string &parameter_name, const std::vector<double> &default_values, const std::string &description) -> Eigen::Matrix<float, 3, 2>
+        auto declare_limits_parameter = [this](
+                                            const std::string &kind,
+                                            const std::string &unit,
+                                            const std::vector<double> &default_values) -> LimitsMatrix
         {
-            auto raw_limits = declare_parameter(
-                parameter_name,
-                default_values,
-                rcl_interfaces::msg::ParameterDescriptor().set__description(description));
+            const auto parameter_name = kind + "_limits";
+            auto descriptor = rcl_interfaces::msg::ParameterDescriptor();
+            descriptor.set__read_only(true);
+            descriptor.set__description(
+                "Signed " + kind + " velocity limits along each axis (order: x, y, z) in [" + unit + "]. Each axis has the following values: " +
+                "[max negative speed, min negative speed, negative dead band edge, positive dead band edge, min positive speed, max positive speed].");
+            descriptor.set__additional_constraints(
+                std::to_string(LimitsMatrix::ColsAtCompileTime) + " values per axis, ordered: v0 <= v1 <= v2 <= 0 <= v3 <= v4 <= v5.");
 
-            if (raw_limits.size() != 6)
+            auto raw_limits = declare_parameter(parameter_name, default_values, descriptor);
+
+            if (raw_limits.size() != static_cast<size_t>(LimitsMatrix::SizeAtCompileTime))
             {
-                throw std::runtime_error("The parameter '" + parameter_name + "' must contain exactly 6 values.");
+                throw std::runtime_error("The parameter '" + parameter_name + "' must contain exactly " + std::to_string(LimitsMatrix::SizeAtCompileTime) + " values.");
             }
 
-            const Eigen::Matrix<double, 3, 2> parsed_limits = Eigen::Matrix<double, 2, 3>(raw_limits.data()).transpose();
-
-            if ((parsed_limits.col(0).array() > 0.0).any() || (parsed_limits.col(1).array() < 0.0).any())
-            {
-                throw std::runtime_error("The parameter '" + parameter_name + "' must satisfy min <= 0 <= max for every axis.");
-            }
+            const auto parsed_limits = Eigen::Matrix<double, LimitsMatrix::ColsAtCompileTime, LimitsMatrix::RowsAtCompileTime>(raw_limits.data()).transpose().eval();
 
             if (!parsed_limits.allFinite())
             {
                 throw std::runtime_error("The parameter '" + parameter_name + "' must contain only finite values.");
             }
+
+            constexpr auto N = LimitsMatrix::ColsAtCompileTime;
+            const auto monotonically_increasing = (parsed_limits.leftCols<N - 1>().array() <= parsed_limits.rightCols<N - 1>().array()).all();
+            const auto negative_dead_band_is_negative = (parsed_limits.col(2).array() <= 0.0).all();
+            const auto positive_dead_band_is_positive = (parsed_limits.col(3).array() >= 0.0).all();
+
+            if (!monotonically_increasing || !negative_dead_band_is_negative || !positive_dead_band_is_positive)
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must satisfy: " + descriptor.additional_constraints);
+            }
+
             return parsed_limits.cast<float>();
         };
 
         m_linear_limits = declare_limits_parameter(
-            "linear_limits",
-            std::vector<double>{-0.5, 0.5, -0.5, 0.5, -0.5, 0.5},
-            "The linear velocity limits along the robot's x, y, and z axes in [m/s]. "
-            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
-            "The first two values are for x, the next two for y, and the last two for z.");
+            "linear",
+            "m/s",
+            std::vector<double>{
+                -0.5, -0.3, -0.05, 0.05, 0.3, 0.5,
+                -0.5, -0.3, -0.05, 0.05, 0.3, 0.5,
+                -0.5, -0.3, -0.05, 0.05, 0.3, 0.5});
 
         m_angular_limits = declare_limits_parameter(
-            "angular_limits",
-            std::vector<double>{-1.0, 1.0, -1.0, 1.0, -1.0, 1.0},
-            "The angular velocity limits around the robot's x, y, and z axes in [rad/s]. "
-            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
-            "The first two values are for x, the next two for y, and the last two for z.");
+            "angular",
+            "rad/s",
+            std::vector<double>{
+                -1.0, -0.3, -0.05, 0.05, 0.3, 1.0,
+                -1.0, -0.3, -0.05, 0.05, 0.3, 1.0,
+                -1.0, -0.3, -0.05, 0.05, 0.3, 1.0});
 
         m_odom_frame_id = declare_parameter<std::string>(
             "odom_frame_id",
@@ -187,8 +204,8 @@ namespace sfg_hardware_interface
 
         auto cmd = geometry_msgs::msg::TwistStamped();
         cmd.header = msg->header;
-        cmd.twist.linear = clamp_velocity(msg->twist.linear, m_linear_limits);
-        cmd.twist.angular = clamp_velocity(msg->twist.angular, m_angular_limits);
+        cmd.twist.linear = apply_velocity_limits(msg->twist.linear, m_linear_limits);
+        cmd.twist.angular = apply_velocity_limits(msg->twist.angular, m_angular_limits);
 
         try
         {
@@ -257,22 +274,31 @@ namespace sfg_hardware_interface
         response->result = sfg_agent_msgs::srv::TriggerAction::Response::SUCCESS;
     }
 
-    geometry_msgs::msg::Vector3 LocomotionControllerBase::clamp_velocity(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits)
+    geometry_msgs::msg::Vector3 LocomotionControllerBase::apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const LimitsMatrix &limits)
     {
-        Eigen::Vector3f clamped_velocity = {
+        Eigen::Array3f clamped_velocity(
             static_cast<float>(velocity.x),
             static_cast<float>(velocity.y),
-            static_cast<float>(velocity.z),
-        };
-        clamped_velocity = clamped_velocity.cwiseMax(limits.col(0)).cwiseMin(limits.col(1));
+            static_cast<float>(velocity.z));
 
-        const auto max_speed = limits.cwiseAbs().maxCoeff();
-        const auto speed = clamped_velocity.norm();
+        // 1. Clamp each axis to its max negative/positive speed.
+        clamped_velocity = clamped_velocity.max(limits.array().col(0)).min(limits.array().col(5));
+
+        // 2. Limit the total speed before applying the minimums, so it can't push them below min again.
+        const float max_speed = limits.array().abs().maxCoeff();
+        const float speed = clamped_velocity.matrix().norm();
 
         if (speed > max_speed)
         {
             clamped_velocity *= max_speed / speed;
         }
+
+        // 3. Set velocities within the dead band to zero.
+        clamped_velocity = (clamped_velocity >= limits.array().col(2) && clamped_velocity <= limits.array().col(3)).select(0.0f, clamped_velocity);
+
+        // 4. Raise small non-zero values to the minimum speed per direction.
+        clamped_velocity = (clamped_velocity > limits.array().col(1) && clamped_velocity < limits.array().col(2)).select(limits.array().col(1), clamped_velocity);
+        clamped_velocity = (clamped_velocity > limits.array().col(3) && clamped_velocity < limits.array().col(4)).select(limits.array().col(4), clamped_velocity);
 
         geometry_msgs::msg::Vector3 result;
         result.x = clamped_velocity.x();
