@@ -8,8 +8,8 @@
 
 namespace sfg_hardware_interface
 {
-    template <typename VectorT>
-    bool is_finite(const VectorT &vector)
+    template <typename VectorType>
+    bool is_finite(const VectorType &vector)
     {
         return std::isfinite(vector.x) && std::isfinite(vector.y) && std::isfinite(vector.z);
     }
