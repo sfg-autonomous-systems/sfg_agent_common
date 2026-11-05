@@ -20,13 +20,14 @@ namespace sfg_hardware_interface
         }
     }
 
-    ViconLocalizer::ViconLocalizer(const rclcpp::NodeOptions &options)
-        : Node("localizer", rclcpp::NodeOptions(options).allow_undeclared_parameters(true).automatically_declare_parameters_from_overrides(true)),
+    ViconLocalizer::ViconLocalizer(const rclcpp::NodeOptions &options) : Node("localizer", options),
           m_done(false),
           m_transform_buffer(std::make_unique<tf2_ros::Buffer>(get_clock())),
           m_transform_listener(std::make_unique<tf2_ros::TransformListener>(*m_transform_buffer)),
           m_tf_broadcaster(std::make_unique<tf2_ros::TransformBroadcaster>(this))
     {
+        auto sanitized_agent_name = sfg_utils::agent_utils::sanitize_agent_name(sfg_utils::agent_utils::get_agent_name());
+
         // Declare and retrieve ROS parameters.
         m_server_address = sfg_utils::ros_utils::declare_parameter_if_not_declared(
             *this,
@@ -45,7 +46,7 @@ namespace sfg_hardware_interface
         m_subject_name = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "subject_name",
-            sfg_utils::agent_utils::get_agent_name());
+            sanitized_agent_name);
 
         m_map_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
@@ -55,17 +56,17 @@ namespace sfg_hardware_interface
         m_odom_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "odom_frame_id",
-            "odom");
+            sanitized_agent_name + "/odom");
 
         m_marker_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
             "marker_frame_id",
-            m_subject_name);
+            sanitized_agent_name + "/marker");
 
         m_base_link_frame_id = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::string>(
             *this,
-            "base_frame_id",
-            m_subject_name);
+            "base_link_frame_id",
+            sanitized_agent_name + "/base_link");
 
         m_client_polling_thread = std::thread(&ViconLocalizer::poll_client, this);
         RCLCPP_INFO(get_logger(), "Started Vicon localizer for subject '%s', estimating '%s -> %s' from Vicon and odometry.", m_subject_name.c_str(), m_map_frame_id.c_str(), m_odom_frame_id.c_str());
@@ -128,18 +129,15 @@ namespace sfg_hardware_interface
         {
             const auto frame_result = m_client.GetFrame().Result;
 
-            if (frame_result == ViconDataStreamSDK::CPP::Result::NoFrame)
+            if (frame_result != ViconDataStreamSDK::CPP::Result::Success)
             {
+                RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Failed to retrieve a Vicon frame.");
+
                 if (!rclcpp::sleep_for(std::chrono::milliseconds(10)))
                 {
                     break;
                 }
                 continue;
-            }
-            
-            if (frame_result != ViconDataStreamSDK::CPP::Result::Success)
-            {
-                throw std::runtime_error("Failed to retrieve a Vicon frame.");
             }
 
             try

@@ -9,6 +9,7 @@
 
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>
