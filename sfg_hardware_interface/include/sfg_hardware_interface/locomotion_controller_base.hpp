@@ -34,7 +34,7 @@ namespace sfg_hardware_interface
             const std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Request> request,
             std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Response> response);
 
-        geometry_msgs::msg::Vector3 clamp_velocity(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits);
+        geometry_msgs::msg::Vector3 apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits);
 
         // ROS parameters
         float m_cmd_timeout;

@@ -1,9 +1,90 @@
 #include "sfg_hardware_interface/locomotion_controller_base.hpp"
 
+#include <cmath>
+
 #include "sfg_utils/fqn/ros_fqn_builder.hpp"
 
 namespace sfg_hardware_interface
 {
+    template <typename VectorType>
+    bool is_finite(const VectorType &vector)
+    {
+        return std::isfinite(vector.x) && std::isfinite(vector.y) && std::isfinite(vector.z);
+    }
+
+    LocomotionControllerBase::LocomotionControllerBase(const std::string &name, const rclcpp::NodeOptions &options) : Node(name, options)
+    {
+        // Declare and retrieve ROS parameters.
+        m_cmd_timeout = declare_parameter(
+            "cmd_timeout",
+            0.25f,
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__description(
+                    "Messages that have been received with a timestamp older "
+                    "than this value will be ignored. Unit is [s]."));
+
+        // The trailing return type is required because else Eigen returns a lazily evaluated expression that relies on the local matrix 'parsed_limits'.
+        auto declare_limits_parameter = [this](const std::string &parameter_name, const std::vector<double> &default_values, const std::string &description) -> Eigen::Matrix<float, 3, 2>
+        {
+            auto raw_limits = declare_parameter(
+                parameter_name,
+                default_values,
+                rcl_interfaces::msg::ParameterDescriptor().set__description(description));
+
+            if (raw_limits.size() != 6)
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must contain exactly 6 values.");
+            }
+
+            const Eigen::Matrix<double, 3, 2> parsed_limits = Eigen::Matrix<double, 2, 3>(raw_limits.data()).transpose();
+
+            if ((parsed_limits.col(0).array() > 0.0).any() || (parsed_limits.col(1).array() < 0.0).any())
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must satisfy min <= 0 <= max for every axis.");
+            }
+
+            if (!parsed_limits.allFinite())
+            {
+                throw std::runtime_error("The parameter '" + parameter_name + "' must contain only finite values.");
+            }
+            return parsed_limits.cast<float>();
+        };
+
+        m_linear_limits = declare_limits_parameter(
+            "linear_limits",
+            std::vector<double>{-0.5, 0.5, -0.5, 0.5, -0.5, 0.5},
+            "The linear velocity limits along the robot's x, y, and z axes in [m/s]. "
+            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
+            "The first two values are for x, the next two for y, and the last two for z.");
+
+        m_angular_limits = declare_limits_parameter(
+            "angular_limits",
+            std::vector<double>{-1.0, 1.0, -1.0, 1.0, -1.0, 1.0},
+            "The angular velocity limits around the robot's x, y, and z axes in [rad/s]. "
+            "Each consecutive pair of values defines the minimum and maximum speed for the respective axis. "
+            "The first two values are for x, the next two for y, and the last two for z.");
+
+        m_action_map = {
+            {"arm", std::bind(&LocomotionControllerBase::arm, this)},
+            {"disarm", std::bind(&LocomotionControllerBase::disarm, this)},
+            {"emergency_stop", std::bind(&LocomotionControllerBase::emergency_stop, this)},
+        };
+
+        using namespace sfg_utils::fqn;
+
+        // Set up interfaces.
+        m_cmd_vel_subscriber = create_subscription<geometry_msgs::msg::TwistStamped>(
+            RosFqnBuilder().resource(Resource::CmdVel).build(RosFqnSegment::Resource),
+            rclcpp::SensorDataQoS(),
+            std::bind(&LocomotionControllerBase::cmd_vel_callback, this, std::placeholders::_1));
+        m_reset_cmd_timer = create_wall_timer(
+            std::chrono::duration<float>(m_cmd_timeout),
+            std::bind(&LocomotionControllerBase::reset_cmd_callback, this));
+        m_trigger_action_service = create_service<sfg_agent_msgs::srv::TriggerAction>(
+            RosFqnBuilder().resource(Resource::TriggerAction).build(RosFqnSegment::Resource),
+            std::bind(&LocomotionControllerBase::trigger_action_callback, this, std::placeholders::_1, std::placeholders::_2));
+    }
+
     void LocomotionControllerBase::arm()
     {
         throw UnsupportedActionException();
@@ -29,76 +110,24 @@ namespace sfg_hardware_interface
         m_action_map[name] = function;
     }
 
-    LocomotionControllerBase::LocomotionControllerBase(const std::string &name, const rclcpp::NodeOptions &options) : Node(name, options)
-    {
-        // Declare and retrieve ROS parameters.
-        m_cmd_timeout = declare_parameter(
-            "cmd_timeout",
-            0.25f,
-            rcl_interfaces::msg::ParameterDescriptor()
-                .set__description(
-                    "Messages that have been received with a timestamp older "
-                    "than this value will be ignored. Unit is [s]."));
-
-        m_linear_limits = Eigen::Matrix<double, 3, 2>(
-                              declare_parameter(
-                                  "linear_limits",
-                                  std::vector<double>{0.5, 0.5, 0.5, 0.5, 0.5, 0.5},
-                                  rcl_interfaces::msg::ParameterDescriptor()
-                                      .set__description(
-                                          "The linear velocity limits along the robot's x, y, and z axes in [m/s]. "
-                                          "Each consecutive pair of values defines the minimum and maximum absolute speed for the respective axis. "
-                                          "The first two values are for x, the next two for y, and the last two for z."))
-                                  .data())
-                              .cast<float>();
-
-        m_angular_limits = Eigen::Matrix<double, 3, 2>(
-                               declare_parameter(
-                                   "angular_limits",
-                                   std::vector<double>{1.0, 1.0, 1.0, 1.0, 1.0, 1.0},
-                                   rcl_interfaces::msg::ParameterDescriptor()
-                                       .set__description(
-                                           "The angular velocity limits around the robot's x, y, and z axes in [rad/s]. "
-                                           "Each consecutive pair of values defines the minimum and maximum absolute speed for the respective axis. "
-                                           "The first two values are for x, the next two for y, and the last two for z."))
-                                   .data())
-                               .cast<float>();
-
-        m_action_map = {
-            {"arm", std::bind(&LocomotionControllerBase::arm, this)},
-            {"disarm", std::bind(&LocomotionControllerBase::disarm, this)},
-            {"emergency_stop", std::bind(&LocomotionControllerBase::emergency_stop, this)},
-        };
-
-        using namespace sfg_utils::fqn;
-
-        // Set up interfaces.
-        m_cmd_vel_subscriber = create_subscription<geometry_msgs::msg::TwistStamped>(
-            RosFqnBuilder().resource(Resource::CmdVel).build(RosFqnSegment::Resource),
-            rclcpp::SensorDataQoS(),
-            std::bind(&LocomotionControllerBase::cmd_vel_callback, this, std::placeholders::_1));
-        m_reset_cmd_timer = create_wall_timer(
-            std::chrono::duration<float>(m_cmd_timeout),
-            std::bind(&LocomotionControllerBase::reset_cmd_callback, this));
-        m_trigger_action_service = create_service<sfg_agent_msgs::srv::TriggerAction>(
-            RosFqnBuilder().resource(Resource::TriggerAction).build(RosFqnSegment::Resource),
-            std::bind(&LocomotionControllerBase::trigger_action_callback, this, std::placeholders::_1, std::placeholders::_2));
-    }
-
     void LocomotionControllerBase::cmd_vel_callback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr &msg)
     {
-        if (now() - msg->header.stamp > rclcpp::Duration::from_seconds(m_cmd_timeout))
+        if (std::abs((now() - msg->header.stamp).seconds()) >= m_cmd_timeout)
         {
-            // Just to be safe...
-            RCLCPP_WARN(get_logger(), "Received outdated command message. Ignoring.");
-            m_reset_cmd_timer->reset();
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Received command message outside the accepted time window. Ignoring.");
+            return;
+        }
+
+        if (!is_finite(msg->twist.linear) || !is_finite(msg->twist.angular))
+        {
+            RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "Received command message with non-finite values. Ignoring.");
             return;
         }
 
         auto cmd = geometry_msgs::msg::TwistStamped();
         cmd.header = msg->header;
-        cmd.twist.linear = clamp_velocity(msg->twist.linear, m_linear_limits);
-        cmd.twist.angular = clamp_velocity(msg->twist.angular, m_angular_limits);
+        cmd.twist.linear = apply_velocity_limits(msg->twist.linear, m_linear_limits);
+        cmd.twist.angular = apply_velocity_limits(msg->twist.angular, m_angular_limits);
 
         try
         {
@@ -167,15 +196,22 @@ namespace sfg_hardware_interface
         response->result = sfg_agent_msgs::srv::TriggerAction::Response::SUCCESS;
     }
 
-    geometry_msgs::msg::Vector3 LocomotionControllerBase::clamp_velocity(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits)
+    geometry_msgs::msg::Vector3 LocomotionControllerBase::apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const Eigen::Matrix<float, 3, 2> &limits)
     {
         Eigen::Vector3f clamped_velocity = {
             static_cast<float>(velocity.x),
             static_cast<float>(velocity.y),
             static_cast<float>(velocity.z),
         };
-        Eigen::Vector3f sign = clamped_velocity.cwiseSign();
-        clamped_velocity = clamped_velocity.cwiseAbs().cwiseMin(limits.col(1)).cwiseMax(limits.col(0)).cwiseProduct(sign);
+        clamped_velocity = clamped_velocity.cwiseMax(limits.col(0)).cwiseMin(limits.col(1));
+
+        const auto max_speed = limits.cwiseAbs().maxCoeff();
+        const auto speed = clamped_velocity.norm();
+
+        if (speed > max_speed)
+        {
+            clamped_velocity *= max_speed / speed;
+        }
 
         geometry_msgs::msg::Vector3 result;
         result.x = clamped_velocity.x();
