@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <rclcpp/rclcpp.hpp>
 
 #include "sfg_agent_msgs/msg/discovery_event.hpp"
@@ -31,7 +32,7 @@ namespace sfg_agent
             std::shared_ptr<sfg_agent_msgs::srv::GetDiscoveredAgents::Response> response);
 
         // ROS parameters
-        uint8_t m_keepalive;
+        std::uint8_t m_keepalive;
         bool m_exclude_self;
 
         std::string m_agent_name;
