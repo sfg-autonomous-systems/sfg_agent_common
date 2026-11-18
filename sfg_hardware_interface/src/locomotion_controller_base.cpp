@@ -108,14 +108,14 @@ namespace sfg_hardware_interface
             RosFqnBuilder().resource(Resource::CmdVel).build(RosFqnSegment::Resource),
             rclcpp::SensorDataQoS(),
             std::bind(&LocomotionControllerBase::cmd_vel_callback, this, std::placeholders::_1));
-        m_reset_cmd_timer = create_wall_timer(
+        m_cmd_vel_reset_timer = create_wall_timer(
             std::chrono::duration<float>(m_cmd_timeout),
             std::bind(&LocomotionControllerBase::reset_cmd_callback, this));
+        m_odometry_publisher = create_publisher<nav_msgs::msg::Odometry>(RosFqnBuilder().resource(Resource::Odom).build(RosFqnSegment::Resource), 10);
+        m_tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
         m_trigger_action_service = create_service<sfg_agent_msgs::srv::TriggerAction>(
             RosFqnBuilder().resource(Resource::TriggerAction).build(RosFqnSegment::Resource),
             std::bind(&LocomotionControllerBase::trigger_action_callback, this, std::placeholders::_1, std::placeholders::_2));
-        m_odometry_publisher = create_publisher<nav_msgs::msg::Odometry>(RosFqnBuilder().scope(Scope::Global).agent().component(sfg_utils::fqn::Component::LocomotionController).resource(Resource::Custom, "odom").build(), 10);
-        m_tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
     }
 
     void LocomotionControllerBase::arm()
@@ -215,7 +215,7 @@ namespace sfg_hardware_interface
         {
             RCLCPP_ERROR(get_logger(), "Failed to apply command message: %s", exception.what());
         }
-        m_reset_cmd_timer->reset();
+        m_cmd_vel_reset_timer->reset();
     }
 
     void LocomotionControllerBase::reset_cmd_callback()
@@ -226,7 +226,7 @@ namespace sfg_hardware_interface
         try
         {
             apply_cmd(msg);
-            m_reset_cmd_timer->cancel();
+            m_cmd_vel_reset_timer->cancel();
         }
         catch (const std::exception &exception)
         {
