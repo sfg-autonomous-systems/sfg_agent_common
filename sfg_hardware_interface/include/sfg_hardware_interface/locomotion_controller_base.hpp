@@ -56,9 +56,9 @@ namespace sfg_hardware_interface
         std::string m_base_link_frame_id;
 
         rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr m_cmd_vel_subscriber;
-        rclcpp::TimerBase::SharedPtr m_reset_cmd_timer;
-        rclcpp::Service<sfg_agent_msgs::srv::TriggerAction>::SharedPtr m_trigger_action_service;
+        rclcpp::TimerBase::SharedPtr m_cmd_vel_reset_timer;
         rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_odometry_publisher;
         std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
+        rclcpp::Service<sfg_agent_msgs::srv::TriggerAction>::SharedPtr m_trigger_action_service;
     };
 }

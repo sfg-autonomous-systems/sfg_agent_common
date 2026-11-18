@@ -14,9 +14,10 @@ namespace sfg_utils::fqn
         ImageRaw = 1 << 5,
         Imu = 1 << 6,
         JointStates = 1 << 7,
-        PointCloud = 1 << 8,
-        RobotDescription = 1 << 9,
-        TriggerAction = 1 << 10,
+        Odom = 1 << 8,
+        PointCloud = 1 << 9,
+        RobotDescription = 1 << 10,
+        TriggerAction = 1 << 11,
 
         None = 0,
         Custom = 1,
