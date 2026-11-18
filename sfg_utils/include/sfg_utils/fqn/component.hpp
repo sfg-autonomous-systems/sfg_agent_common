@@ -8,6 +8,7 @@ namespace sfg_utils::fqn
         Create3,
         Lidar,
         LocomotionController,
+        Tracker,
 
         Custom
     };
