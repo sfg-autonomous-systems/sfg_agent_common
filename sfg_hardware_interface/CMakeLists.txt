@@ -70,8 +70,6 @@ sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
   tf2_ros::tf2_ros
   EXPORT_DEPENDENCIES
   rclcpp
-  sfg_utils
-  tf2_geometry_msgs
   tf2_ros
 )
 

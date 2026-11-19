@@ -1,5 +1,6 @@
 #include "sfg_hardware_interface/vicon_localizer.hpp"
 
+#include <DataStreamClient.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include "sfg_utils/agent_utils.hpp"
@@ -20,7 +21,9 @@ namespace sfg_hardware_interface
         }
     }
 
-    ViconLocalizer::ViconLocalizer(const rclcpp::NodeOptions &options) : Node("localizer", options),
+    ViconLocalizer::ViconLocalizer(const rclcpp::NodeOptions &options)
+        : Node("localizer", options),
+          m_client(std::make_unique<ViconDataStreamSDK::CPP::Client>()),
           m_done(false),
           m_transform_buffer(std::make_unique<tf2_ros::Buffer>(get_clock())),
           m_transform_listener(std::make_unique<tf2_ros::TransformListener>(*m_transform_buffer)),
@@ -86,11 +89,11 @@ namespace sfg_hardware_interface
     {
         RCLCPP_INFO(get_logger(), "Connecting to Vicon server at %s...", m_server_address.c_str());
 
-        while (!m_done && rclcpp::ok() && !m_client.IsConnected().Connected)
+        while (!m_done && rclcpp::ok() && !m_client->IsConnected().Connected)
         {
-            m_client.Connect(m_server_address);
+            m_client->Connect(m_server_address);
 
-            if (m_client.IsConnected().Connected)
+            if (m_client->IsConnected().Connected)
             {
                 break;
             }
@@ -108,9 +111,9 @@ namespace sfg_hardware_interface
 
         RCLCPP_INFO(get_logger(), "Connected to Vicon server at %s.", m_server_address.c_str());
 
-        m_client.SetBufferSize(m_buffer_size);
-        throw_on_failure(m_client.EnableSegmentData(), "Failed to enable segment data from Vicon server.");
-        throw_on_failure(m_client.SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush), "Failed to set Vicon stream mode.");
+        m_client->SetBufferSize(m_buffer_size);
+        throw_on_failure(m_client->EnableSegmentData(), "Failed to enable segment data from Vicon server.");
+        throw_on_failure(m_client->SetStreamMode(ViconDataStreamSDK::CPP::StreamMode::ServerPush), "Failed to set Vicon stream mode.");
     }
 
     void ViconLocalizer::poll_client()
@@ -125,9 +128,9 @@ namespace sfg_hardware_interface
             return;
         }
 
-        while (!m_done && rclcpp::ok() && m_client.IsConnected().Connected)
+        while (!m_done && rclcpp::ok() && m_client->IsConnected().Connected)
         {
-            const auto frame_result = m_client.GetFrame().Result;
+            const auto frame_result = m_client->GetFrame().Result;
 
             if (frame_result != ViconDataStreamSDK::CPP::Result::Success)
             {
@@ -152,7 +155,7 @@ namespace sfg_hardware_interface
 
         try
         {
-            throw_on_failure(m_client.Disconnect(), "Failed to disconnect from Vicon server.");
+            throw_on_failure(m_client->Disconnect(), "Failed to disconnect from Vicon server.");
         }
         catch (const std::exception &exception)
         {
@@ -162,10 +165,10 @@ namespace sfg_hardware_interface
 
     void ViconLocalizer::process_frame()
     {
-        auto stamp = now() - rclcpp::Duration::from_seconds(m_client.GetLatencyTotal().Total);
-        auto segment_name = throw_on_failure(m_client.GetSubjectRootSegmentName(m_subject_name), "Failed to get subject root segment name from Vicon server.").SegmentName;
-        auto segment_translation = throw_on_failure(m_client.GetSegmentGlobalTranslation(m_subject_name, segment_name), "Failed to get root segment global translation from Vicon server.");
-        auto segment_rotation = throw_on_failure(m_client.GetSegmentGlobalRotationQuaternion(m_subject_name, segment_name), "Failed to get root segment global rotation from Vicon server.");
+        auto stamp = now() - rclcpp::Duration::from_seconds(m_client->GetLatencyTotal().Total);
+        auto segment_name = throw_on_failure(m_client->GetSubjectRootSegmentName(m_subject_name), "Failed to get subject root segment name from Vicon server.").SegmentName;
+        auto segment_translation = throw_on_failure(m_client->GetSegmentGlobalTranslation(m_subject_name, segment_name), "Failed to get root segment global translation from Vicon server.");
+        auto segment_rotation = throw_on_failure(m_client->GetSegmentGlobalRotationQuaternion(m_subject_name, segment_name), "Failed to get root segment global rotation from Vicon server.");
 
         if (segment_translation.Occluded || segment_rotation.Occluded)
         {
