@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <DataStreamClient.h>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <string>
@@ -10,6 +9,12 @@
 #include <tf2_ros/transform_broadcaster.hpp>
 #include <tf2_ros/transform_listener.h>
 #include <thread>
+
+// Forward declare the client so we don't need ViconDataStreamSDK_CPP as a public dependency.
+namespace ViconDataStreamSDK::CPP
+{
+    class Client;
+}
 
 namespace sfg_hardware_interface
 {
@@ -37,7 +42,7 @@ namespace sfg_hardware_interface
         std::string m_marker_frame_id;
         std::string m_base_link_frame_id;
 
-        ViconDataStreamSDK::CPP::Client m_client;
+        std::unique_ptr<ViconDataStreamSDK::CPP::Client> m_client;
         std::thread m_client_polling_thread;
         std::atomic<bool> m_done;
 
