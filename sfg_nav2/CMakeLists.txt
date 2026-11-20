@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 # Add other files/directories.                                                                           #
 # ########################################################################################################
 install(DIRECTORY
+  "config"
   "launch"
   DESTINATION "share/${PROJECT_NAME}/"
 )

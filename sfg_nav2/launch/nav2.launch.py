@@ -21,6 +21,14 @@ def generate_launch_description() -> launch.LaunchDescription:
     use_respawn = LaunchConfiguration("use_respawn")
     use_sim_time = LaunchConfiguration("use_sim_time")
 
+    common_params_file = PathJoinSubstitution(
+        [
+            FindPackageShare(package_name),
+            "config",
+            "nav2_params_common.yaml",
+        ]
+    )
+
     lifecycle_nodes = [
         "controller_server",
         "smoother_server",
@@ -31,6 +39,16 @@ def generate_launch_description() -> launch.LaunchDescription:
         "bt_navigator",
         "waypoint_follower",
     ]
+
+    common_params = ParameterFile(
+        RewrittenYaml(
+            source_file=common_params_file,
+            root_key=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+            param_rewrites={},
+            convert_types=True,
+        ),
+        allow_substs=True,
+    )
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -75,6 +93,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "odom_topic": global_namespace.component(
@@ -106,7 +125,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 output="screen",
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[common_params, configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
                 remappings=[],
                 namespace=local_namespace.build(
@@ -120,6 +139,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "base_frame_id": local_namespace.resource(
@@ -148,6 +168,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "odom_topic": global_namespace.component(
@@ -170,6 +191,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "odom_topic": global_namespace.component(
@@ -191,7 +213,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 output="screen",
                 respawn=use_respawn,
                 respawn_delay=2.0,
-                parameters=[configured_params],
+                parameters=[common_params, configured_params],
                 arguments=["--ros-args", "--log-level", log_level],
                 remappings=[],
                 namespace=local_namespace.build(
@@ -205,6 +227,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "robot_base_frame": local_namespace.resource(
@@ -225,6 +248,7 @@ def generate_launch_description() -> launch.LaunchDescription:
                 respawn=use_respawn,
                 respawn_delay=2.0,
                 parameters=[
+                    common_params,
                     configured_params,
                     {
                         "robot_base_frame": local_namespace.resource(
