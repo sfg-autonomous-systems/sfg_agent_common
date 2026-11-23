@@ -20,10 +20,6 @@ namespace sfg_hardware_interface::detail
     {
     public:
         explicit Nl80211Client(std::chrono::milliseconds receive_timeout);
-        Nl80211Client(const Nl80211Client &) = delete;
-        Nl80211Client &operator=(const Nl80211Client &) = delete;
-        Nl80211Client(Nl80211Client &&) noexcept = default;
-        Nl80211Client &operator=(Nl80211Client &&) noexcept = default;
 
         InterfaceInfo get_interface(const std::string &interface_name);
         std::vector<StationInfo> get_stations(const std::string &interface_name);

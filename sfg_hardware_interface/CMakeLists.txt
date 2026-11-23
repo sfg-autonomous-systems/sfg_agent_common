@@ -78,6 +78,7 @@ sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
 
 sfg_utils__add_component("wifi_link_status_publisher" "${PROJECT_NAME}::WifiLinkStatusPublisher"
   SOURCES
+  "src/detail/network_utils.cpp"
   "src/detail/nl80211_client.cpp"
   "src/wifi_link_status_publisher_component.cpp"
   "src/wifi_link_status_publisher.cpp"
