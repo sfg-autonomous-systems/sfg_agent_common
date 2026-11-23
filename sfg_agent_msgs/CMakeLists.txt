@@ -25,6 +25,7 @@ set(msg_files
   "msg/Metadata.msg"
   "msg/Trajectory.msg"
   "msg/Waypoint.msg"
+  "msg/WifiLinkStatus.msg"
 )
 set(srv_files
   "srv/GetDiscoveredAgents.srv"

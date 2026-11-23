@@ -9,6 +9,7 @@ namespace sfg_utils::fqn
         Lidar,
         LocomotionController,
         Tracker,
+        Wifi,
 
         Custom
     };
