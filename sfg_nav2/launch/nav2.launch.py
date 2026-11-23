@@ -1,8 +1,8 @@
 import launch
-from launch.actions import DeclareLaunchArgument, GroupAction
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node, SetParameter
-from launch_ros.descriptions import ParameterFile
+from launch_ros.actions import ComposableNodeContainer, SetParameter
+from launch_ros.descriptions import ComposableNode, ParameterFile
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
 from rospkg import get_package_name
@@ -14,13 +14,6 @@ global_namespace = RosFqnBuilder().scope(Scope.Global).agent()
 
 
 def generate_launch_description() -> launch.LaunchDescription:
-    autostart = LaunchConfiguration("autostart")
-    log_level = LaunchConfiguration("log_level")
-    params_file = LaunchConfiguration("params_file")
-    params_package_name = LaunchConfiguration("params_package_name")
-    use_respawn = LaunchConfiguration("use_respawn")
-    use_sim_time = LaunchConfiguration("use_sim_time")
-
     common_params_file = PathJoinSubstitution(
         [
             FindPackageShare(package_name),
@@ -52,18 +45,18 @@ def generate_launch_description() -> launch.LaunchDescription:
 
     configured_params = ParameterFile(
         RewrittenYaml(
-            source_file=params_file,
+            source_file=LaunchConfiguration("params_file"),
             root_key=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
             param_rewrites={
-                "autostart": autostart,
+                "autostart": LaunchConfiguration("autostart"),
                 "collision_monitor.ros__parameters.pointcloud.topic": global_namespace.component(
                     Component.Lidar, "back"
                 )
                 .resource(Resource.PointCloud)
                 .build(),
-                "global_frame": local_namespace.resource(Resource.Custom, "odom").build(
-                    RosFqnSegment.Agent, RosFqnSegment.Resource
-                ),
+                "local_costmap.local_costmap.ros__parameters.global_frame": local_namespace.resource(
+                    Resource.Custom, "odom"
+                ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
                 "global_costmap.global_costmap.ros__parameters.obstacle_layer.lidar.topic": global_namespace.component(
                     Component.Lidar, "back"
                 )
@@ -77,222 +70,192 @@ def generate_launch_description() -> launch.LaunchDescription:
                 "robot_base_frame": local_namespace.resource(
                     Resource.Custom, "base_link"
                 ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
+                "use_sim_time": LaunchConfiguration("use_sim_time"),
             },
             convert_types=True,
         ),
         allow_substs=True,
     )
 
-    nav2_nodes = GroupAction(
-        actions=[
-            SetParameter("use_sim_time", use_sim_time),
-            Node(
-                package="nav2_controller",
-                executable="controller_server",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "odom_topic": global_namespace.component(
-                            Component.LocomotionController
-                        )
-                        .resource(Resource.Odom)
-                        .build(),
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[
-                    ("cmd_vel", "cmd_vel_nav"),
-                    (
-                        local_namespace.resource(
-                            Resource.Custom, "follow_path"
-                        ).build(),
-                        global_namespace.resource(
-                            Resource.Custom, "follow_path"
-                        ).build(),
-                    ),
-                ],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
+    controller_node = ComposableNode(
+        package="nav2_controller",
+        plugin="nav2_controller::ControllerServer",
+        name="controller_server",
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "odom_topic": global_namespace.component(Component.LocomotionController)
+                .resource(Resource.Odom)
+                .build()
+            },
+        ],
+        remappings=[
+            ("cmd_vel", "cmd_vel_nav"),
+            (
+                local_namespace.resource(Resource.Custom, "follow_path").build(),
+                global_namespace.resource(Resource.Custom, "follow_path").build(),
             ),
-            Node(
-                package="nav2_planner",
-                executable="planner_server",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[common_params, configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_collision_monitor",
-                executable="collision_monitor",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "base_frame_id": local_namespace.resource(
-                            Resource.Custom, "base_link"
-                        ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
-                        "odom_frame_id": local_namespace.resource(
-                            Resource.Custom, "odom"
-                        ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
-                        "cmd_vel_out_topic": local_namespace.component(
-                            Component.LocomotionController
-                        )
-                        .resource(Resource.CmdVel)
-                        .build(),
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_smoother",
-                executable="smoother_server",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "odom_topic": global_namespace.component(
-                            Component.LocomotionController
-                        )
-                        .resource(Resource.Odom)
-                        .build(),
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_velocity_smoother",
-                executable="velocity_smoother",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "odom_topic": global_namespace.component(
-                            Component.LocomotionController
-                        )
-                        .resource(Resource.Odom)
-                        .build()
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[("cmd_vel", "cmd_vel_nav")],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_waypoint_follower",
-                executable="waypoint_follower",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[common_params, configured_params],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_behaviors",
-                executable="behavior_server",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "robot_base_frame": local_namespace.resource(
-                            Resource.Custom, "base_link"
-                        ).build(RosFqnSegment.Agent, RosFqnSegment.Resource)
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[("cmd_vel", "cmd_vel_nav")],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_bt_navigator",
-                executable="bt_navigator",
-                output="screen",
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[
-                    common_params,
-                    configured_params,
-                    {
-                        "robot_base_frame": local_namespace.resource(
-                            Resource.Custom, "base_link"
-                        ).build(RosFqnSegment.Agent, RosFqnSegment.Resource)
-                    },
-                ],
-                arguments=["--ros-args", "--log-level", log_level],
-                remappings=[],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-            Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="lifecycle_manager_navigation",
-                output="screen",
-                arguments=["--ros-args", "--log-level", log_level],
-                parameters=[{"autostart": autostart, "node_names": lifecycle_nodes}],
-                namespace=local_namespace.build(
-                    RosFqnSegment.Scope, RosFqnSegment.Agent
-                ),
-            ),
-        ]
+        ],
+    )
+
+    planner_node = ComposableNode(
+        package="nav2_planner",
+        plugin="nav2_planner::PlannerServer",
+        name="planner_server",
+        parameters=[common_params, configured_params],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    collision_monitor_node = ComposableNode(
+        package="nav2_collision_monitor",
+        plugin="nav2_collision_monitor::CollisionMonitor",
+        name="collision_monitor",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "base_frame_id": local_namespace.resource(
+                    Resource.Custom, "base_link"
+                ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
+                "odom_frame_id": local_namespace.resource(
+                    Resource.Custom, "odom"
+                ).build(RosFqnSegment.Agent, RosFqnSegment.Resource),
+                "cmd_vel_out_topic": local_namespace.component(
+                    Component.LocomotionController
+                )
+                .resource(Resource.CmdVel)
+                .build(),
+            },
+        ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    smoother_server_node = ComposableNode(
+        package="nav2_smoother",
+        plugin="nav2_smoother::SmootherServer",
+        name="smoother_server",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "odom_topic": global_namespace.component(Component.LocomotionController)
+                .resource(Resource.Odom)
+                .build()
+            },
+        ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    velocity_smoother_node = ComposableNode(
+        package="nav2_velocity_smoother",
+        plugin="nav2_velocity_smoother::VelocitySmoother",
+        name="velocity_smoother",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "odom_topic": global_namespace.component(Component.LocomotionController)
+                .resource(Resource.Odom)
+                .build()
+            },
+        ],
+        remappings=[("cmd_vel", "cmd_vel_nav")],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    waypoint_follower_node = ComposableNode(
+        package="nav2_waypoint_follower",
+        plugin="nav2_waypoint_follower::WaypointFollower",
+        name="waypoint_follower",
+        parameters=[
+            common_params,
+            configured_params,
+        ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    behavior_server_node = ComposableNode(
+        package="nav2_behaviors",
+        plugin="behavior_server::BehaviorServer",
+        name="behavior_server",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "global_frame": global_namespace.component(
+                    Component.LocomotionController
+                )
+                .resource(Resource.Odom)
+                .build(),
+            },
+        ],
+        remappings=[("cmd_vel", "cmd_vel_nav")],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    bt_navigator_node = ComposableNode(
+        package="nav2_bt_navigator",
+        plugin="nav2_bt_navigator::BtNavigator",
+        name="bt_navigator",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "odom_topic": global_namespace.component(Component.LocomotionController)
+                .resource(Resource.Odom)
+                .build(),
+            },
+        ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    lifecycle_manager_node = ComposableNode(
+        package="nav2_lifecycle_manager",
+        plugin="nav2_lifecycle_manager::LifecycleManager",
+        name="lifecycle_manager_navigation",
+        parameters=[{"node_names": lifecycle_nodes}],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
     )
 
     return launch.LaunchDescription(
         [
             DeclareLaunchArgument("autostart", default_value="true"),
             DeclareLaunchArgument("log_level", default_value="info"),
-            DeclareLaunchArgument(
-                "params_file",
-                default_value=PathJoinSubstitution(
-                    [
-                        FindPackageShare(params_package_name),
-                        "config",
-                        "nav2_params.yaml",
-                    ]
-                ),
-            ),
-            DeclareLaunchArgument("params_package_name", default_value=package_name),
+            DeclareLaunchArgument("params_file"),
             DeclareLaunchArgument("use_respawn", default_value="false"),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
-            nav2_nodes,
+            ComposableNodeContainer(
+                package="rclcpp_components",
+                executable="component_container_mt",
+                namespace=local_namespace.build(
+                    RosFqnSegment.Scope, RosFqnSegment.Agent
+                ),
+                name="nav2_container",
+                output="screen",
+                respawn=LaunchConfiguration("use_respawn"),
+                arguments=[
+                    "--ros-args",
+                    "--log-level",
+                    LaunchConfiguration("log_level"),
+                ],
+                composable_node_descriptions=[
+                    controller_node,
+                    planner_node,
+                    collision_monitor_node,
+                    smoother_server_node,
+                    velocity_smoother_node,
+                    waypoint_follower_node,
+                    behavior_server_node,
+                    bt_navigator_node,
+                    lifecycle_manager_node,
+                ],
+            ),
         ]
     )

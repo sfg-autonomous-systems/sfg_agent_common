@@ -1,12 +1,7 @@
-# Generisch: Algorithmen, Plugins, Toleranzen, Frequenzen, BT-Struktur.
-# Keine roboter- oder sensorspezifischen Werte.
-# Hinweis: Listen (z. B. plugins) werden von der spezifischen Datei komplett
-# ersetzt, falls dort dieselbe Liste gesetzt wird.
-
 bt_navigator:
   ros__parameters:
-    global_frame: odom          # wird per RewrittenYaml ersetzt
-    robot_base_frame: base_link # wird per RewrittenYaml ersetzt
+    global_frame: map
+    robot_base_frame: base_link
     transform_tolerance: 0.1
     default_server_timeout: 20
     wait_for_service_timeout: 1000
@@ -59,8 +54,8 @@ local_costmap:
     ros__parameters:
       update_frequency: 5.0
       publish_frequency: 2.0
-      global_frame: odom          # wird per RewrittenYaml ersetzt
-      robot_base_frame: base_link # wird per RewrittenYaml ersetzt
+      global_frame: odom
+      robot_base_frame: base_link
       rolling_window: true
       resolution: 0.05
       plugins: ["obstacle_layer", "inflation_layer"]
@@ -77,8 +72,8 @@ global_costmap:
     ros__parameters:
       update_frequency: 1.0
       publish_frequency: 1.0
-      global_frame: odom          # wird per RewrittenYaml ersetzt
-      robot_base_frame: base_link # wird per RewrittenYaml ersetzt
+      global_frame: map
+      robot_base_frame: base_link
       rolling_window: true
       resolution: 0.05
       track_unknown_space: true
@@ -122,8 +117,8 @@ behavior_server:
       plugin: "nav2_behaviors::BackUp"
     wait:
       plugin: "nav2_behaviors::Wait"
-    global_frame: odom          # wird per RewrittenYaml ersetzt
-    robot_base_frame: base_link # wird per RewrittenYaml ersetzt
+    global_frame: map
+    robot_base_frame: base_link
     transform_tolerance: 0.1
     simulate_ahead_time: 2.0
 
@@ -143,7 +138,7 @@ velocity_smoother:
     scale_velocities: false
     feedback: "OPEN_LOOP"
     odom_duration: 0.1
-    odom_topic: "odom"          # wird im Launch-File überschrieben
+    odom_topic: odom
     velocity_timeout: 1.0
 
 collision_monitor:
