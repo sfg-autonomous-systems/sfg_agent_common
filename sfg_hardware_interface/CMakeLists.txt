@@ -81,9 +81,6 @@ sfg_utils__add_component("wifi_link_status_publisher" "${PROJECT_NAME}::WifiLink
   "src/detail/nl80211_client.cpp"
   "src/wifi_link_status_publisher_component.cpp"
   "src/wifi_link_status_publisher.cpp"
-  ADDITIONAL_INCLUDE_DIRS
-  PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/src"
   DEPENDENCIES
   PRIVATE
   PkgConfig::LIBNL

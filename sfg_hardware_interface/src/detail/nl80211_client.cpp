@@ -1,5 +1,6 @@
 #include "sfg_hardware_interface/detail/nl80211_client.hpp"
 
+#include <cerrno>
 #include <cstring>
 #include <linux/if_ether.h>
 #include <linux/nl80211.h>
@@ -120,10 +121,6 @@ namespace sfg_hardware_interface::detail
         {
             interface_info.m_ssid = std::string(static_cast<const char *>(nla_data(attributes[NL80211_ATTR_SSID])), nla_len(attributes[NL80211_ATTR_SSID]));
         }
-        if (attributes[NL80211_ATTR_BSSID])
-        {
-            interface_info.m_bssid = std::string(static_cast<const char *>(nla_data(attributes[NL80211_ATTR_BSSID])), nla_len(attributes[NL80211_ATTR_BSSID]));
-        }
         if (attributes[NL80211_ATTR_WIPHY_FREQ])
         {
             interface_info.m_frequency_mhz = nla_get_u32(attributes[NL80211_ATTR_WIPHY_FREQ]);
@@ -152,7 +149,7 @@ namespace sfg_hardware_interface::detail
 
         auto to_u32 = [&](size_t attribute_index) -> std::optional<std::uint32_t>
         {
-            return station_info_attributes[attribute_index] ? std::optional<uint32_t>(nla_get_u32(station_info_attributes[attribute_index])) : std::nullopt;
+            return station_info_attributes[attribute_index] ? std::optional<std::uint32_t>(nla_get_u32(station_info_attributes[attribute_index])) : std::nullopt;
         };
         auto to_dbm = [&](size_t attribute_index) -> std::optional<std::int32_t>
         {
@@ -204,7 +201,7 @@ namespace sfg_hardware_interface::detail
         station_info.m_tx_retry_count = to_u32(NL80211_STA_INFO_TX_RETRIES);
         station_info.m_tx_failed_count = to_u32(NL80211_STA_INFO_TX_FAILED);
         station_info.m_inactive_for_ms = to_u32(NL80211_STA_INFO_INACTIVE_TIME);
-        station_info.m_connected_for_ms = to_u32(NL80211_STA_INFO_CONNECTED_TIME);
+        station_info.m_connected_for = to_u32(NL80211_STA_INFO_CONNECTED_TIME);
         return station_info;
     }
 
@@ -242,7 +239,7 @@ namespace sfg_hardware_interface::detail
 
                 if (context->m_exception)
                 {
-                    return NL_SKIP;
+                    return NL_OK;
                 }
                 try
                 {
@@ -255,7 +252,7 @@ namespace sfg_hardware_interface::detail
                 {
                     context->m_exception = std::current_exception();
                 }
-                return NL_SKIP;
+                return NL_OK;
             },
             &context);
         nl_cb_set(
@@ -265,7 +262,7 @@ namespace sfg_hardware_interface::detail
             [](nl_msg *, void *custom_data) -> std::int32_t
             {
                 static_cast<Context *>(custom_data)->m_status = 0;
-                return NL_SKIP;
+                return NL_OK;
             },
             &context);
         nl_cb_set(
@@ -275,7 +272,7 @@ namespace sfg_hardware_interface::detail
             [](nl_msg *, void *custom_data) -> std::int32_t
             {
                 static_cast<Context *>(custom_data)->m_status = 0;
-                return NL_STOP;
+                return NL_OK;
             },
             &context);
         nl_cb_err(
@@ -284,7 +281,7 @@ namespace sfg_hardware_interface::detail
             [](sockaddr_nl *, nlmsgerr *error_msg, void *custom_data) -> std::int32_t
             {
                 static_cast<Context *>(custom_data)->m_status = error_msg->error;
-                return NL_STOP;
+                return NL_OK;
             },
             &context);
 

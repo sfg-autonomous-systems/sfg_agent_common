@@ -20,6 +20,6 @@ namespace sfg_hardware_interface::detail
         std::optional<std::uint32_t> m_tx_retry_count;
         std::optional<std::uint32_t> m_tx_failed_count;
         std::optional<std::uint32_t> m_inactive_for_ms;
-        std::optional<std::uint32_t> m_connected_for_ms;
+        std::optional<std::uint32_t> m_connected_for;
     };
 }

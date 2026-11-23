@@ -19,7 +19,7 @@ namespace sfg_hardware_interface::detail
     class Nl80211Client
     {
     public:
-        Nl80211Client(std::chrono::milliseconds receive_timeout);
+        explicit Nl80211Client(std::chrono::milliseconds receive_timeout);
         Nl80211Client(const Nl80211Client &) = delete;
         Nl80211Client &operator=(const Nl80211Client &) = delete;
         Nl80211Client(Nl80211Client &&) noexcept = default;
