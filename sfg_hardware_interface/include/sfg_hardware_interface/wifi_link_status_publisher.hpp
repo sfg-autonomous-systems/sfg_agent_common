@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <rclcpp/rclcpp.hpp>
 #include <sfg_agent_msgs/msg/wifi_link_status.hpp>
 #include <string>
@@ -27,6 +28,15 @@ namespace sfg_hardware_interface
         ~WifiLinkStatusPublisher() override;
 
     private:
+        struct Sample
+        {
+        public:
+            rclcpp::Time m_stamp;
+            std::string m_bssid;
+            std::uint64_t m_rx_byte_count;
+            std::uint64_t m_tx_byte_count;
+        };
+
         void publish_link_status();
 
         void validate_client(detail::Nl80211Client &client);
@@ -39,6 +49,7 @@ namespace sfg_hardware_interface
         std::string m_frame_id;
 
         std::unique_ptr<detail::Nl80211Client> m_nl80211_client;
+        std::optional<Sample> m_previous_sample;
 
         rclcpp::Publisher<sfg_agent_msgs::msg::WifiLinkStatus>::SharedPtr m_link_status_publisher;
         rclcpp::TimerBase::SharedPtr m_timer;

@@ -194,8 +194,8 @@ namespace sfg_hardware_interface::detail
 
         station_info.m_signal_strength_dbm = to_dbm(NL80211_STA_INFO_SIGNAL);
         station_info.m_signal_strength_average_dbm = to_dbm(NL80211_STA_INFO_SIGNAL_AVG);
-        station_info.m_tx_nominal_bitrate_mbps = to_bitrate(station_info_attributes[NL80211_STA_INFO_TX_BITRATE]);
         station_info.m_rx_nominal_bitrate_mbps = to_bitrate(station_info_attributes[NL80211_STA_INFO_RX_BITRATE]);
+        station_info.m_tx_nominal_bitrate_mbps = to_bitrate(station_info_attributes[NL80211_STA_INFO_TX_BITRATE]);
         station_info.m_rx_byte_count = to_bytes(NL80211_STA_INFO_RX_BYTES64, NL80211_STA_INFO_RX_BYTES);
         station_info.m_tx_byte_count = to_bytes(NL80211_STA_INFO_TX_BYTES64, NL80211_STA_INFO_TX_BYTES);
         station_info.m_tx_retry_count = to_u32(NL80211_STA_INFO_TX_RETRIES);

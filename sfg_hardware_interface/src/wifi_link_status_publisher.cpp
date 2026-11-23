@@ -91,11 +91,16 @@ namespace sfg_hardware_interface
             {
                 fill_link_status(*msg, interface_info, station_infos.front());
             }
+            else
+            {
+                m_previous_sample.reset();
+            }
         }
         catch (const detail::Nl80211Client::Error &error)
         {
             RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "Failed to read Wi-Fi interface '%s': %s", m_network_interface.c_str(), error.what());
             m_nl80211_client.reset();
+            m_previous_sample.reset();
         }
         m_link_status_publisher->publish(std::move(msg));
     }
@@ -139,5 +144,21 @@ namespace sfg_hardware_interface
 
         msg.tx_actual_bitrate_mbps = std::numeric_limits<float>::quiet_NaN();
         msg.rx_actual_bitrate_mbps = std::numeric_limits<float>::quiet_NaN();
+
+        if (m_previous_sample && m_previous_sample->m_bssid == msg.bssid)
+        {
+            const auto elapsed_time = (rclcpp::Time(msg.header.stamp) - m_previous_sample->m_stamp).seconds();
+            auto compute_bitrate_mbps = [elapsed_time](std::uint64_t previous_byte_count, std::uint64_t current_byte_count)
+            {
+                if (elapsed_time <= 0.0 || current_byte_count < previous_byte_count)
+                {
+                    return std::numeric_limits<float>::quiet_NaN();
+                }
+                return static_cast<float>((current_byte_count - previous_byte_count) * 8.0 / elapsed_time / 1e6);
+            };
+            msg.rx_actual_bitrate_mbps = compute_bitrate_mbps(m_previous_sample->m_rx_byte_count, msg.rx_byte_count);
+            msg.tx_actual_bitrate_mbps = compute_bitrate_mbps(m_previous_sample->m_tx_byte_count, msg.tx_byte_count);
+        }
+        m_previous_sample = Sample{msg.header.stamp, msg.bssid, msg.rx_byte_count, msg.tx_byte_count};
     }
 }
