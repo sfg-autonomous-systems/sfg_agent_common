@@ -57,7 +57,7 @@ namespace sfg_hardware_interface
         using namespace sfg_utils::fqn;
 
         // Set up interfaces.
-        m_link_status_publisher = create_publisher<sfg_agent_msgs::msg::WifiLinkStatus>(
+        m_link_status_publisher = create_publisher<sfg_hardware_interface_msgs::msg::WifiLinkStatus>(
             RosFqnBuilder().resource(Resource::LinkStatus).build(RosFqnSegment::Resource),
             10);
 
@@ -72,7 +72,7 @@ namespace sfg_hardware_interface
 
     void WifiLinkStatusPublisher::publish_link_status()
     {
-        auto msg = std::make_unique<sfg_agent_msgs::msg::WifiLinkStatus>();
+        auto msg = std::make_unique<sfg_hardware_interface_msgs::msg::WifiLinkStatus>();
         msg->header.stamp = now();
         msg->header.frame_id = m_frame_id;
         msg->interface_name = m_network_interface;
@@ -123,7 +123,7 @@ namespace sfg_hardware_interface
         }
     }
 
-    void WifiLinkStatusPublisher::fill_link_status(sfg_agent_msgs::msg::WifiLinkStatus &msg, const detail::InterfaceInfo &interface_info, const detail::StationInfo &station_info)
+    void WifiLinkStatusPublisher::fill_link_status(sfg_hardware_interface_msgs::msg::WifiLinkStatus &msg, const detail::InterfaceInfo &interface_info, const detail::StationInfo &station_info)
     {
         msg.connected = true;
         msg.ssid = interface_info.m_ssid.value_or("");

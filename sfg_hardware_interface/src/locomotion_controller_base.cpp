@@ -113,7 +113,7 @@ namespace sfg_hardware_interface
             std::bind(&LocomotionControllerBase::reset_cmd_callback, this));
         m_odometry_publisher = create_publisher<nav_msgs::msg::Odometry>(RosFqnBuilder().resource(Resource::Odom).build(RosFqnSegment::Resource), 10);
         m_tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-        m_trigger_action_service = create_service<sfg_agent_msgs::srv::TriggerAction>(
+        m_trigger_action_service = create_service<sfg_hardware_interface_msgs::srv::TriggerAction>(
             RosFqnBuilder().resource(Resource::TriggerAction).build(RosFqnSegment::Resource),
             std::bind(&LocomotionControllerBase::trigger_action_callback, this, std::placeholders::_1, std::placeholders::_2));
     }
@@ -235,8 +235,8 @@ namespace sfg_hardware_interface
     }
 
     void LocomotionControllerBase::trigger_action_callback(
-        const std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Request> request,
-        std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Response> response)
+        const std::shared_ptr<sfg_hardware_interface_msgs::srv::TriggerAction::Request> request,
+        std::shared_ptr<sfg_hardware_interface_msgs::srv::TriggerAction::Response> response)
     {
         auto iterator = m_action_map.find(request->action);
 
@@ -250,7 +250,7 @@ namespace sfg_hardware_interface
                 response->message += pair.first + ", ";
             }
             response->message = response->message.substr(0, response->message.size() - 2);
-            response->result = sfg_agent_msgs::srv::TriggerAction::Response::UNSUPPORTED;
+            response->result = sfg_hardware_interface_msgs::srv::TriggerAction::Response::UNSUPPORTED;
             return;
         }
 
@@ -261,17 +261,17 @@ namespace sfg_hardware_interface
         catch (const UnsupportedActionException &exception)
         {
             response->message = "Failed to trigger action: The action '" + request->action + "' is not supported by this locomotion controller.";
-            response->result = sfg_agent_msgs::srv::TriggerAction::Response::UNSUPPORTED;
+            response->result = sfg_hardware_interface_msgs::srv::TriggerAction::Response::UNSUPPORTED;
             return;
         }
         catch (const std::exception &exception)
         {
             response->message = "Failed to trigger action: The action '" + request->action + "' threw an exception: ";
             response->message += exception.what();
-            response->result = sfg_agent_msgs::srv::TriggerAction::Response::FAILURE;
+            response->result = sfg_hardware_interface_msgs::srv::TriggerAction::Response::FAILURE;
             return;
         }
-        response->result = sfg_agent_msgs::srv::TriggerAction::Response::SUCCESS;
+        response->result = sfg_hardware_interface_msgs::srv::TriggerAction::Response::SUCCESS;
     }
 
     geometry_msgs::msg::Vector3 LocomotionControllerBase::apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const LimitsMatrix &limits)

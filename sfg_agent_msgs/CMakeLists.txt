@@ -26,12 +26,10 @@ set(msg_files
   "msg/Metadata.msg"
   "msg/Trajectory.msg"
   "msg/Waypoint.msg"
-  "msg/WifiLinkStatus.msg"
 )
 set(srv_files
   "srv/GetDiscoveredAgents.srv"
   "srv/GetMetadata.srv"
-  "srv/TriggerAction.srv"
 )
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${action_files}

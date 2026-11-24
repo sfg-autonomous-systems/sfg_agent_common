@@ -4,7 +4,7 @@
 #include <memory>
 #include <optional>
 #include <rclcpp/rclcpp.hpp>
-#include <sfg_agent_msgs/msg/wifi_link_status.hpp>
+#include <sfg_hardware_interface_msgs/msg/wifi_link_status.hpp>
 #include <string>
 
 // Forward declare the client so we don't need libnl as a public dependency.
@@ -40,7 +40,7 @@ namespace sfg_hardware_interface
         void publish_link_status();
 
         void validate_client(detail::Nl80211Client &client);
-        void fill_link_status(sfg_agent_msgs::msg::WifiLinkStatus &msg, const detail::InterfaceInfo &interface_info, const detail::StationInfo &station_info);
+        void fill_link_status(sfg_hardware_interface_msgs::msg::WifiLinkStatus &msg, const detail::InterfaceInfo &interface_info, const detail::StationInfo &station_info);
 
         // ROS parameters
         std::string m_network_interface;
@@ -51,7 +51,7 @@ namespace sfg_hardware_interface
         std::unique_ptr<detail::Nl80211Client> m_nl80211_client;
         std::optional<Sample> m_previous_sample;
 
-        rclcpp::Publisher<sfg_agent_msgs::msg::WifiLinkStatus>::SharedPtr m_link_status_publisher;
+        rclcpp::Publisher<sfg_hardware_interface_msgs::msg::WifiLinkStatus>::SharedPtr m_link_status_publisher;
         rclcpp::TimerBase::SharedPtr m_timer;
     };
 }

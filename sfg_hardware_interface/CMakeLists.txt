@@ -15,7 +15,7 @@ find_package(nav_msgs REQUIRED)
 find_package(PkgConfig REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(sfg_agent_msgs REQUIRED)
+find_package(sfg_hardware_interface_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -44,7 +44,7 @@ sfg_utils__add_library("${target_name}"
   ${geometry_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  ${sfg_agent_msgs_TARGETS}
+  ${sfg_hardware_interface_msgs_TARGETS}
   tf2_ros::tf2_ros
   PRIVATE
   sfg_utils::sfg_utils
@@ -53,7 +53,7 @@ sfg_utils__add_library("${target_name}"
   geometry_msgs
   nav_msgs
   rclcpp
-  sfg_agent_msgs
+  sfg_hardware_interface_msgs
   tf2_ros
 )
 
@@ -89,10 +89,10 @@ sfg_utils__add_component("wifi_link_status_publisher" "${PROJECT_NAME}::WifiLink
   sfg_utils::sfg_utils
   PUBLIC
   rclcpp::rclcpp
-  ${sfg_agent_msgs_TARGETS}
+  ${sfg_hardware_interface_msgs_TARGETS}
   EXPORT_DEPENDENCIES
   rclcpp
-  sfg_agent_msgs
+  sfg_hardware_interface_msgs
 )
 
 if(BUILD_TESTING)
