@@ -9,13 +9,13 @@
 
   <depend>magic_enum</depend>
   <depend>rclcpp</depend>
+  <depend>rmw</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
   <build_depend>pybind11_vendor</build_depend>
   <build_depend>python3-dev</build_depend>
-  <build_depend>rmw</build_depend>
 
   <exec_depend>ament_index_python</exec_depend>
   <exec_depend>launch</exec_depend>
