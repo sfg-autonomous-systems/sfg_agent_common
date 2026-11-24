@@ -1,7 +1,7 @@
 import launch
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import ComposableNodeContainer, SetParameter
+from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode, ParameterFile
 from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
@@ -23,13 +23,14 @@ def generate_launch_description() -> launch.LaunchDescription:
     )
 
     lifecycle_nodes = [
-        "controller_server",
-        "smoother_server",
-        "planner_server",
         "behavior_server",
-        "velocity_smoother",
-        "collision_monitor",
         "bt_navigator",
+        "collision_monitor",
+        "controller_server",
+        "coverage_server",
+        "planner_server",
+        "smoother_server",
+        "velocity_smoother",
         "waypoint_follower",
     ]
 
@@ -77,34 +78,38 @@ def generate_launch_description() -> launch.LaunchDescription:
         allow_substs=True,
     )
 
-    controller_node = ComposableNode(
-        package="nav2_controller",
-        plugin="nav2_controller::ControllerServer",
-        name="controller_server",
+    behavior_server_node = ComposableNode(
+        package="nav2_behaviors",
+        plugin="behavior_server::BehaviorServer",
+        name="behavior_server",
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "global_frame": global_namespace.component(
+                    Component.LocomotionController
+                )
+                .resource(Resource.Odom)
+                .build(),
+            },
+        ],
+        remappings=[("cmd_vel", "cmd_vel_nav")],
         namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    bt_navigator_node = ComposableNode(
+        package="nav2_bt_navigator",
+        plugin="nav2_bt_navigator::BtNavigator",
+        name="bt_navigator",
         parameters=[
             common_params,
             configured_params,
             {
                 "odom_topic": global_namespace.component(Component.LocomotionController)
                 .resource(Resource.Odom)
-                .build()
+                .build(),
             },
         ],
-        remappings=[
-            ("cmd_vel", "cmd_vel_nav"),
-            (
-                local_namespace.resource(Resource.Custom, "follow_path").build(),
-                global_namespace.resource(Resource.Custom, "follow_path").build(),
-            ),
-        ],
-    )
-
-    planner_node = ComposableNode(
-        package="nav2_planner",
-        plugin="nav2_planner::PlannerServer",
-        name="planner_server",
-        parameters=[common_params, configured_params],
         remappings=[],
         namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
     )
@@ -130,6 +135,50 @@ def generate_launch_description() -> launch.LaunchDescription:
                 .build(),
             },
         ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    controller_node = ComposableNode(
+        package="nav2_controller",
+        plugin="nav2_controller::ControllerServer",
+        name="controller_server",
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+        parameters=[
+            common_params,
+            configured_params,
+            {
+                "odom_topic": global_namespace.component(Component.LocomotionController)
+                .resource(Resource.Odom)
+                .build()
+            },
+        ],
+        remappings=[
+            ("cmd_vel", "cmd_vel_nav"),
+            (
+                local_namespace.resource(Resource.Custom, "follow_path").build(),
+                global_namespace.resource(Resource.Custom, "follow_path").build(),
+            ),
+        ],
+    )
+
+    coverage_server_node = ComposableNode(
+        package="opennav_coverage",
+        plugin="opennav_coverage::CoverageServer",
+        name="coverage_server",
+        parameters=[
+            common_params,
+            configured_params,
+        ],
+        remappings=[],
+        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
+    )
+
+    planner_node = ComposableNode(
+        package="nav2_planner",
+        plugin="nav2_planner::PlannerServer",
+        name="planner_server",
+        parameters=[common_params, configured_params],
         remappings=[],
         namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
     )
@@ -180,42 +229,6 @@ def generate_launch_description() -> launch.LaunchDescription:
         namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
     )
 
-    behavior_server_node = ComposableNode(
-        package="nav2_behaviors",
-        plugin="behavior_server::BehaviorServer",
-        name="behavior_server",
-        parameters=[
-            common_params,
-            configured_params,
-            {
-                "global_frame": global_namespace.component(
-                    Component.LocomotionController
-                )
-                .resource(Resource.Odom)
-                .build(),
-            },
-        ],
-        remappings=[("cmd_vel", "cmd_vel_nav")],
-        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
-    )
-
-    bt_navigator_node = ComposableNode(
-        package="nav2_bt_navigator",
-        plugin="nav2_bt_navigator::BtNavigator",
-        name="bt_navigator",
-        parameters=[
-            common_params,
-            configured_params,
-            {
-                "odom_topic": global_namespace.component(Component.LocomotionController)
-                .resource(Resource.Odom)
-                .build(),
-            },
-        ],
-        remappings=[],
-        namespace=local_namespace.build(RosFqnSegment.Scope, RosFqnSegment.Agent),
-    )
-
     lifecycle_manager_node = ComposableNode(
         package="nav2_lifecycle_manager",
         plugin="nav2_lifecycle_manager::LifecycleManager",
@@ -246,15 +259,16 @@ def generate_launch_description() -> launch.LaunchDescription:
                     LaunchConfiguration("log_level"),
                 ],
                 composable_node_descriptions=[
-                    controller_node,
-                    planner_node,
+                    behavior_server_node,
+                    bt_navigator_node,
                     collision_monitor_node,
+                    controller_node,
+                    coverage_server_node,
+                    lifecycle_manager_node,
+                    planner_node,
                     smoother_server_node,
                     velocity_smoother_node,
                     waypoint_follower_node,
-                    behavior_server_node,
-                    bt_navigator_node,
-                    lifecycle_manager_node,
                 ],
             ),
         ]
