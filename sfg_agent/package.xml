@@ -12,7 +12,7 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>
-  <depend>sfg_composition_interfaces</depend>
+  <depend>sfg_composition</depend>
   <depend>sfg_utils</depend>
   <depend>yaml-cpp</depend>
 

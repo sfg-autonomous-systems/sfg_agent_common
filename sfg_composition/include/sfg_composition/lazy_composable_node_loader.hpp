@@ -4,7 +4,7 @@
 #include <composition_interfaces/srv/unload_node.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-namespace sfg_composition_interfaces
+namespace sfg_composition
 {
     class LazyComposableNodeLoader : public std::enable_shared_from_this<LazyComposableNodeLoader>
     {
