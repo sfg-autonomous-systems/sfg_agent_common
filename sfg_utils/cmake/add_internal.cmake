@@ -98,6 +98,8 @@ macro(sfg_utils__add_internal TARGET_NAME)
             DIRECTORY "include/"
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
             PATTERN "detail" EXCLUDE
+            PATTERN "*/detail/*" EXCLUDE
+            PATTERN "detail/*" EXCLUDE
         )
 
         # Install the additional public include directories, too.
@@ -114,9 +116,11 @@ macro(sfg_utils__add_internal TARGET_NAME)
             endif()
 
             install(
-                DIRECTORY "${include_dir}/" 
-                DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}" 
-                PATTERN "detail" EXCLUDE)
+                DIRECTORY "${include_dir}/"
+                DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+                PATTERN "detail" EXCLUDE
+                PATTERN "*/detail/*" EXCLUDE
+                PATTERN "detail/*" EXCLUDE)
         endforeach()
     endif()
 endmacro()
