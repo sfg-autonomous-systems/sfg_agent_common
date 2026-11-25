@@ -14,7 +14,7 @@ find_package(magic_enum REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sfg_agent_msgs REQUIRED)
-find_package(sfg_composition_interfaces REQUIRED)
+find_package(sfg_composition REQUIRED)
 find_package(sfg_utils REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
@@ -64,11 +64,11 @@ sfg_utils__add_component("agent_decoder" "${PROJECT_NAME}::AgentDecoder"
   rclcpp_components::component
   PUBLIC
   ${sfg_agent_msgs_TARGETS}
-  sfg_composition_interfaces::sfg_composition_interfaces
+  sfg_composition::sfg_composition
   sfg_utils::sfg_utils
   EXPORT_DEPENDENCIES
   sfg_agent_msgs
-  sfg_composition_interfaces
+  sfg_composition
   sfg_utils
 )
 

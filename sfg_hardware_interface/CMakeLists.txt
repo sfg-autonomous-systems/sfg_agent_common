@@ -12,12 +12,15 @@ find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(PkgConfig REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(sfg_agent_msgs REQUIRED)
+find_package(sfg_hardware_interface_msgs REQUIRED)
 find_package(sfg_utils REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+
+pkg_check_modules(LIBNL REQUIRED IMPORTED_TARGET libnl-3.0 libnl-genl-3.0)
 
 include(FetchContent)
 
@@ -41,7 +44,7 @@ sfg_utils__add_library("${target_name}"
   ${geometry_msgs_TARGETS}
   ${nav_msgs_TARGETS}
   rclcpp::rclcpp
-  ${sfg_agent_msgs_TARGETS}
+  ${sfg_hardware_interface_msgs_TARGETS}
   tf2_ros::tf2_ros
   PRIVATE
   sfg_utils::sfg_utils
@@ -50,7 +53,7 @@ sfg_utils__add_library("${target_name}"
   geometry_msgs
   nav_msgs
   rclcpp
-  sfg_agent_msgs
+  sfg_hardware_interface_msgs
   tf2_ros
 )
 
@@ -71,6 +74,25 @@ sfg_utils__add_component("vicon_localizer" "${PROJECT_NAME}::ViconLocalizer"
   EXPORT_DEPENDENCIES
   rclcpp
   tf2_ros
+)
+
+sfg_utils__add_component("wifi_link_status_publisher" "${PROJECT_NAME}::WifiLinkStatusPublisher"
+  SOURCES
+  "src/detail/network_utils.cpp"
+  "src/detail/nl80211_client.cpp"
+  "src/wifi_link_status_publisher_component.cpp"
+  "src/wifi_link_status_publisher.cpp"
+  DEPENDENCIES
+  PRIVATE
+  PkgConfig::LIBNL
+  rclcpp_components::component
+  sfg_utils::sfg_utils
+  PUBLIC
+  rclcpp::rclcpp
+  ${sfg_hardware_interface_msgs_TARGETS}
+  EXPORT_DEPENDENCIES
+  rclcpp
+  sfg_hardware_interface_msgs
 )
 
 if(BUILD_TESTING)

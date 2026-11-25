@@ -93,9 +93,13 @@ macro(sfg_utils__add_internal TARGET_NAME)
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         )
 
+        # Headers in a "detail" directory are private to the package and are not installed.
         install(
             DIRECTORY "include/"
             DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+            PATTERN "detail" EXCLUDE
+            PATTERN "*/detail/*" EXCLUDE
+            PATTERN "detail/*" EXCLUDE
         )
 
         # Install the additional public include directories, too.
@@ -111,7 +115,12 @@ macro(sfg_utils__add_internal TARGET_NAME)
                 continue()
             endif()
 
-            install(DIRECTORY "${include_dir}/" DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+            install(
+                DIRECTORY "${include_dir}/"
+                DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+                PATTERN "detail" EXCLUDE
+                PATTERN "*/detail/*" EXCLUDE
+                PATTERN "detail/*" EXCLUDE)
         endforeach()
     endif()
 endmacro()

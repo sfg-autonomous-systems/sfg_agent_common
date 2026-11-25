@@ -6,7 +6,7 @@
 #include "sfg_agent_msgs/msg/discovery_event.hpp"
 #include "sfg_agent_msgs/msg/metadata.hpp"
 #include "sfg_agent_msgs/srv/get_discovered_agents.hpp"
-#include "sfg_composition_interfaces/lazy_composable_node_loader.hpp"
+#include "sfg_composition/lazy_composable_node_loader.hpp"
 #include "sfg_utils/fqn/stream.hpp"
 
 namespace sfg_agent
@@ -22,7 +22,7 @@ namespace sfg_agent
         {
         public:
             sfg_agent_msgs::msg::Metadata m_metadata;
-            std::vector<std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>>> m_decoders;
+            std::vector<std::pair<std::string, std::shared_ptr<sfg_composition::LazyComposableNodeLoader>>> m_decoders;
         };
 
         AgentDecoder(const AgentDecoder &) = default;
@@ -33,8 +33,8 @@ namespace sfg_agent
         void listen_to_graph_events();
         void agent_discovery_event_callback(const sfg_agent_msgs::msg::DiscoveryEvent::ConstSharedPtr msg);
         void get_discovered_agents_callback(rclcpp::Client<sfg_agent_msgs::srv::GetDiscoveredAgents>::SharedFuture future);
-        std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
-        std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::pair<std::string, std::shared_ptr<sfg_composition::LazyComposableNodeLoader>> create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
+        std::pair<std::string, std::shared_ptr<sfg_composition::LazyComposableNodeLoader>> create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream);
 
         // ROS parameters
         std::string m_container_name;

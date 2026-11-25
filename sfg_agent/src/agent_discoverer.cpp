@@ -143,11 +143,11 @@ namespace sfg_agent
         agent->m_metadata = response->metadata;
 
         // Inform subscribers about the new agent.
-        auto msg = sfg_agent_msgs::msg::DiscoveryEvent();
-        msg.header.stamp = now();
-        msg.metadata = response->metadata;
-        msg.event_type = sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED;
-        m_agent_discovery_event_publisher->publish(msg);
+        auto msg = std::make_unique<sfg_agent_msgs::msg::DiscoveryEvent>();
+        msg->header.stamp = now();
+        msg->metadata = response->metadata;
+        msg->event_type = sfg_agent_msgs::msg::DiscoveryEvent::DISCOVERED;
+        m_agent_discovery_event_publisher->publish(std::move(msg));
     }
 
     void sfg_agent::AgentDiscoverer::get_discovered_agents_callback(

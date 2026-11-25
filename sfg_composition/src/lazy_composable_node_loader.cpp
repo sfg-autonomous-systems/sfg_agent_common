@@ -1,6 +1,6 @@
-#include "sfg_composition_interfaces/lazy_composable_node_loader.hpp"
+#include "sfg_composition/lazy_composable_node_loader.hpp"
 
-namespace sfg_composition_interfaces
+namespace sfg_composition
 {
     LazyComposableNodeLoader::LazyComposableNodeLoader(
         std::shared_ptr<composition_interfaces::srv::LoadNode::Request> load_request,

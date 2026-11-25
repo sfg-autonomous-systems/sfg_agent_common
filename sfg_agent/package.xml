@@ -12,12 +12,15 @@
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
   <depend>sfg_agent_msgs</depend>
-  <depend>sfg_composition_interfaces</depend>
+  <depend>sfg_composition</depend>
   <depend>sfg_utils</depend>
   <depend>yaml-cpp</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>python3-rospkg</exec_depend>
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>sfg_image_transport</exec_depend>

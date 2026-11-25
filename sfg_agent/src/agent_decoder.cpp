@@ -168,7 +168,7 @@ namespace sfg_agent
         }
     }
 
-    std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> AgentDecoder::create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    std::pair<std::string, std::shared_ptr<sfg_composition::LazyComposableNodeLoader>> AgentDecoder::create_camera_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
         assert(stream == Stream::Color || stream == Stream::Depth);
@@ -193,10 +193,10 @@ namespace sfg_agent
             "in/" + in_transport + ":=" + input_topic,
             "out:=" + output_topic};
 
-        return std::make_pair(output_topic, std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
+        return std::make_pair(output_topic, std::make_shared<sfg_composition::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
     }
 
-    std::pair<std::string, std::shared_ptr<sfg_composition_interfaces::LazyComposableNodeLoader>> AgentDecoder::create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
+    std::pair<std::string, std::shared_ptr<sfg_composition::LazyComposableNodeLoader>> AgentDecoder::create_camera_info_decoder(const std::string &agent_name, const std::string &camera, sfg_utils::fqn::Stream stream)
     {
         using namespace sfg_utils::fqn;
         assert(stream == Stream::Color || stream == Stream::Depth);
@@ -218,6 +218,6 @@ namespace sfg_agent
         request->parameters.push_back(rclcpp::Parameter("qos_overrides." + output_topic + ".publisher.reliability", "best_effort").to_parameter_msg());
         request->extra_arguments = {rclcpp::Parameter("use_intra_process_comms", get_node_options().use_intra_process_comms()).to_parameter_msg()};
 
-        return std::make_pair(output_topic, std::make_shared<sfg_composition_interfaces::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
+        return std::make_pair(output_topic, std::make_shared<sfg_composition::LazyComposableNodeLoader>(request, m_load_node_client, m_unload_node_client, get_logger()));
     }
 }

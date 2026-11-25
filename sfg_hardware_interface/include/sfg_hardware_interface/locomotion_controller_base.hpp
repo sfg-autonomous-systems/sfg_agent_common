@@ -6,7 +6,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <tf2_ros/transform_broadcaster.hpp>
 
-#include "sfg_agent_msgs/srv/trigger_action.hpp"
+#include "sfg_hardware_interface_msgs/srv/trigger_action.hpp"
 
 namespace sfg_hardware_interface
 {
@@ -43,8 +43,8 @@ namespace sfg_hardware_interface
         void cmd_vel_callback(const geometry_msgs::msg::TwistStamped::ConstSharedPtr &msg);
         void reset_cmd_callback();
         void trigger_action_callback(
-            const std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Request> request,
-            std::shared_ptr<sfg_agent_msgs::srv::TriggerAction::Response> response);
+            const std::shared_ptr<sfg_hardware_interface_msgs::srv::TriggerAction::Request> request,
+            std::shared_ptr<sfg_hardware_interface_msgs::srv::TriggerAction::Response> response);
 
         geometry_msgs::msg::Vector3 apply_velocity_limits(const geometry_msgs::msg::Vector3 &velocity, const LimitsMatrix &limits);
 
@@ -59,6 +59,6 @@ namespace sfg_hardware_interface
         rclcpp::TimerBase::SharedPtr m_cmd_vel_reset_timer;
         rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_odometry_publisher;
         std::unique_ptr<tf2_ros::TransformBroadcaster> m_tf_broadcaster;
-        rclcpp::Service<sfg_agent_msgs::srv::TriggerAction>::SharedPtr m_trigger_action_service;
+        rclcpp::Service<sfg_hardware_interface_msgs::srv::TriggerAction>::SharedPtr m_trigger_action_service;
     };
 }
