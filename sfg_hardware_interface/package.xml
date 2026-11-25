@@ -9,7 +9,6 @@
 
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
-  <depend>libnl-3-dev</depend>
   <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
@@ -21,6 +20,10 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>git</buildtool_depend>
   <buildtool_depend>pkg-config</buildtool_depend>
+
+  <build_depend>libnl-3-dev</build_depend>
+
+  <exec_depend>libnl-3</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
