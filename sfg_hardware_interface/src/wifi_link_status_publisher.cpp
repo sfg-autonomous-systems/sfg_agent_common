@@ -51,6 +51,14 @@ namespace sfg_hardware_interface
                 .set__read_only(true)
                 .set__description("Frame ID written to the header of the published messages."));
 
+        m_antenna_frame_ids = sfg_utils::ros_utils::declare_parameter_if_not_declared<std::vector<std::string>>(
+            *this,
+            "antenna_frame_ids",
+            {},
+            rcl_interfaces::msg::ParameterDescriptor()
+                .set__read_only(true)
+                .set__description("Frame IDs of the individual antennas ordered by their chain index."));
+
         m_nl80211_client = std::make_unique<detail::Nl80211Client>(m_receive_timeout_ms);
         validate_client(*m_nl80211_client);
 
@@ -130,12 +138,11 @@ namespace sfg_hardware_interface
         msg.bssid = detail::network_utils::format_mac_address(station_info.m_mac_address);
         msg.frequency_mhz = interface_info.m_frequency_mhz.value_or(0);
 
-        msg.signal_strength_dbm = static_cast<std::int8_t>(station_info.m_signal_strength_dbm.value_or(0));
-        msg.signal_strength_average_dbm = static_cast<std::int8_t>(station_info.m_signal_strength_average_dbm.value_or(0));
-        msg.inactive_for_ms = station_info.m_inactive_for_ms.value_or(0);
+        msg.signal_strength_dbm = station_info.m_signal_strength_dbm.value_or(std::numeric_limits<std::int8_t>::min());
+        msg.signal_strength_average_dbm = station_info.m_signal_strength_average_dbm.value_or(std::numeric_limits<std::int8_t>::min());
 
-        msg.tx_nominal_bitrate_mbps = static_cast<float>(station_info.m_tx_nominal_bitrate_mbps.value_or(0.0));
-        msg.rx_nominal_bitrate_mbps = static_cast<float>(station_info.m_rx_nominal_bitrate_mbps.value_or(0.0));
+        msg.tx_nominal_bitrate_mbps = static_cast<float>(station_info.m_tx_nominal_bitrate_mbps.value_or(std::numeric_limits<double>::quiet_NaN()));
+        msg.rx_nominal_bitrate_mbps = static_cast<float>(station_info.m_rx_nominal_bitrate_mbps.value_or(std::numeric_limits<double>::quiet_NaN()));
 
         msg.tx_byte_count = station_info.m_tx_byte_count.value_or(0);
         msg.rx_byte_count = station_info.m_rx_byte_count.value_or(0);
@@ -160,5 +167,26 @@ namespace sfg_hardware_interface
             msg.tx_actual_bitrate_mbps = compute_bitrate_mbps(m_previous_sample->m_tx_byte_count, msg.tx_byte_count);
         }
         m_previous_sample = Sample{msg.header.stamp, msg.bssid, msg.rx_byte_count, msg.tx_byte_count};
+
+        msg.inactive_for_ms = station_info.m_inactive_for_ms.value_or(0);
+        msg.connected_for = station_info.m_connected_for.value_or(0);
+
+        for (const auto &chain_info : station_info.m_chain_infos)
+        {
+            sfg_hardware_interface_msgs::msg::WifiAntennaStatus antenna_status;
+            antenna_status.chain_index = chain_info.m_index;
+            antenna_status.signal_strength_dbm = chain_info.m_signal_strength_dbm.value_or(std::numeric_limits<std::int8_t>::min());
+            antenna_status.signal_strength_average_dbm = chain_info.m_signal_strength_average_dbm.value_or(std::numeric_limits<std::int8_t>::min());
+
+            if (chain_info.m_index < m_antenna_frame_ids.size())
+            {
+                antenna_status.frame_id = m_antenna_frame_ids[chain_info.m_index];
+            }
+            else if (!m_antenna_frame_ids.empty())
+            {
+                RCLCPP_WARN_ONCE(get_logger(), "No frame ID specified for antenna with chain index %u.", chain_info.m_index);
+            }
+            msg.antennas.push_back(std::move(antenna_status));
+        }
     }
 }

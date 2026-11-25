@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <linux/if_ether.h>
 #include <optional>
+#include <vector>
+
+#include "sfg_hardware_interface/detail/chain_info.hpp"
 
 namespace sfg_hardware_interface::detail
 {
@@ -11,8 +14,8 @@ namespace sfg_hardware_interface::detail
     {
     public:
         std::array<std::uint8_t, ETH_ALEN> m_mac_address{};
-        std::optional<std::int32_t> m_signal_strength_dbm;
-        std::optional<std::int32_t> m_signal_strength_average_dbm;
+        std::optional<std::int8_t> m_signal_strength_dbm;
+        std::optional<std::int8_t> m_signal_strength_average_dbm;
         std::optional<double> m_rx_nominal_bitrate_mbps;
         std::optional<double> m_tx_nominal_bitrate_mbps;
         std::optional<std::uint64_t> m_rx_byte_count;
@@ -21,5 +24,6 @@ namespace sfg_hardware_interface::detail
         std::optional<std::uint32_t> m_tx_failed_count;
         std::optional<std::uint32_t> m_inactive_for_ms;
         std::optional<std::uint32_t> m_connected_for;
+        std::vector<ChainInfo> m_chain_infos;
     };
 }

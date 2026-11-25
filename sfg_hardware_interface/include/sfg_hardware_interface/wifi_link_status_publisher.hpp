@@ -1,11 +1,13 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <rclcpp/rclcpp.hpp>
 #include <sfg_hardware_interface_msgs/msg/wifi_link_status.hpp>
 #include <string>
+#include <vector>
 
 // Forward declare the client so we don't need libnl as a public dependency.
 namespace sfg_hardware_interface::detail
@@ -47,6 +49,7 @@ namespace sfg_hardware_interface
         std::chrono::milliseconds m_receive_timeout_ms;
         float m_publish_rate;
         std::string m_frame_id;
+        std::vector<std::string> m_antenna_frame_ids;
 
         std::unique_ptr<detail::Nl80211Client> m_nl80211_client;
         std::optional<Sample> m_previous_sample;

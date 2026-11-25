@@ -16,6 +16,7 @@ find_package(std_msgs REQUIRED)
 # Add interfaces.                                                                                        #
 # ########################################################################################################
 set(msg_files
+  "msg/WifiAntennaStatus.msg"
   "msg/WifiLinkStatus.msg"
 )
 set(srv_files

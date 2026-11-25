@@ -1,5 +1,6 @@
 #include "sfg_hardware_interface/detail/nl80211_client.hpp"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <linux/if_ether.h>
@@ -147,27 +148,9 @@ namespace sfg_hardware_interface::detail
             std::memcpy(station_info.m_mac_address.data(), nla_data(attributes[NL80211_ATTR_MAC]), ETH_ALEN);
         }
 
-        auto to_u32 = [&](size_t attribute_index) -> std::optional<std::uint32_t>
+        auto to_dbm = [&](size_t attribute_index)
         {
-            return station_info_attributes[attribute_index] ? std::optional<std::uint32_t>(nla_get_u32(station_info_attributes[attribute_index])) : std::nullopt;
-        };
-        auto to_dbm = [&](size_t attribute_index) -> std::optional<std::int32_t>
-        {
-            return station_info_attributes[attribute_index] ? std::optional<std::int32_t>(std::int8_t(nla_get_u8(station_info_attributes[attribute_index]))) : std::nullopt;
-        };
-        // NL80211 can provide the number of bytes received/transmitted either as a 32-bit (legacy) or a 64-bit (modern) integer.
-        // We check both and give priority to the 64-bit variant.
-        auto to_bytes = [&](size_t attribute_64_bit_index, size_t attribute_32_bit_index) -> std::optional<std::uint64_t>
-        {
-            if (station_info_attributes[attribute_64_bit_index])
-            {
-                return nla_get_u64(station_info_attributes[attribute_64_bit_index]);
-            }
-            if (station_info_attributes[attribute_32_bit_index])
-            {
-                return nla_get_u32(station_info_attributes[attribute_32_bit_index]);
-            }
-            return std::nullopt;
+            return station_info_attributes[attribute_index] ? std::optional<std::int8_t>(nla_get_u8(station_info_attributes[attribute_index])) : std::nullopt;
         };
         auto to_bitrate = [&](nlattr *attribute) -> std::optional<double>
         {
@@ -191,6 +174,24 @@ namespace sfg_hardware_interface::detail
             }
             return std::nullopt;
         };
+        // NL80211 can provide the number of bytes received/transmitted either as a 32-bit (legacy) or a 64-bit (modern) integer.
+        // We check both and give priority to the 64-bit variant.
+        auto to_bytes = [&](size_t attribute_64_bit_index, size_t attribute_32_bit_index) -> std::optional<std::uint64_t>
+        {
+            if (station_info_attributes[attribute_64_bit_index])
+            {
+                return nla_get_u64(station_info_attributes[attribute_64_bit_index]);
+            }
+            if (station_info_attributes[attribute_32_bit_index])
+            {
+                return nla_get_u32(station_info_attributes[attribute_32_bit_index]);
+            }
+            return std::nullopt;
+        };
+        auto to_u32 = [&](size_t attribute_index)
+        {
+            return station_info_attributes[attribute_index] ? std::optional<std::uint32_t>(nla_get_u32(station_info_attributes[attribute_index])) : std::nullopt;
+        };
 
         station_info.m_signal_strength_dbm = to_dbm(NL80211_STA_INFO_SIGNAL);
         station_info.m_signal_strength_average_dbm = to_dbm(NL80211_STA_INFO_SIGNAL_AVG);
@@ -202,7 +203,38 @@ namespace sfg_hardware_interface::detail
         station_info.m_tx_failed_count = to_u32(NL80211_STA_INFO_TX_FAILED);
         station_info.m_inactive_for_ms = to_u32(NL80211_STA_INFO_INACTIVE_TIME);
         station_info.m_connected_for = to_u32(NL80211_STA_INFO_CONNECTED_TIME);
+        station_info.m_chain_infos = parse_chains(station_info_attributes);
         return station_info;
+    }
+
+    std::vector<ChainInfo> Nl80211Client::parse_chains(nlattr **station_info_attributes)
+    {
+        std::vector<ChainInfo> chain_infos;
+
+        auto collect = [&](nlattr *attribute, std::optional<std::int8_t> ChainInfo::*member)
+        {
+            if (!attribute)
+            {
+                return;
+            }
+
+            nlattr *nested_attribute;
+            std::int32_t remaining;
+            nla_for_each_nested(nested_attribute, attribute, remaining)
+            {
+                const std::uint8_t chain_index = nla_type(nested_attribute);
+                auto chain_info = std::find_if(chain_infos.begin(), chain_infos.end(), [chain_index](const ChainInfo &chain_info)
+                                               { return chain_info.m_index == chain_index; });
+                if (chain_info == chain_infos.end())
+                {
+                    chain_info = chain_infos.insert(chain_infos.end(), ChainInfo{chain_index, std::nullopt, std::nullopt});
+                }
+                (*chain_info).*member = nla_get_u8(nested_attribute);
+            }
+        };
+        collect(station_info_attributes[NL80211_STA_INFO_CHAIN_SIGNAL], &ChainInfo::m_signal_strength_dbm);
+        collect(station_info_attributes[NL80211_STA_INFO_CHAIN_SIGNAL_AVG], &ChainInfo::m_signal_strength_average_dbm);
+        return chain_infos;
     }
 
     void Nl80211Client::request(std::uint8_t cmd, std::uint32_t flags, std::uint32_t interface_index, const Handler &handler)

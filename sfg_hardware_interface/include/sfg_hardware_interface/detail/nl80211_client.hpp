@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "sfg_hardware_interface/detail/chain_info.hpp"
 #include "sfg_hardware_interface/detail/interface_info.hpp"
 #include "sfg_hardware_interface/detail/station_info.hpp"
 
@@ -58,6 +59,7 @@ namespace sfg_hardware_interface::detail
         static std::uint32_t get_interface_index(const std::string &interface_name);
         static InterfaceInfo parse_interface(nlattr **attributes);
         static std::optional<StationInfo> parse_station(nlattr **attributes);
+        static std::vector<ChainInfo> parse_chains(nlattr **station_info_attributes);
 
         void request(std::uint8_t cmd, std::uint32_t flags, std::uint32_t interface_index, const Handler &handler);
 
