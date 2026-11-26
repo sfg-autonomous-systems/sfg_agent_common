@@ -27,7 +27,7 @@ include(FetchContent)
 FetchContent_Declare(
   vicon_datastream_sdk
   GIT_REPOSITORY https://github.com/sfg-autonomous-systems/sfg_vicon_datastream_sdk.git
-  GIT_TAG 5aa21b4f493b88349b7c76e3761799d5b0a6223d
+  GIT_TAG e8a93f99212d19d786870e5e95b6bf3b00192354
 )
 FetchContent_MakeAvailable(vicon_datastream_sdk)
 
